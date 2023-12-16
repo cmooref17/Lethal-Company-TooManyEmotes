@@ -107,7 +107,6 @@ namespace TooManyEmotes {
 
         public static void OnHoveredNewElement(int index)
         {
-            Plugin.Log("OnHoveredNewIndex: " + index);
             if (hoveredEmoteIndex != -1)
                 emoteUIElementsList[hoveredEmoteIndex].OnHover(false);
             if (index != -1)
@@ -267,7 +266,7 @@ namespace TooManyEmotes {
             renderTexture.graphicsFormat = UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_UNorm;
             renderTexture.depthStencilFormat = UnityEngine.Experimental.Rendering.GraphicsFormat.D24_UNorm_S8_UInt;
             renderingCamera.targetTexture = renderTexture;
-            renderingCamera.transform.position = Vector3.up;
+            renderingCamera.transform.position = Vector3.down * 1000;
             renderTextureImageUI.texture = renderTexture;
 
             DisableRenderCameraNextFrame();
