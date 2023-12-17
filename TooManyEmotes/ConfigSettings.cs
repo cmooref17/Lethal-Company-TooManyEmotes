@@ -12,6 +12,7 @@ using static UnityEngine.EventSystems.EventTrigger;
 
 namespace TooManyEmotes.Config {
     public static class ConfigSettings {
+        public static ConfigEntry<bool> unlockEverything;
         public static ConfigEntry<float> priceMultiplierEmotesStore;
         public static ConfigEntry<int> numEmotesStoreRotation;
         public static ConfigEntry<int> numMysteryEmotesStoreRotation;
@@ -23,12 +24,15 @@ namespace TooManyEmotes.Config {
         public static void BindConfigSettings() {
             Plugin.Log("BindingConfigs");
 
-            priceMultiplierEmotesStore = Plugin.instance.Config.Bind("Server settings", "PriceMultiplierEmotesStore", 1.0f, "[Host only] Price multiplier for emotes in the store.");
-            numEmotesStoreRotation = Plugin.instance.Config.Bind("Server settings", "NumEmotesInStoreRotation", 3, "[Host only] The number of (non-mystery) emotes that will be available at a time in the store.");
-            numMysteryEmotesStoreRotation = Plugin.instance.Config.Bind("Server settings", "NumMysteryEmotesInStoreRotation", 1, "[Host only] The number of \"mystery\" emotes that will be available at a time in the store. These emotes will be a mystery until unlocked.");
-            numFreeEmoteCoupons = Plugin.instance.Config.Bind("Server settings", "NumFreeEmoteCoupons", 1, "[Host only] The number of free emote coupons you start with each round.");
+
+            unlockEverything = Plugin.instance.Config.Bind("Server settings", "UnlockEverythingAtStart", false, "[Host only] If true, every emote will be unlocked in your emote wheel.");
+            priceMultiplierEmotesStore = Plugin.instance.Config.Bind("Server settings", "PriceMultiplierEmotesStore", 1.0f, "[Host only] Price multiplier for emotes in the store. Only applies if UnlockEverythingAtStart is false.");
+            numEmotesStoreRotation = Plugin.instance.Config.Bind("Server settings", "NumEmotesInStoreRotation", 3, "[Host only] The number of (non-mystery) emotes that will be available at a time in the store. Only applies if UnlockEverythingAtStart is false.");
+            numMysteryEmotesStoreRotation = Plugin.instance.Config.Bind("Server settings", "NumMysteryEmotesInStoreRotation", 1, "[Host only] The number of \"mystery\" emotes that will be available at a time in the store. These emotes will be a mystery until unlocked. Only applies if UnlockEverythingAtStart is false.");
+            numFreeEmoteCoupons = Plugin.instance.Config.Bind("Server settings", "NumFreeEmoteCoupons", 1, "[Host only] The number of free emote coupons you start with each round. Only applies if UnlockEverythingAtStart is false.");
             openEmoteMenuKeybind = Plugin.instance.Config.Bind("Client", "OpenEmoteMenuKeybind", "<Keyboard>/backquote", "Keybind for opening the emote radial menu.");
 
+            currentConfigEntries.Add(unlockEverything.Definition.Key, unlockEverything);
             currentConfigEntries.Add(priceMultiplierEmotesStore.Definition.Key, priceMultiplierEmotesStore);
             currentConfigEntries.Add(numEmotesStoreRotation.Definition.Key, numEmotesStoreRotation);
             currentConfigEntries.Add(numMysteryEmotesStoreRotation.Definition.Key, numMysteryEmotesStoreRotation);

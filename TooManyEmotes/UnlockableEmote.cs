@@ -15,6 +15,5 @@ namespace TooManyEmotes {
         public AnimationClip transitionsToClip = null;
         public bool complementary = false;
         public int price = 0;
-        public bool isPose = false;
     }
 }

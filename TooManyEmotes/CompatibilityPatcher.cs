@@ -39,23 +39,36 @@ namespace TooManyEmotes.CompatibilityPatcher {
                     Assembly assembly = pluginInfo.Instance.GetType().Assembly;
                     if (assembly != null)
                     {
+                        Plugin.Log("Applying compatibility patch for More_Emotes");
+
                         Type internalClassType = assembly.GetType("MoreEmotes.Patch.EmotePatch");
-                        FieldInfo runtimeAnimatorControllerField = internalClassType.GetField("local", BindingFlags.Public | BindingFlags.Static);
-                        RuntimeAnimatorController runtimeAnimatorController = (RuntimeAnimatorController)runtimeAnimatorControllerField.GetValue(null);
-                        if (runtimeAnimatorController != null)
+                        FieldInfo animatorControllerFieldLocal = internalClassType.GetField("local", BindingFlags.Public | BindingFlags.Static);
+                        RuntimeAnimatorController animatorControllerLocal = (RuntimeAnimatorController)animatorControllerFieldLocal.GetValue(null);
+                        if (animatorControllerLocal != null)
                         {
-                            if (!(runtimeAnimatorController is AnimatorOverrideController))
+                            if (!(animatorControllerLocal is AnimatorOverrideController))
                             {
                                 loadedMoreEmotes = true;
-                                Plugin.Log("Applying compatibility patch for More_Emotes");
-                                runtimeAnimatorController = new AnimatorOverrideController(runtimeAnimatorController);
-                                runtimeAnimatorControllerField.SetValue(null, runtimeAnimatorController);
-                                return;
+                                animatorControllerLocal = new AnimatorOverrideController(animatorControllerLocal);
+                                animatorControllerFieldLocal.SetValue(null, animatorControllerLocal);
+                            }
+                        }
+
+                        FieldInfo animatorControllerFieldOther = internalClassType.GetField("others", BindingFlags.Public | BindingFlags.Static);
+                        RuntimeAnimatorController animatorControllerOther = (RuntimeAnimatorController)animatorControllerFieldOther.GetValue(null);
+                        if (animatorControllerOther != null)
+                        {
+                            if (!(animatorControllerOther is AnimatorOverrideController))
+                            {
+                                loadedMoreEmotes = true;
+                                animatorControllerOther = new AnimatorOverrideController(animatorControllerOther);
+                                animatorControllerFieldOther.SetValue(null, animatorControllerOther);
                             }
                         }
                     }
                 }
-                Plugin.LogError("Failed to patch compatibility with More_Emotes");
+                if (!loadedMoreEmotes)
+                    Plugin.LogError("Failed to patch compatibility with More_Emotes");
             }
         }
     }

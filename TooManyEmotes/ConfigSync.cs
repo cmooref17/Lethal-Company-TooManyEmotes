@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TooManyEmotes.Config;
+using TooManyEmotes.Patches;
 using Unity.Collections;
 using Unity.Netcode;
 
@@ -16,6 +17,7 @@ namespace TooManyEmotes.Networking {
 
         public static bool isSynced = false;
 
+        public static bool syncUnlockEverything;
         public static float syncPriceMultiplierEmotesStore;
         public static int syncNumEmotesStoreRotation;
         public static int syncNumMysteryEmotesStoreRotation;
@@ -30,8 +32,13 @@ namespace TooManyEmotes.Networking {
                 isSynced = false;
                 if (NetworkManager.Singleton.IsServer)
                 {
-                    isSynced = true;
                     NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestConfigSyncServerRpc", OnRequestConfigSyncServerRpc);
+                    isSynced = true;
+                    if (syncUnlockEverything)
+                    {
+                        foreach (var emote in StartOfRoundPatcher.allUnlockableEmotes)
+                            StartOfRoundPatcher.UnlockEmoteLocal(emote);
+                    }
                 }
                 else
                 {
@@ -43,6 +50,7 @@ namespace TooManyEmotes.Networking {
 
 
         public static void BuildDefaultConfigSync() {
+            syncUnlockEverything = ConfigSettings.unlockEverything.Value;
             syncPriceMultiplierEmotesStore = ConfigSettings.priceMultiplierEmotesStore.Value;
             syncNumEmotesStoreRotation = ConfigSettings.numEmotesStoreRotation.Value;
             syncNumMysteryEmotesStoreRotation = ConfigSettings.numMysteryEmotesStoreRotation.Value;
@@ -66,7 +74,8 @@ namespace TooManyEmotes.Networking {
             if (!NetworkManager.Singleton.IsServer)
                 return;
             Plugin.Log("Receiving config sync request from client: " + clientId);
-            var writer = new FastBufferWriter(sizeof(float) + sizeof(int) * 3, Allocator.Temp);
+            var writer = new FastBufferWriter(sizeof(bool) + sizeof(float) + sizeof(int) * 3, Allocator.Temp);
+            writer.WriteValueSafe(syncUnlockEverything);
             writer.WriteValueSafe(syncPriceMultiplierEmotesStore);
             writer.WriteValueSafe(syncNumEmotesStoreRotation);
             writer.WriteValueSafe(syncNumMysteryEmotesStoreRotation);
@@ -79,24 +88,33 @@ namespace TooManyEmotes.Networking {
             if (!NetworkManager.Singleton.IsClient)
                 return;
 
-            if (reader.TryBeginRead(sizeof(float) + sizeof(int) * 3))
+            if (reader.TryBeginRead(sizeof(bool) + sizeof(float) + sizeof(int) * 3))
             {
                 Plugin.Log("Receiving Config sync from server.");
+                bool syncUnlockEverythingUpdate;
                 float syncPriceMultiplierEmotesStoreUpdate;
                 int syncNumEmotesStoreRotationUpdate;
                 int syncNumMysteryEmotesStoreRotationUpdate;
                 int syncNumFreeEmoteCouponsUpdate;
 
+                reader.ReadValue(out syncUnlockEverythingUpdate);
                 reader.ReadValue(out syncPriceMultiplierEmotesStoreUpdate);
                 reader.ReadValue(out syncNumEmotesStoreRotationUpdate);
                 reader.ReadValue(out syncNumMysteryEmotesStoreRotationUpdate);
-                reader.ReadValue(out syncNumFreeEmoteCouponsUpdate)
-                    ;
+                reader.ReadValue(out syncNumFreeEmoteCouponsUpdate);
+
+                syncUnlockEverything = syncUnlockEverythingUpdate;
                 syncPriceMultiplierEmotesStore = syncPriceMultiplierEmotesStoreUpdate;
                 syncNumEmotesStoreRotation = syncNumEmotesStoreRotationUpdate;
                 syncNumMysteryEmotesStoreRotation = syncNumMysteryEmotesStoreRotationUpdate;
                 syncNumFreeEmoteCoupons = syncNumFreeEmoteCouponsUpdate;
                 isSynced = true;
+
+                if (syncUnlockEverything && StartOfRoundPatcher.allUnlockableEmotes != null && StartOfRoundPatcher.unlockedEmotes != null)
+                {
+                    foreach (var emote in StartOfRoundPatcher.allUnlockableEmotes)
+                        StartOfRoundPatcher.UnlockEmoteLocal(emote);
+                }
                 return;
             }
             Plugin.LogError("Failed to receive config sync from server.");

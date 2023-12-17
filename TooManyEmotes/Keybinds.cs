@@ -23,6 +23,8 @@ namespace TooManyEmotes
 
         static InputAction OpenEmoteMenuAction;
         static InputAction SelectEmoteUIAction;
+        static InputAction NextEmotePageAction;
+        static InputAction PrevEmotePageAction;
 
         //static int maxEmotes = 10;
 
@@ -34,6 +36,8 @@ namespace TooManyEmotes
 
             OpenEmoteMenuAction = new InputAction(binding: ConfigSettings.openEmoteMenuKeybind.Value, interactions: "Press");
             SelectEmoteUIAction = new InputAction(binding: "<Mouse>/leftButton", interactions: "Press");
+            PrevEmotePageAction = new InputAction(binding: "<Keyboard>/q", interactions: "Press");
+            NextEmotePageAction = new InputAction(binding: "<Keyboard>/e", interactions: "Press");
 
             if (__instance.gameObject.activeSelf)
                 SubscribeToEvents();
@@ -45,10 +49,14 @@ namespace TooManyEmotes
             Plugin.Log("Subscribing to OnPressCustomEmoteKey events");
 
             OpenEmoteMenuAction.performed += OnPressOpenEmoteMenu;
-            OpenEmoteMenuAction.Enable();
-
             SelectEmoteUIAction.performed += OnSelectEmoteUI;
+            PrevEmotePageAction.performed += OnSwapPrevEmotePage;
+            NextEmotePageAction.performed += OnSwapNextEmotePage;
+
+            OpenEmoteMenuAction.Enable();
             SelectEmoteUIAction.Enable();
+            PrevEmotePageAction.Enable();
+            NextEmotePageAction.Enable();
         }
 
 
@@ -69,10 +77,14 @@ namespace TooManyEmotes
             Plugin.Log("Unsubscribing from OnPressCustomEmoteKey events.");
 
             OpenEmoteMenuAction.performed -= OnPressOpenEmoteMenu;
-            OpenEmoteMenuAction.Disable();
-
             SelectEmoteUIAction.performed -= OnSelectEmoteUI;
+            PrevEmotePageAction.performed -= OnSwapPrevEmotePage;
+            NextEmotePageAction.performed -= OnSwapNextEmotePage;
+
+            OpenEmoteMenuAction.Disable();
             SelectEmoteUIAction.Disable();
+            PrevEmotePageAction.Disable();
+            NextEmotePageAction.Disable();
         }
 
 
@@ -92,13 +104,35 @@ namespace TooManyEmotes
             if (localPlayerController == null || !context.performed)
                 return;
 
-            if (EmoteMenuManager.isMenuOpen && EmoteMenuManager.hoveredEmoteIndex >= 0 && EmoteMenuManager.hoveredEmoteIndex < StartOfRoundPatcher.currentEmoteLoadout.Length)
+            if (EmoteMenuManager.isMenuOpen && EmoteMenuManager.hoveredEmoteIndex >= 0 && EmoteMenuManager.hoveredEmoteIndex < StartOfRoundPatcher.unlockedEmotes.Count)
             {
-                UnlockableEmote emote = StartOfRoundPatcher.currentEmoteLoadout[EmoteMenuManager.hoveredEmoteIndex];
+                UnlockableEmote emote = StartOfRoundPatcher.unlockedEmotes[EmoteMenuManager.hoveredEmoteIndex];
                 if (emote != null)
                     localPlayerController.PerformEmote(context, -(EmoteMenuManager.hoveredEmoteIndex + 1));
                 EmoteMenuManager.CloseEmoteMenu();
             }
+        }
+
+
+        static void OnSwapPrevEmotePage(InputAction.CallbackContext context)
+        {
+            if (localPlayerController == null || !context.performed)
+                return;
+            if (!EmoteMenuManager.isMenuOpen || EmoteMenuManager.numPages <= 1)
+                return;
+
+            EmoteMenuManager.SwapPrevPage();
+        }
+
+
+        static void OnSwapNextEmotePage(InputAction.CallbackContext context)
+        {
+            if (localPlayerController == null || !context.performed)
+                return;
+            if (!EmoteMenuManager.isMenuOpen || EmoteMenuManager.numPages <= 1)
+                return;
+
+            EmoteMenuManager.SwapNextPage();
         }
     }
 }

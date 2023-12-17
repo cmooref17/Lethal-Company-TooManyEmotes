@@ -24,57 +24,28 @@ namespace TooManyEmotes.Patches
     internal class TerminalPatcher
     {
         public static Terminal terminalInstance;
-
-        public static List<UnlockableEmote> allUnlockableEmotes = new List<UnlockableEmote>();
-        public static Dictionary<string, UnlockableEmote> allUnlockableEmotesDict = new Dictionary<string, UnlockableEmote>();
-        public static HashSet<UnlockableEmote> emoteSelection = new HashSet<UnlockableEmote>();
-        public static List<UnlockableEmote> mysteryEmoteSelection = new List<UnlockableEmote>();
+        public static HashSet<UnlockableEmote> emoteSelection;
+        public static List<UnlockableEmote> mysteryEmoteSelection;
         public static int numFreeEmoteCoupons { get { return StartOfRoundPatcher.unlockedEmotes != null ? Mathf.Max(ConfigSync.syncNumFreeEmoteCoupons - StartOfRoundPatcher.unlockedEmotes.Count, 0): 0; } }
-        public static int randomEmotesUnlockedThisRotation = 0;
+        public static int randomEmotesUnlockedThisRotation;
         static string confirmEmoteOpeningText = "You have requested to order a new emote.";
 
         static UnlockableEmote purchasingEmote;
+        static bool initializedTerminalNodes = false;
 
         [HarmonyPatch(typeof(Terminal), "Awake")]
         [HarmonyPostfix]
         public static void InitializeTerminal(Terminal __instance) {
-            if (allUnlockableEmotes != null && allUnlockableEmotes.Count > 0)
-                return;
             terminalInstance = __instance;
-            int id = 0;
-            foreach (var emoteClip in Plugin.customAnimationClips)
-            {
-                UnlockableEmote emote = new UnlockableEmote {
-                    emoteId = id,
-                    emoteName = emoteClip.name,
-                    displayName = emoteClip.name,
-                    animationClip = emoteClip,
-                    price = 100
-                };
-
-                emote.price = (int)Mathf.Max(emote.price * ConfigSync.syncPriceMultiplierEmotesStore, 0);
-
-                if (emote.emoteName.Contains("_start"))
-                {
-                    string emoteLoopName = emote.emoteName.Replace("_start", "_loop");
-                    var emoteLoop = Plugin.customAnimationClipsLoopDict[emoteLoopName];
-                    emote.transitionsToClip = emoteLoop;
-                    emote.displayName = emote.emoteName.Replace("_start", ""); ;
-                }
-                else if (emote.emoteName.Contains("_pose"))
-                    emote.isPose = true;
-
-                emote.displayName = emote.displayName.Replace('_', ' ').Trim(' ');
-                emote.displayName = char.ToUpper(emote.displayName[0]) + emote.displayName.Substring(1).ToLower();
-                allUnlockableEmotes.Add(emote);
-                allUnlockableEmotesDict.Add(emote.emoteName, emote);
-                id++;
-            }
-
-            EditExistingTerminalNodes();
+            emoteSelection = new HashSet<UnlockableEmote>();
+            mysteryEmoteSelection = new List<UnlockableEmote>();
+            randomEmotesUnlockedThisRotation = 0;
+            if (!initializedTerminalNodes)
+                EditExistingTerminalNodes();
         }
 
         public static void EditExistingTerminalNodes() {
+            initializedTerminalNodes = true;
             foreach (TerminalNode node in terminalInstance.terminalNodes.specialNodes)
             {
                 if (node.name == "Start")
@@ -116,7 +87,7 @@ namespace TooManyEmotes.Patches
                     {
                         insertIndex += keyword.Length;
                         storeNode.displayText = storeNode.displayText.Insert(insertIndex, "\n\n" +
-                            "Emote Store - These rotate per-quota\n" +
+                            "Emote Store - These rotate every day.\n" +
                             "------------------------------\n" +
                             "[emoteUnlockablesSelectionList]");
                     }
@@ -154,9 +125,9 @@ namespace TooManyEmotes.Patches
             if (modifiedDisplayText.Contains("[emoteCurrentlyUnlocked]"))
             {
                 string replacementText = "";
-                for (int i = 0; i < StartOfRoundPatcher.currentEmoteLoadout.Length; i++)
+                for (int i = 0; i < StartOfRoundPatcher.unlockedEmotes.Count; i++)
                 {
-                    var emote = StartOfRoundPatcher.currentEmoteLoadout[i];
+                    var emote = StartOfRoundPatcher.unlockedEmotes[i];
                     if (emote != null)
                         replacementText += string.Format("[{0}] {1}\n", i + 1, emote.displayName);
                 }
@@ -250,7 +221,7 @@ namespace TooManyEmotes.Patches
 
             if (input.StartsWith("emote random") || input.StartsWith("random"))
             {
-
+                // TODO
             }
 
 
@@ -266,11 +237,13 @@ namespace TooManyEmotes.Patches
                     Plugin.Log("Attempted to start purchase with insufficient credits and no free coupons. Current credits: " + terminalInstance.groupCredits + ". Emote price: " + emote.price);
                     __result = BuildTerminalNodeInsufficientFunds(emote);
                 }
+                /*
                 else if (StartOfRoundPatcher.unlockedEmotes.Count >= 10)
                 {
                     Plugin.Log("Attempted to start purchase when emote limit has been reached.");
                     __result = BuildTerminalNodeMaxEmotes();
                 }
+                */
                 else
                 {
                     Plugin.Log("Started purchasing emote: " + emote.emoteName);
@@ -289,18 +262,6 @@ namespace TooManyEmotes.Patches
 
 
         public static TerminalNode BuildTerminalNodeHome() {
-            /*
-            TerminalNode homeTerminalNode = new TerminalNode {
-                displayText = "[TooManyEmotes]\n\n" +
-                    "Unlockable emotes can be found in the store.\n\n" +
-                    "Assigning emotes to your loadout\n" +
-                    "> Assign [Emote name] [1-10]\n\n" +
-                    "Currently unlocked emotes\n" +
-                    "------------------------------\n\n",
-                clearPreviousText = true,
-                acceptAnything = false
-            };
-            */
 
             TerminalNode homeTerminalNode = new TerminalNode {
                 displayText = "[TooManyEmotes]\n\n" +
@@ -313,32 +274,7 @@ namespace TooManyEmotes.Patches
                 clearPreviousText = true,
                 acceptAnything = false
             };
-            /*
-            for (int i = 0; i < StartOfRoundPatcher.currentEmoteLoadout.Length; i++)
-            {
-                UnlockableEmote emote = StartOfRoundPatcher.currentEmoteLoadout[i];
-                if (emote != null)
-                    homeTerminalNode.displayText += string.Format("[{0}] {1}\n", i + 1, emote.displayName);
-            }
-            */
-            //homeTerminalNode.displayText += "\n\n";
-
-            /*
-            bool hasUnassignedEmotes = false;
-            foreach (var emote in StartOfRoundPatcher.unlockedEmotes)
-            {
-                if (StartOfRoundPatcher.currentEmoteLoadout.Contains(emote))
-                    continue;
-                if (!hasUnassignedEmotes)
-                {
-                    hasUnassignedEmotes = true;
-                    homeTerminalNode.displayText += "\nUnassigned emotes\n" +
-                        "------------------------------\n\n";
-                }
-                homeTerminalNode.displayText += emote.displayName + "\n";
-            }
-            homeTerminalNode.displayText += "\n";
-            */
+            
             return homeTerminalNode;
         }
 
@@ -375,11 +311,12 @@ namespace TooManyEmotes.Patches
             else
                 terminalNode.displayText += "Your new balance is $" + newGroupCredits + "\n\n";
 
-            int emoteIndex = Array.IndexOf(StartOfRoundPatcher.currentEmoteLoadout, emote);
-            if (emoteIndex != -1)
-                terminalNode.displayText += "Your new emote is registered in your emote loadout.\nEmote slot: " + (emoteIndex + 1) + ".\n\n";
-            else
-                terminalNode.displayText += "Your current emote loadout is full.\nTo use this emote, assign it to an emote slot.\n\n";
+            int page = Mathf.Max((StartOfRoundPatcher.unlockedEmotes.Count - 1) / 8) + 1;
+            int slot = StartOfRoundPatcher.unlockedEmotes.Count % 8;
+            terminalNode.displayText += "Your new emote is registered in your emote radial menu.\n" +
+                "You can find your emote in your emote radial menu.\n" +
+                "Page: " + page + "\n" +
+                "Slot: " + slot + ".\n\n";
 
             return terminalNode;
         }
@@ -437,19 +374,26 @@ namespace TooManyEmotes.Patches
 
         static UnlockableEmote TryGetEmote(string emoteNameInput, IEnumerable<UnlockableEmote> emoteList = null, bool reliable = false) {
             if (emoteList == null)
-                emoteList = allUnlockableEmotes;
+                emoteList = StartOfRoundPatcher.allUnlockableEmotes;
+            UnlockableEmote getEmote = null;
             foreach (var emote in emoteList)
             {
                 string emoteName = emote.displayName.ToLower();
                 if (reliable)
                 {
-                    if (emoteNameInput == emoteName || emoteNameInput == emoteName.Split(' ')[0] || emoteNameInput.Split(' ')[0] == emoteName.Split(' ')[0])
-                        return emote;
+                    if ((emoteNameInput.Length >= 4 && emoteName.StartsWith(emoteName)) || emoteNameInput == emoteName || emoteNameInput == emoteName.Split(' ')[0] || emoteNameInput.Split(' ')[0] == emoteName.Split(' ')[0])
+                    {
+                        if (getEmote == null || emoteName.Length < getEmote.displayName.Length)
+                            getEmote = emote;
+                    }
                 }
                 else if (emoteName.StartsWith(emoteNameInput))
-                    return emote;
+                {
+                    if (getEmote == null || emoteName.Length < getEmote.displayName.Length)
+                        getEmote = emote;
+                }
             }
-            return null;
+            return getEmote;
         }
         static UnlockableEmote TryGetEmoteCurrentSelection(string emoteNameInput, bool reliable = false) => TryGetEmote(emoteNameInput, emoteSelection, reliable);
         static UnlockableEmote TryGetEmoteUnlockedEmotes(string emoteNameInput, bool reliable = false) => TryGetEmote(emoteNameInput, StartOfRoundPatcher.unlockedEmotes, reliable);
@@ -458,14 +402,16 @@ namespace TooManyEmotes.Patches
         [HarmonyPatch(typeof(Terminal), "RotateShipDecorSelection")]
         [HarmonyPostfix]
         public static void RotateEmoteSelection() {
-            System.Random random = new System.Random(UnityEngine.Random.Range(1, 100000000)); // Not seed based currently
+            //System.Random random = new System.Random(UnityEngine.Random.Range(1, 100000000)); // Not seed based currently
+
+            System.Random random = new System.Random(StartOfRound.Instance.randomMapSeed + 65);
             emoteSelection.Clear();
             List<UnlockableEmote> emoteList = new List<UnlockableEmote>();
 
-            foreach (var unlockableEmote in allUnlockableEmotes)
+            foreach (var emote in StartOfRoundPatcher.allUnlockableEmotes)
             {
-                if (unlockableEmote != null) // && !StartOfRoundPatcher.unlockedEmotes.Contains(unlockableEmote)
-                    emoteList.Add(unlockableEmote);
+                if (emote != null && !emote.complementary && !StartOfRoundPatcher.unlockedEmotes.Contains(emote)) // && !StartOfRoundPatcher.unlockedEmotes.Contains(unlockableEmote)
+                    emoteList.Add(emote);
             }
 
             for (int i = 0; i < ConfigSync.syncNumEmotesStoreRotation; i++)

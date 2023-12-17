@@ -32,15 +32,18 @@ namespace TooManyEmotes.Patches {
         public static AnimationClip defaultDance1Clip;
         public static int emoteStateHash { get { return Animator.StringToHash(string.Format("{0}.Dance1", localPlayerController.playerBodyAnimator.GetLayerName(1))); } } //Animator.StringToHash("EmotesNoArms.Dance1");
 
-        public static HashSet<PlayerControllerB> performingCustomEmotes = new HashSet<PlayerControllerB>();
+        public static HashSet<PlayerControllerB> performingCustomEmotes;
         public static bool performingCustomEmoteLocal { get { return localPlayerController != null ? performingCustomEmotes.Contains(localPlayerController) : false; } set { if (localPlayerController == null) return; if (value) performingCustomEmotes.Add(localPlayerController); else performingCustomEmotes.Remove(localPlayerController); } }
-        static float timeStartedLastEmote = 0;
+        static float timeStartedLastEmote;
         public static float timeSinceStartedEmote { get { return Time.time - timeStartedLastEmote; } }
 
 
         [HarmonyPatch(typeof(PlayerControllerB), "Awake")]
         [HarmonyPostfix]
-        public static void InitializePlayer(PlayerControllerB __instance) { }
+        public static void InitializePlayer(PlayerControllerB __instance) {
+            performingCustomEmotes = new HashSet<PlayerControllerB>();
+            timeStartedLastEmote = 0;
+        }
 
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
@@ -64,9 +67,9 @@ namespace TooManyEmotes.Patches {
                 if (emoteID < 0)
                 {
                     int emoteIndex = Mathf.Abs(emoteID) - 1;
-                    if (emoteIndex >= 0 && emoteIndex < StartOfRoundPatcher.currentEmoteLoadout.Length)
+                    if (emoteIndex >= 0 && emoteIndex < StartOfRoundPatcher.unlockedEmotes.Count)
                     {
-                        UnlockableEmote emote = StartOfRoundPatcher.currentEmoteLoadout[emoteIndex];
+                        UnlockableEmote emote = StartOfRoundPatcher.unlockedEmotes[emoteIndex];
                         if (emote != null /* && emote != GetCurrentlyPlayingEmote(localPlayerController) */)
                         {
                             Plugin.Log("Starting custom emote for local player");
@@ -155,7 +158,7 @@ namespace TooManyEmotes.Patches {
             float customEmoteId = ((animationSpeed - speed) * 1000) - 1;
             int emoteId = Mathf.RoundToInt(customEmoteId);
             animationSpeed = 1;
-            if (customEmoteId >= 0 && customEmoteId < TerminalPatcher.allUnlockableEmotes.Count)
+            if (customEmoteId >= 0 && customEmoteId < StartOfRoundPatcher.allUnlockableEmotes.Count)
                 OnUpdateCustomEmote(emoteId, __instance);
             else
                 OnUpdateCustomEmote(-1, __instance);
@@ -167,8 +170,8 @@ namespace TooManyEmotes.Patches {
             Plugin.Log("OnUpdateCustomEmote for player: " + playerController.name + ". Emote id: " + emoteId);
             if (emoteId != -1)
             {
-                EnablePlayerRigBuilder(playerController, false);
-                UnlockableEmote emote = TerminalPatcher.allUnlockableEmotes[emoteId];
+                EnablePlayerRigBuilderNextFrame(playerController, false);
+                UnlockableEmote emote = StartOfRoundPatcher.allUnlockableEmotes[emoteId];
                 SetCurrentAnimationClip(emote.animationClip, playerController);
                 performingCustomEmotes.Add(playerController);
                 playerController.performingEmote = true;
@@ -195,7 +198,7 @@ namespace TooManyEmotes.Patches {
             }
             else
             {
-                EnablePlayerRigBuilder(playerController, true);
+                EnablePlayerRigBuilderNextFrame(playerController, true);
                 SetCurrentAnimationClip(defaultDance1Clip, playerController);
                 performingCustomEmotes.Remove(playerController);
 
@@ -209,10 +212,12 @@ namespace TooManyEmotes.Patches {
             }
         }
 
-        public static void EnablePlayerRigBuilder(PlayerControllerB playerController, bool enabled = true) {
-            playerController.GetComponentInChildren<RigBuilder>().enabled = enabled;
-            if (enabled)
-                playerController.GetComponentInChildren<RigBuilder>().Build();
+        public static void EnablePlayerRigBuilderNextFrame(PlayerControllerB playerController, bool enabled = true) {
+            IEnumerator EnablePlayerRigBuilderNextFrame() {
+                yield return null;
+                playerController.GetComponentInChildren<RigBuilder>().enabled = enabled;
+            }
+            playerController.StartCoroutine(EnablePlayerRigBuilderNextFrame());
         }
 
 
@@ -255,9 +260,9 @@ namespace TooManyEmotes.Patches {
             if (animationClip != null)
             {
                 string clipName = animationClip.name.Replace("_loop", "_start");
-                if (TerminalPatcher.allUnlockableEmotesDict.ContainsKey(clipName))
+                if (StartOfRoundPatcher.allUnlockableEmotesDict.ContainsKey(clipName))
                 {
-                    UnlockableEmote emote = TerminalPatcher.allUnlockableEmotesDict[clipName];
+                    UnlockableEmote emote = StartOfRoundPatcher.allUnlockableEmotesDict[clipName];
                     return emote;
                 }
             }

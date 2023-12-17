@@ -48,6 +48,7 @@ namespace TooManyEmotes.Networking {
         private static void OnUnlockEmoteServerRpc(ulong clientId, FastBufferReader reader) {
             if (!NetworkManager.Singleton.IsServer)
                 return;
+
             if (reader.TryBeginRead(sizeof(int)))
             {
                 int numEmotes;
@@ -61,7 +62,7 @@ namespace TooManyEmotes.Networking {
                         reader.ReadValue(out emoteIds[i]);
                         int emoteId = emoteIds[i];
                         Plugin.Log("Receiving unlocked emote update from client. Emote id: " + emoteId);
-                        if (emoteId < TerminalPatcher.allUnlockableEmotes.Count)
+                        if (emoteId < StartOfRoundPatcher.allUnlockableEmotes.Count)
                             StartOfRoundPatcher.UnlockEmoteLocal(emoteId);
                         else
                             Plugin.LogError("Error while syncing unlocked emote from client: Emote id is invalid! Emote id: " + emoteId);
@@ -98,7 +99,7 @@ namespace TooManyEmotes.Networking {
                         reader.ReadValue(out emoteIds[i]);
                         int emoteId = emoteIds[i];
                         Plugin.Log("Receiving unlocked emote update from server. Emote id: " + emoteId);
-                        if (emoteId < TerminalPatcher.allUnlockableEmotes.Count)
+                        if (emoteId < StartOfRoundPatcher.allUnlockableEmotes.Count)
                             StartOfRoundPatcher.UnlockEmoteLocal(emoteId);
                         else
                             Plugin.LogError("Error while syncing unlocked emote from server: Emote id is invalid! Emote id: " + emoteId);

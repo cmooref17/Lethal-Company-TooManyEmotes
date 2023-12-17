@@ -54,8 +54,7 @@ namespace TooManyEmotes.Patches
             if (!GameNetworkManager.Instance.isHostingGame)
                 return;
 
-            StartOfRoundPatcher.unlockedEmotes = new HashSet<UnlockableEmote>();
-            StartOfRoundPatcher.currentEmoteLoadout = new UnlockableEmote[StartOfRoundPatcher.emoteLoadoutSize];
+            StartOfRoundPatcher.unlockedEmotes = new List<UnlockableEmote>(StartOfRoundPatcher.complementaryEmotes);
             try
             {
                 if (ES3.KeyExists("TooManyEmotes.UnlockedEmotes", GameNetworkManager.Instance.currentSaveFileName))
@@ -63,8 +62,14 @@ namespace TooManyEmotes.Patches
                     string[] emoteIds = ES3.Load<string[]>("TooManyEmotes.UnlockedEmotes", GameNetworkManager.Instance.currentSaveFileName);
                     for (int i = 0; i < emoteIds.Length; i++)
                     {
-                        if (TerminalPatcher.allUnlockableEmotesDict.ContainsKey(emoteIds[i]))
-                            StartOfRoundPatcher.UnlockEmoteLocal(TerminalPatcher.allUnlockableEmotesDict[emoteIds[i]]); //StartOfRoundPatcher.unlockedEmotes.Add(TerminalPatcher.allUnlockableEmotesDict[emoteIds[i]]);
+                        if (StartOfRoundPatcher.allUnlockableEmotesDict.ContainsKey(emoteIds[i]))
+                        {
+                            var emote = StartOfRoundPatcher.allUnlockableEmotesDict[emoteIds[i]];
+                            if (!StartOfRoundPatcher.unlockedEmotes.Contains(emote))
+                                StartOfRoundPatcher.UnlockEmoteLocal(emote);
+                        }
+                        else
+                            Plugin.LogError("Tried to load emote that doesn't exist: " + emoteIds[i]);
                     }
                 }
                 Plugin.Log("Loaded " + StartOfRoundPatcher.unlockedEmotes.Count + " unlockable emotes.");
@@ -90,10 +95,7 @@ namespace TooManyEmotes.Patches
             ES3.DeleteKey("TooManyEmotes.FreeEmoteCoupon", __instance.currentSaveFileName);
 
             if (StartOfRoundPatcher.unlockedEmotes != null)
-            {
                 StartOfRoundPatcher.unlockedEmotes.Clear();
-                StartOfRoundPatcher.currentEmoteLoadout = new UnlockableEmote[StartOfRoundPatcher.emoteLoadoutSize];
-            }
         }
     }
 }

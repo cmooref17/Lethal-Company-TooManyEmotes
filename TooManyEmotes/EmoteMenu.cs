@@ -29,6 +29,7 @@ namespace TooManyEmotes {
         public static RectTransform menuTransform;
         public static CanvasGroup canvasGroup;
         public static RawImage renderTextureImageUI;
+        public static TextMeshPro swapPageText;
 
         public static RenderTexture renderTexture;
         public static Camera renderingCamera;
@@ -40,11 +41,16 @@ namespace TooManyEmotes {
         public static int playerLayerMask { get { return 1 << playerLayer; } }
 
         public static Color colorUnhovered = new Color(0.05f, 0.05f, 0.05f, 0.5f);
-        public static Color colorHovered = new Color(0.2f, 0.2f, 0.2f, 0.5f);
+        public static Color colorHovered = new Color(0.3f, 0.3f, 0.3f, 0.6f);
 
         public static List<EmoteUIElement> emoteUIElementsList;
-        public static int hoveredEmoteIndex = 0;
-        public static UnlockableEmote previewingEmote { get { return hoveredEmoteIndex >= 0 && hoveredEmoteIndex < StartOfRoundPatcher.currentEmoteLoadout.Length ? StartOfRoundPatcher.currentEmoteLoadout[hoveredEmoteIndex] : null; } }
+        public static int hoveredEmoteUIIndex = 0;
+        public static int hoveredEmoteIndex { get { return hoveredEmoteUIIndex >= 0 ? hoveredEmoteUIIndex + 8 * currentPage : -1; } }
+        public static int currentPage = 0;
+        public static int numPages { get { return Mathf.Max((StartOfRoundPatcher.unlockedEmotes.Count - 1) / emoteUIElementsList.Count, 0) + 1; } }
+        public static UnlockableEmote previewingEmote { get { return hoveredEmoteUIIndex >= 0 && hoveredEmoteUIIndex < StartOfRoundPatcher.unlockedEmotes.Count ? StartOfRoundPatcher.unlockedEmotes[hoveredEmoteUIIndex] : null; } }
+
+
 
 
         [HarmonyPatch(typeof(HUDManager), "Awake")]
@@ -59,10 +65,13 @@ namespace TooManyEmotes {
             menuTransform = menuGameObject.GetComponent<RectTransform>();
             renderTextureImageUI = menuGameObject.GetComponentInChildren<RawImage>();
             Transform emoteUIElementsParent = menuTransform.Find("RadialElements").transform;
+            swapPageText = menuTransform.Find("RadialBase/SwapPageText").GetComponent<TextMeshPro>();
             emoteUIElementsList = new List<EmoteUIElement>();
 
-            int i = 0;
-            for (i = 0; i < emoteUIElementsParent.childCount; i++)
+            currentPage = 0;
+            hoveredEmoteUIIndex = -1;
+
+            for (int i = 0; i < emoteUIElementsParent.childCount; i++)
             {
                 Transform emoteUIObject = emoteUIElementsParent.GetChild(i);
                 EmoteUIElement emoteUIElement = new EmoteUIElement {
@@ -100,27 +109,65 @@ namespace TooManyEmotes {
                 emoteIndex = Mathf.FloorToInt(angle / 45);
             }
 
-            if (emoteIndex != hoveredEmoteIndex)
+            if (emoteIndex != hoveredEmoteUIIndex)
                 OnHoveredNewElement(emoteIndex);
         }
 
 
         public static void OnHoveredNewElement(int index)
         {
-            if (hoveredEmoteIndex != -1)
-                emoteUIElementsList[hoveredEmoteIndex].OnHover(false);
+            if (hoveredEmoteUIIndex != -1 && hoveredEmoteUIIndex != index)
+                emoteUIElementsList[hoveredEmoteUIIndex].OnHover(false);
             if (index != -1)
                 emoteUIElementsList[index].OnHover(true);
-            hoveredEmoteIndex = index;
             SetPreviewAnimation(hoveredEmoteIndex);
+            hoveredEmoteUIIndex = index;
         }
 
 
-        public static void SetPreviewAnimation(int index)
+        public static void SwapPrevPage()
         {
-            if (index >= 0 && index < StartOfRoundPatcher.currentEmoteLoadout.Length && StartOfRoundPatcher.currentEmoteLoadout[index] != null)
+            currentPage--;
+            if (currentPage < 0)
+                currentPage = numPages - 1;
+            UpdateEmoteWheel();
+        }
+
+
+        public static void SwapNextPage()
+        {
+            currentPage++;
+            if (currentPage >= numPages)
+                currentPage = 0;
+            UpdateEmoteWheel();
+        }
+
+
+        public static void UpdateEmoteWheel()
+        {
+            swapPageText.text = string.Format("[{0} / {1}]\n[Q / E]", currentPage + 1, numPages);
+            for (int i = 0; i < emoteUIElementsList.Count; i++)
             {
-                UnlockableEmote emote = StartOfRoundPatcher.currentEmoteLoadout[index];
+                var emoteUI = emoteUIElementsList[i];
+                int emoteIndex = i + 8 * currentPage;
+                emoteUI.textContainer.text = "";
+                if (emoteIndex < StartOfRoundPatcher.unlockedEmotes.Count)
+                {
+                    UnlockableEmote emote = StartOfRoundPatcher.unlockedEmotes[emoteIndex];
+                    if (emote != null)
+                        emoteUI.textContainer.text = emote.displayName;
+                }
+            }
+            if (hoveredEmoteUIIndex >= 0 && hoveredEmoteUIIndex < 8)
+                OnHoveredNewElement(hoveredEmoteUIIndex);
+        }
+
+
+        public static void SetPreviewAnimation(int emoteIndex)
+        {
+            if (emoteIndex >= 0 && emoteIndex < StartOfRoundPatcher.unlockedEmotes.Count && StartOfRoundPatcher.unlockedEmotes[emoteIndex] != null)
+            {
+                UnlockableEmote emote = StartOfRoundPatcher.unlockedEmotes[emoteIndex];
                 Plugin.Log("Setting preview emote to: " + emote.emoteName);
                 previewPlayerObject.SetActive(true);
                 renderingCamera.enabled = true;
@@ -163,24 +210,16 @@ namespace TooManyEmotes {
         }
         public static void OpenEmoteMenu()
         {
+            Plugin.Log("Opening emote menu");
             menuGameObject.SetActive(true);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             quickMenuManager.isMenuOpen = true;
-            for (int i = 0; i < emoteUIElementsList.Count; i++)
-            {
-                var emoteUI = emoteUIElementsList[i];
-                emoteUI.textContainer.text = "";
-                if (i < StartOfRoundPatcher.currentEmoteLoadout.Length)
-                {
-                    UnlockableEmote emote = StartOfRoundPatcher.currentEmoteLoadout[i];
-                    if (emote != null)
-                        emoteUI.textContainer.text = emote.displayName;
-                }
-            }
+            UpdateEmoteWheel();
         }
         public static void CloseEmoteMenu()
         {
+            Plugin.Log("Closing emote menu");
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             localPlayerController.isFreeCamera = false;
@@ -195,8 +234,6 @@ namespace TooManyEmotes {
                 return false;
             return true;
         }
-
-
 
 
 
@@ -273,6 +310,17 @@ namespace TooManyEmotes {
         }
 
 
+        [HarmonyPatch(typeof(PlayerControllerB), "ItemSecondaryUse_performed")]
+        [HarmonyPrefix]
+        public static bool PreventItemSecondaryUseInMenu(InputAction.CallbackContext context) => !isMenuOpen;
+
+        [HarmonyPatch(typeof(PlayerControllerB), "ItemTertiaryUse_performed")]
+        [HarmonyPrefix]
+        public static bool PreventItemTertiaryUseInMenu(InputAction.CallbackContext context) => !isMenuOpen;
+
+        [HarmonyPatch(typeof(PlayerControllerB), "Interact_performed")]
+        [HarmonyPrefix]
+        public static bool PreventInteractInMenu(InputAction.CallbackContext context) => !isMenuOpen;
 
 
         [HarmonyPatch(typeof(QuickMenuManager), "OpenQuickMenu")]
