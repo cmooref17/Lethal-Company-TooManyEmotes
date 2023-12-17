@@ -381,7 +381,7 @@ namespace TooManyEmotes.Patches
                 string emoteName = emote.displayName.ToLower();
                 if (reliable)
                 {
-                    if ((emoteNameInput.Length >= 4 && emoteName.StartsWith(emoteName)) || emoteNameInput == emoteName || emoteNameInput == emoteName.Split(' ')[0] || emoteNameInput.Split(' ')[0] == emoteName.Split(' ')[0])
+                    if ((emoteNameInput.Length >= 4 && emoteName.StartsWith(emoteNameInput)) || emoteNameInput == emoteName || emoteNameInput == emoteName.Split(' ')[0] || emoteNameInput.Split(' ')[0] == emoteName.Split(' ')[0])
                     {
                         if (getEmote == null || emoteName.Length < getEmote.displayName.Length)
                             getEmote = emote;
@@ -399,7 +399,7 @@ namespace TooManyEmotes.Patches
         static UnlockableEmote TryGetEmoteUnlockedEmotes(string emoteNameInput, bool reliable = false) => TryGetEmote(emoteNameInput, StartOfRoundPatcher.unlockedEmotes, reliable);
 
 
-        [HarmonyPatch(typeof(Terminal), "RotateShipDecorSelection")]
+        [HarmonyPatch(typeof(TimeOfDay), "OnDayChanged")]
         [HarmonyPostfix]
         public static void RotateEmoteSelection() {
             //System.Random random = new System.Random(UnityEngine.Random.Range(1, 100000000)); // Not seed based currently

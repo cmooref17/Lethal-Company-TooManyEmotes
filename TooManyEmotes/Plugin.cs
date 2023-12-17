@@ -12,13 +12,11 @@ using UnityEngine;
 
 namespace TooManyEmotes
 {
-    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.3.6")]
+    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.3.8")]
     public class Plugin : BaseUnityPlugin
     {
         private Harmony _harmony;
         public static Plugin instance;
-
-        public static RuntimeAnimatorController customAnimationController;
 
         public static List<AnimationClip> complementaryAnimationClips;
         public static List<AnimationClip> customAnimationClips;
@@ -31,18 +29,15 @@ namespace TooManyEmotes
         {
             instance = this;
             ConfigSettings.BindConfigSettings();
-            this._harmony = new Harmony("TooManyEmotes");
-            this._harmony.PatchAll();
-            base.Logger.LogInfo("TooManyEmotes loaded");
-
+            
             //Path.Combine(Path.GetDirectoryName(Info.Location), "Assets", "")
 
-            complementaryAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("emotes_complementary"));
+            complementaryAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_complementary"));
             customAnimationClips = new List<AnimationClip>(complementaryAnimationClips);
             customAnimationClipsLoopDict = new Dictionary<string, AnimationClip>();
-            customAnimationClips.AddRange(LoadEmoteAssetBundle("emotes_common"));
-            customAnimationClips.AddRange(LoadEmoteAssetBundle("emotes_dance"));
-            customAnimationClips.AddRange(LoadEmoteAssetBundle("emotes_fortnite"));
+            customAnimationClips.AddRange(LoadEmoteAssetBundle("Assets/emotes_common"));
+            customAnimationClips.AddRange(LoadEmoteAssetBundle("Assets/emotes_dance"));
+            customAnimationClips.AddRange(LoadEmoteAssetBundle("Assets/emotes_fortnite"));
 
             foreach (var clip in customAnimationClips)
             {
@@ -54,6 +49,10 @@ namespace TooManyEmotes
                 customAnimationClips.Remove(animationClipLoop);
 
             LoadRadialMenuAsset();
+
+            this._harmony = new Harmony("TooManyEmotes");
+            this._harmony.PatchAll();
+            base.Logger.LogInfo("TooManyEmotes loaded");
         }
 
         static AnimationClip[] LoadEmoteAssetBundle(string assetBundleName) {
@@ -68,7 +67,7 @@ namespace TooManyEmotes
             }
             catch
             {
-                LogError("Failed to load emotes asset bundle: " + assetBundleName + ". You should probably call the cops.");
+                LogError("Failed to load emotes asset bundle: " + assetBundleName + ".");
                 return new AnimationClip[0];
             }
         }
@@ -77,7 +76,7 @@ namespace TooManyEmotes
         public static void LoadRadialMenuAsset() {
             try
             {
-                string assetsPath = Path.Combine(Path.GetDirectoryName(instance.Info.Location), "radial_menu");
+                string assetsPath = Path.Combine(Path.GetDirectoryName(instance.Info.Location), "Assets/radial_menu");
                 AssetBundle assetBundle = AssetBundle.LoadFromFile(assetsPath);
                 radialMenuPrefab = assetBundle.LoadAsset<GameObject>("RadialMenu");
                 previewAnimatorController = assetBundle.LoadAsset<RuntimeAnimatorController>("PreviewAnimatorController");

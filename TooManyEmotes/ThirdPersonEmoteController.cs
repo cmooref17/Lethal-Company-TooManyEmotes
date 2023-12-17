@@ -91,7 +91,7 @@ namespace TooManyEmotes.Patches {
         public static void OnStartCustomEmoteLocal() {
             StartOfRound.Instance.SwitchCamera(emoteCamera);
             localPlayerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
-            localPlayerController.thisPlayerModelArms.enabled = false;
+            localPlayerController.playerModelArmsMetarig.transform.parent.gameObject.SetActive(false);
             localPlayerController.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
             playerHUDHelmetModel.SetActive(false);
             emoteCameraPivot.eulerAngles = gameplayCamera.transform.eulerAngles + new Vector3(0, 0, 0);
@@ -103,7 +103,7 @@ namespace TooManyEmotes.Patches {
         public static void OnStopCustomEmoteLocal() {
             emoteCamera.enabled = false;
             StartOfRound.Instance.SwitchCamera(gameplayCamera);
-            localPlayerController.thisPlayerModelArms.enabled = defaultShowArms;
+            localPlayerController.playerModelArmsMetarig.transform.parent.gameObject.SetActive(defaultShowArms);
             localPlayerController.thisPlayerModel.shadowCastingMode = defaultShadowCasterMode;
             playerHUDHelmetModel.SetActive(defaultShowHelmetHud);
             HUDManager.Instance.HideHUD(false);
