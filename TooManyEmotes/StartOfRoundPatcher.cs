@@ -90,7 +90,7 @@ namespace TooManyEmotes.Patches
                     StartOfRound.Instance.ChooseNewRandomMapSeed();
                     StartOfRound.Instance.overrideRandomSeed = true;
                     StartOfRound.Instance.overrideSeedNumber = StartOfRound.Instance.randomMapSeed;
-                    TerminalPatcher.terminalInstance.RotateShipDecorSelection();
+                    TerminalPatcher.RotateEmoteSelection();
                 }
             }
         }

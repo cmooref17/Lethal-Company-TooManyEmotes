@@ -26,7 +26,7 @@ namespace TooManyEmotes.Patches
         public static Terminal terminalInstance;
         public static HashSet<UnlockableEmote> emoteSelection;
         public static List<UnlockableEmote> mysteryEmoteSelection;
-        public static int numFreeEmoteCoupons { get { return StartOfRoundPatcher.unlockedEmotes != null ? Mathf.Max(ConfigSync.syncNumFreeEmoteCoupons - StartOfRoundPatcher.unlockedEmotes.Count, 0): 0; } }
+        public static int numFreeEmoteCoupons { get { return StartOfRoundPatcher.unlockedEmotes != null ? Mathf.Max(ConfigSync.syncNumFreeEmoteCoupons - StartOfRoundPatcher.unlockedEmotes.Count + StartOfRoundPatcher.complementaryEmotes.Count, 0): 0; } }
         public static int randomEmotesUnlockedThisRotation;
         static string confirmEmoteOpeningText = "You have requested to order a new emote.";
 
@@ -399,9 +399,28 @@ namespace TooManyEmotes.Patches
         static UnlockableEmote TryGetEmoteUnlockedEmotes(string emoteNameInput, bool reliable = false) => TryGetEmote(emoteNameInput, StartOfRoundPatcher.unlockedEmotes, reliable);
 
 
+
+        // This is temporary
+        [HarmonyPatch(typeof(Terminal), "RotateShipDecorSelection")]
+        [HarmonyPostfix]
+        public static void RotateEmoteSelectionPerQuota()
+        {
+            RotateEmoteSelection();
+        }
+
+
+
         [HarmonyPatch(typeof(TimeOfDay), "OnDayChanged")]
         [HarmonyPostfix]
-        public static void RotateEmoteSelection() {
+        public static void RotateEmoteSelectionDaily()
+        {
+            RotateEmoteSelection();
+        }
+
+
+
+        public static void RotateEmoteSelection()
+        {
             //System.Random random = new System.Random(UnityEngine.Random.Range(1, 100000000)); // Not seed based currently
 
             System.Random random = new System.Random(StartOfRound.Instance.randomMapSeed + 65);
@@ -438,7 +457,6 @@ namespace TooManyEmotes.Patches
         }
 
 
-        
 
 
         static TerminalNode BuildCustomTerminalNode(string displayText, bool clearPreviousText = false, bool acceptAnything = false, bool isConfirmationNode = false) {
