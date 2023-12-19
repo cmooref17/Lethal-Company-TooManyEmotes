@@ -26,6 +26,12 @@ namespace TooManyEmotes.Patches
     {
         public static List<UnlockableEmote> allUnlockableEmotes;
         public static Dictionary<string, UnlockableEmote> allUnlockableEmotesDict;
+
+        public static List<UnlockableEmote> allCommonEmotes;
+        public static List<UnlockableEmote> allUncommonEmotes;
+        public static List<UnlockableEmote> allRareEmotes;
+        public static List<UnlockableEmote> allLegendaryEmotes;
+
         public static List<UnlockableEmote> unlockedEmotes;
         public static List<UnlockableEmote> complementaryEmotes;
 
@@ -34,10 +40,16 @@ namespace TooManyEmotes.Patches
         public static void InitializeEmotes(StartOfRound __instance) {
             __instance.localClientAnimatorController = new AnimatorOverrideController(__instance.localClientAnimatorController);
             __instance.otherClientsAnimatorController = new AnimatorOverrideController(__instance.otherClientsAnimatorController);
-            unlockedEmotes = new List<UnlockableEmote>();
-            complementaryEmotes = new List<UnlockableEmote>();
+
             allUnlockableEmotes = new List<UnlockableEmote>();
             allUnlockableEmotesDict = new Dictionary<string, UnlockableEmote>();
+            unlockedEmotes = new List<UnlockableEmote>();
+
+            complementaryEmotes = new List<UnlockableEmote>();
+            allCommonEmotes = new List<UnlockableEmote>();
+            allUncommonEmotes = new List<UnlockableEmote>();
+            allRareEmotes = new List<UnlockableEmote>();
+            allLegendaryEmotes = new List<UnlockableEmote>();
 
             for (int i = 0; i < Plugin.customAnimationClips.Count; i++)
             {
@@ -47,8 +59,29 @@ namespace TooManyEmotes.Patches
                     emoteName = clip.name,
                     displayName = clip.name,
                     animationClip = clip,
-                    price = 100
+                    rarity = 0
                 };
+
+                if (Plugin.commonAnimationClips.Contains(clip))
+                {
+                    emote.rarity = 0;
+                    allCommonEmotes.Add(emote);
+                }
+                else if (Plugin.uncommonAnimationClips.Contains(clip))
+                {
+                    emote.rarity = 1;
+                    allUncommonEmotes.Add(emote);
+                }
+                else if (Plugin.rareAnimationClips.Contains(clip))
+                {
+                    emote.rarity = 2;
+                    allRareEmotes.Add(emote);
+                }
+                else if (Plugin.legendaryAnimationClips.Contains(clip))
+                {
+                    emote.rarity = 3;
+                    allLegendaryEmotes.Add(emote);
+                }
 
                 if (emote.emoteName.Contains("_start"))
                 {
@@ -65,11 +98,8 @@ namespace TooManyEmotes.Patches
                 if (Plugin.complementaryAnimationClips.Contains(clip))
                 {
                     emote.complementary = true;
-                    emote.price = 0;
                     complementaryEmotes.Add(emote);
                 }
-                else
-                    emote.price = (int)Mathf.Max(emote.price * ConfigSync.syncPriceMultiplierEmotesStore, 0);
             }
             
             for (int i = 0; i < __instance.allPlayerScripts.Length; i++)
@@ -80,41 +110,53 @@ namespace TooManyEmotes.Patches
         [HarmonyPatch(typeof(StartOfRound), "Start")]
         [HarmonyPostfix]
         public static void OnServerStart(StartOfRound __instance) {
-            if (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost)
-            {
-                foreach (var emote in complementaryEmotes)
-                    UnlockEmoteLocal(emote);
+            if (!__instance.IsServer)
+                return;
 
-                if (StartOfRound.Instance.randomMapSeed == 0)
-                {
-                    StartOfRound.Instance.ChooseNewRandomMapSeed();
-                    StartOfRound.Instance.overrideRandomSeed = true;
-                    StartOfRound.Instance.overrideSeedNumber = StartOfRound.Instance.randomMapSeed;
-                    TerminalPatcher.RotateEmoteSelection();
-                }
+            foreach (var emote in complementaryEmotes)
+                UnlockEmoteLocal(emote);
+
+            Plugin.Log("OnServerStart - CurrentSeed: " + StartOfRound.Instance.randomMapSeed);
+            if (StartOfRound.Instance.randomMapSeed == 0)
+            {
+                StartOfRound.Instance.ChooseNewRandomMapSeed();
+                //StartOfRound.Instance.overrideRandomSeed = true;
+                //StartOfRound.Instance.overrideSeedNumber = StartOfRound.Instance.randomMapSeed;
+                Plugin.Log("Generating new seed: " + StartOfRound.Instance.randomMapSeed);
             }
+            TerminalPatcher.terminalInstance.RotateShipDecorSelection();
+        }
+
+
+        [HarmonyPatch(typeof(StartOfRound), "StartGame")]
+        [HarmonyPostfix]
+        public static void ResetOverrideSeedFlag(StartOfRound __instance)
+        {
+            if (!__instance.IsServer)
+                return;
+
+            if (__instance.inShipPhase)
+                __instance.overrideRandomSeed = false;
         }
 
 
         [HarmonyPatch(typeof(StartOfRound), "ResetShip")]
         [HarmonyPostfix]
-        public static void ResetEmotes(StartOfRound __instance)
+        public static void ResetEmotesOnShipReset(StartOfRound __instance)
         {
             if (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost)
                 unlockedEmotes = new List<UnlockableEmote>(complementaryEmotes);
             else
                 unlockedEmotes = new List<UnlockableEmote>();
+            TerminalPatcher.emoteCreditsUsed = 0;
         }
 
 
-        /*
-        [HarmonyPatch(typeof(StartOfRound), "ChooseNewRandomMapSeed")]
-        [HarmonyPostfix]
-        public static void OnChooseNewRandomMapSeed(StartOfRound __instance)
+        public static void ResetEmotesLocal()
         {
-            Plugin.Log("SEED: " + __instance.randomMapSeed);
+            unlockedEmotes = new List<UnlockableEmote>(complementaryEmotes);
+            TerminalPatcher.emoteCreditsUsed = 0;
         }
-        */
 
 
         [HarmonyPatch(typeof(StartOfRound), "SyncShipUnlockablesServerRpc")]
@@ -125,7 +167,7 @@ namespace TooManyEmotes.Patches
             if (ConfigSync.syncUnlockEverything)
                 return;
             Plugin.Log("Syncing unlocked emotes with clients.");
-            SyncUnlockedEmotes.SendOnUnlockEmoteUpdateMulti();
+            SyncUnlockedEmotes.SendOnUnlockEmoteUpdateMulti(true);
         }
 
 

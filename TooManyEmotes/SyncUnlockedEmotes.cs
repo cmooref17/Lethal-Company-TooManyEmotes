@@ -9,6 +9,7 @@ using Unity.Collections;
 using Unity.Netcode;
 using TooManyEmotes.Patches;
 using TooManyEmotes.Config;
+using UnityEngine;
 
 namespace TooManyEmotes.Networking {
 
@@ -27,17 +28,19 @@ namespace TooManyEmotes.Networking {
 
 
         public static void SendOnUnlockEmoteUpdate(int emoteId) {
-            var writer = new FastBufferWriter(sizeof(int) * 2, Allocator.Temp);
+            var writer = new FastBufferWriter(sizeof(int) * 3, Allocator.Temp);
             Plugin.Log("Sending unlocked emote update to server. Emote id: " + emoteId);
+            writer.WriteValue(-1);
             writer.WriteValue(1);
             writer.WriteValue(emoteId);
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnUnlockEmoteServerRpc", NetworkManager.ServerClientId, writer);
         }
 
 
-        public static void SendOnUnlockEmoteUpdateMulti() {
-            var writer = new FastBufferWriter(sizeof(int) * (StartOfRoundPatcher.unlockedEmotes.Count + 1), Allocator.Temp);
+        public static void SendOnUnlockEmoteUpdateMulti(bool syncEmoteCreditsUsed = false) {
+            var writer = new FastBufferWriter(sizeof(int) + sizeof(int) * (StartOfRoundPatcher.unlockedEmotes.Count + 1), Allocator.Temp);
             Plugin.Log("Sending all unlocked emotes update to server.");
+            writer.WriteValue(syncEmoteCreditsUsed ? TerminalPatcher.emoteCreditsUsed : -1);
             writer.WriteValue(StartOfRoundPatcher.unlockedEmotes.Count);
             foreach (var emote in StartOfRoundPatcher.unlockedEmotes)
                 writer.WriteValue(emote.emoteId);
@@ -49,10 +52,15 @@ namespace TooManyEmotes.Networking {
             if (!NetworkManager.Singleton.IsServer)
                 return;
 
-            if (reader.TryBeginRead(sizeof(int)))
+            if (reader.TryBeginRead(sizeof(int) * 2))
             {
+                int emoteCreditsUsed;
                 int numEmotes;
+                reader.ReadValue(out emoteCreditsUsed);
                 reader.ReadValue(out numEmotes);
+
+                if (emoteCreditsUsed != -1)
+                    TerminalPatcher.emoteCreditsUsed = emoteCreditsUsed;
 
                 if (reader.TryBeginRead(sizeof(int) * numEmotes))
                 {
@@ -68,7 +76,8 @@ namespace TooManyEmotes.Networking {
                             Plugin.LogError("Error while syncing unlocked emote from client: Emote id is invalid! Emote id: " + emoteId);
                     }
 
-                    var writer = new FastBufferWriter(sizeof(int) * (emoteIds.Length + 1), Allocator.Temp);
+                    var writer = new FastBufferWriter(sizeof(int) * sizeof(int) * (emoteIds.Length + 1), Allocator.Temp);
+                    writer.WriteValueSafe(emoteCreditsUsed);
                     writer.WriteValueSafe(emoteIds.Length);
                     for (int i = 0; i < emoteIds.Length; i++)
                         writer.WriteValueSafe(emoteIds[i]);
@@ -86,10 +95,15 @@ namespace TooManyEmotes.Networking {
             if (!NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsServer)
                 return;
 
-            if (reader.TryBeginRead(sizeof(int)))
+            if (reader.TryBeginRead(sizeof(int) * 2))
             {
+                int emoteCreditsUsed;
                 int numEmotes;
+                reader.ReadValue(out emoteCreditsUsed);
                 reader.ReadValue(out numEmotes);
+
+                if (emoteCreditsUsed != -1)
+                    TerminalPatcher.emoteCreditsUsed = emoteCreditsUsed;
 
                 if (reader.TryBeginRead(sizeof(int) * numEmotes))
                 {

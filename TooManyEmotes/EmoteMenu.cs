@@ -120,8 +120,9 @@ namespace TooManyEmotes {
                 emoteUIElementsList[hoveredEmoteUIIndex].OnHover(false);
             if (index != -1)
                 emoteUIElementsList[index].OnHover(true);
-            SetPreviewAnimation(hoveredEmoteIndex);
             hoveredEmoteUIIndex = index;
+            Plugin.Log("Hover: " + index + " HoveredEmoteUIIndex: " + hoveredEmoteUIIndex);
+            SetPreviewAnimation(hoveredEmoteIndex);
         }
 
 
@@ -145,7 +146,8 @@ namespace TooManyEmotes {
 
         public static void UpdateEmoteWheel()
         {
-            swapPageText.text = string.Format("[{0} / {1}]\n[Q / E]", currentPage + 1, numPages);
+            currentPage = Mathf.Clamp(currentPage, 0, numPages - 1);
+            swapPageText.text = string.Format("Page: {0}/ {1}\n[Q / E]", currentPage + 1, numPages);
             for (int i = 0; i < emoteUIElementsList.Count; i++)
             {
                 var emoteUI = emoteUIElementsList[i];

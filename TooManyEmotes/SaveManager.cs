@@ -38,6 +38,7 @@ namespace TooManyEmotes.Patches
                 foreach (var emote in StartOfRoundPatcher.unlockedEmotes)
                     unlockedEmoteIds[index++] = emote.emoteName;
                 ES3.Save("TooManyEmotes.UnlockedEmotes", unlockedEmoteIds, __instance.currentSaveFileName);
+                ES3.Save("TooManyEmotes.EmoteCreditsUsed", TerminalPatcher.emoteCreditsUsed, __instance.currentSaveFileName);
                 Plugin.Log("Saved " + StartOfRoundPatcher.unlockedEmotes.Count + " unlockable emotes.");
             }
 
@@ -55,6 +56,7 @@ namespace TooManyEmotes.Patches
                 return;
 
             StartOfRoundPatcher.unlockedEmotes = new List<UnlockableEmote>(StartOfRoundPatcher.complementaryEmotes);
+            TerminalPatcher.emoteCreditsUsed = 0;
             try
             {
                 if (ES3.KeyExists("TooManyEmotes.UnlockedEmotes", GameNetworkManager.Instance.currentSaveFileName))
@@ -72,9 +74,10 @@ namespace TooManyEmotes.Patches
                             Plugin.LogError("Tried to load emote that doesn't exist: " + emoteIds[i]);
                     }
                 }
+                TerminalPatcher.emoteCreditsUsed = ES3.Load("TooManyEmotes.EmoteCreditsUsed", GameNetworkManager.Instance.currentSaveFileName, 0);
                 Plugin.Log("Loaded " + StartOfRoundPatcher.unlockedEmotes.Count + " unlockable emotes.");
+                Plugin.Log("Loaded used emote credits: " + TerminalPatcher.emoteCreditsUsed);
             }
-
             catch (Exception arg)
             {
                 Plugin.LogError(string.Format("Error while trying to load TooManyEmotes values when disconnecting as host: {0}", arg));
@@ -89,13 +92,14 @@ namespace TooManyEmotes.Patches
                 return;
             if (StartOfRound.Instance == null || StartOfRoundPatcher.unlockedEmotes == null)
                 return;
-            Plugin.Log("Resetting unlockable emotes.");
+            Plugin.Log("Resetting TooManyEmotes saved game values.");
 
             ES3.DeleteKey("TooManyEmotes.UnlockedEmotes", __instance.currentSaveFileName);
-            ES3.DeleteKey("TooManyEmotes.FreeEmoteCoupon", __instance.currentSaveFileName);
+            ES3.DeleteKey("TooManyEmotes.EmoteCreditsUsed", __instance.currentSaveFileName);
 
             if (StartOfRoundPatcher.unlockedEmotes != null)
                 StartOfRoundPatcher.unlockedEmotes.Clear();
+            TerminalPatcher.emoteCreditsUsed = 0;
         }
     }
 }

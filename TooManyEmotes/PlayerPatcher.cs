@@ -43,6 +43,7 @@ namespace TooManyEmotes.Patches {
         public static void InitializePlayer(PlayerControllerB __instance) {
             performingCustomEmotes = new HashSet<PlayerControllerB>();
             timeStartedLastEmote = 0;
+            //__instance.thisPlayerModel.gameObject.layer = 23;
         }
 
 
@@ -51,6 +52,7 @@ namespace TooManyEmotes.Patches {
         public static void OnLocalClientReady(PlayerControllerB __instance) {
             localPlayerAnimatorOverrideController = (AnimatorOverrideController)StartOfRound.Instance.localClientAnimatorController;
             defaultDance1Clip = localPlayerAnimatorOverrideController["Dance1"];
+            //__instance.thisPlayerModel.gameObject.layer = 23;
         }
 
 
@@ -62,17 +64,16 @@ namespace TooManyEmotes.Patches {
             if (__instance == localPlayerController && (context.performed || emoteID < 0) && CallCheckConditionsForEmote(localPlayerController))
             {
                 localPlayerController.performingEmote = true;
-                localPlayerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
                 // Performing custom emote
                 if (emoteID < 0)
                 {
+                    localPlayerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
                     int emoteIndex = Mathf.Abs(emoteID) - 1;
                     if (emoteIndex >= 0 && emoteIndex < StartOfRoundPatcher.unlockedEmotes.Count)
                     {
                         UnlockableEmote emote = StartOfRoundPatcher.unlockedEmotes[emoteIndex];
                         if (emote != null /* && emote != GetCurrentlyPlayingEmote(localPlayerController) */)
                         {
-                            Plugin.Log("Starting custom emote for local player");
                             OnUpdateCustomEmote(emote.emoteId, localPlayerController);
                             ThirdPersonEmoteController.OnStartCustomEmoteLocal();
                             ForceSendAnimationUpdateLocal(emote.emoteId);
@@ -82,7 +83,6 @@ namespace TooManyEmotes.Patches {
                 // Normal emote
                 else if (performingCustomEmoteLocal)
                 {
-                    Plugin.Log("Stopping custom emote for local player");
                     OnUpdateCustomEmote(-1, localPlayerController);
                     ThirdPersonEmoteController.OnStopCustomEmoteLocal();
                     ForceSendAnimationUpdateLocal(-1);
@@ -177,9 +177,7 @@ namespace TooManyEmotes.Patches {
                 playerController.performingEmote = true;
                 playerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
 
-                playerController.playerBodyAnimator.StopPlayback();
                 playerController.playerBodyAnimator.Play("Dance1", 1, 0);
-                playerController.playerBodyAnimator.playbackTime = 0;
 
                 
 
@@ -201,11 +199,7 @@ namespace TooManyEmotes.Patches {
                 EnablePlayerRigBuilderNextFrame(playerController, true);
                 SetCurrentAnimationClip(defaultDance1Clip, playerController);
                 performingCustomEmotes.Remove(playerController);
-
-                //playerController.playerBodyAnimator.StopPlayback();
                 playerController.playerBodyAnimator.Play("Dance1", 1, 0);
-                playerController.playerBodyAnimator.playbackTime = 0;
-
 
                 if (playerController == localPlayerController)
                     ThirdPersonEmoteController.OnStopCustomEmoteLocal();
@@ -306,23 +300,6 @@ namespace TooManyEmotes.Patches {
                 SetCurrentAnimationClip(loopEmote, playerController);
                 playerController.playerBodyAnimator.Play("Dance1", 1, 0);
             }
-            /*
-            if (playerController.playerBodyAnimator.GetCurrentAnimatorStateInfo(1).normalizedTime >= 1)
-            {
-                SetCurrentAnimationClip(loopEmote, playerController);
-                playerController.playerBodyAnimator.Play("Dance1", 1, 0);
-            }
-            */
-            /*
-            //yield return new WaitForSeconds(startEmote.animationClip.length);
-            int emoteNumber = playerController.playerBodyAnimator.GetInteger("emoteNumber");
-            //AnimationClip currentClip = GetCurrentAnimationClip(playerController);
-            if (emoteNumber > 0 && startEmote.animationClip == currentClip && playerController.playerBodyAnimator.GetCurrentAnimatorStateInfo(1).normalizedTime >= 0.8f)
-            {
-                SetCurrentAnimationClip(loopEmote, playerController);
-                playerController.playerBodyAnimator.Play("Dance1", 1, 0);
-            }
-            */
         }
 
 
@@ -335,15 +312,6 @@ namespace TooManyEmotes.Patches {
                 playerController.performingEmote = false;
                 playerController.StopPerformingEmoteServerRpc();
             }
-
-            /*
-            yield return new WaitForSeconds(emote.animationClip.length);
-            if (playerController.playerBodyAnimator.GetInteger("emoteNumber") == 1 && GetCurrentAnimationClip(playerController) == emote.animationClip && playerController.playerBodyAnimator.GetCurrentAnimatorStateInfo(1).normalizedTime == 0.8f)
-            {
-                playerController.performingEmote = false;
-                playerController.StopPerformingEmoteServerRpc();
-            }
-            */
         }
     }
 }

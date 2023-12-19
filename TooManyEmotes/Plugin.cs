@@ -12,15 +12,20 @@ using UnityEngine;
 
 namespace TooManyEmotes
 {
-    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.3.9")]
+    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.4.4")]
     public class Plugin : BaseUnityPlugin
     {
         private Harmony _harmony;
         public static Plugin instance;
 
-        public static List<AnimationClip> complementaryAnimationClips;
         public static List<AnimationClip> customAnimationClips;
         public static Dictionary<string, AnimationClip> customAnimationClipsLoopDict = new Dictionary<string, AnimationClip>();
+
+        public static List<AnimationClip> complementaryAnimationClips;
+        public static List<AnimationClip> commonAnimationClips;
+        public static List<AnimationClip> uncommonAnimationClips;
+        public static List<AnimationClip> rareAnimationClips;
+        public static List<AnimationClip> legendaryAnimationClips;
 
         public static GameObject radialMenuPrefab;
         public static RuntimeAnimatorController previewAnimatorController;
@@ -29,15 +34,23 @@ namespace TooManyEmotes
         {
             instance = this;
             ConfigSettings.BindConfigSettings();
-            
+
             //Path.Combine(Path.GetDirectoryName(Info.Location), "Assets", "")
 
-            complementaryAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_complementary"));
-            customAnimationClips = new List<AnimationClip>(complementaryAnimationClips);
+            customAnimationClips = new List<AnimationClip>();
             customAnimationClipsLoopDict = new Dictionary<string, AnimationClip>();
-            customAnimationClips.AddRange(LoadEmoteAssetBundle("Assets/emotes_common"));
-            customAnimationClips.AddRange(LoadEmoteAssetBundle("Assets/emotes_dance"));
-            customAnimationClips.AddRange(LoadEmoteAssetBundle("Assets/emotes_fortnite"));
+
+            complementaryAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_complementary"));
+            commonAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_0"));
+            uncommonAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_1"));
+            rareAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_2"));
+            legendaryAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_3"));
+
+            customAnimationClips.AddRange(complementaryAnimationClips);
+            customAnimationClips.AddRange(commonAnimationClips);
+            customAnimationClips.AddRange(uncommonAnimationClips);
+            customAnimationClips.AddRange(rareAnimationClips);
+            customAnimationClips.AddRange(legendaryAnimationClips);
 
             foreach (var clip in customAnimationClips)
             {
@@ -54,6 +67,13 @@ namespace TooManyEmotes
             this._harmony.PatchAll();
             base.Logger.LogInfo("TooManyEmotes loaded");
         }
+
+
+        public static bool IsModLoaded(string guid)
+        {
+            return BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey(guid);
+        }
+
 
         static AnimationClip[] LoadEmoteAssetBundle(string assetBundleName) {
 
@@ -89,6 +109,7 @@ namespace TooManyEmotes
         }
 
         public static void Log(string message) => instance.Logger.LogInfo(message);
+        public static void LogWarning(string message) => instance.Logger.LogWarning(message);
         public static void LogError(string message) => instance.Logger.LogError(message);
     }
 }

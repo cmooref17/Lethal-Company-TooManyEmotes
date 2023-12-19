@@ -32,7 +32,7 @@ namespace TooManyEmotes.CompatibilityPatcher {
         [HarmonyPatch(typeof(PreInitSceneScript), "Awake")]
         [HarmonyPostfix]
         public static void ApplyPatch() {
-            if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("MoreEmotes"))
+            if (Plugin.IsModLoaded("MoreEmotes"))
             {
                 if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("MoreEmotes", out var pluginInfo))
                 {
@@ -73,42 +73,76 @@ namespace TooManyEmotes.CompatibilityPatcher {
         }
     }
 
-    /*
+
     [HarmonyPatch]
     internal class MoreCompanyPatcher {
 
         public static bool loadedMoreCompany = false;
-        public static CosmeticApplication cosmeticApplication;
+        public static List<GameObject> cosmeticInstances = new List<GameObject>();
 
         [HarmonyPatch(typeof(HUDManager), "AddPlayerChatMessageClientRpc")]
         [HarmonyPostfix]
         public static void ApplyPatch() {
-            if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany"))
+
+            if (Plugin.IsModLoaded("me.swipez.melonloader.morecompany"))
             {
-                cosmeticApplication = GameObject.FindObjectOfType<CosmeticApplication>(); // __instance.gameObject.GetComponentInChildren<CosmeticApplication>();
-                if (cosmeticApplication != null)
+                try
                 {
-                    if (CosmeticRegistry.locallySelectedCosmetics.Count > 0 && cosmeticApplication.spawnedCosmetics.Count <= 0)
+                    CosmeticApplication cosmeticApplication = GameObject.FindObjectOfType<CosmeticApplication>();
+
+                    if (cosmeticApplication.spawnedCosmetics.Count > 0)
+                        return;
+                    foreach (string id in CosmeticRegistry.locallySelectedCosmetics)
+                        cosmeticApplication.ApplyCosmetic(id, true);
+                    foreach (var cosmetic in cosmeticApplication.spawnedCosmetics)
                     {
-                        foreach (string id in CosmeticRegistry.locallySelectedCosmetics)
-                            cosmeticApplication.ApplyCosmetic(id, false);
+                        cosmetic.transform.localScale *= 0.38f;
+                        SetAllChildrenLayer(cosmetic.transform, 23);
                     }
                     loadedMoreCompany = true;
                     Plugin.Log("Applied patch for MoreCompany Cosmetics");
-                    return;
                 }
-                Plugin.Log("Failed to apply patch for MoreCompany Cosmetics");
+                catch { }
             }
-            else
-                Plugin.LogError("MoreCompany not loaded");
+        }
+
+        private static void SetAllChildrenLayer(Transform transform, int layer)
+        {
+            transform.gameObject.layer = layer;
+            foreach (Transform item in transform)
+                SetAllChildrenLayer(item, layer);
         }
 
 
         public static void ShowCosmetics(bool show) {
-            if (loadedMoreCompany && cosmeticApplication != null && cosmeticApplication.spawnedCosmetics.Count > 0)
+            if (loadedMoreCompany && cosmeticInstances != null && cosmeticInstances.Count > 0)
             {
-                foreach (var cosmetic in cosmeticApplication.spawnedCosmetics)
+                int i = 0;
+                foreach (var cosmetic in cosmeticInstances)
+                {
+                    if (cosmetic == null) continue;
                     cosmetic.gameObject.SetActive(show);
+                    i++;
+                }
+            }
+        }
+    }
+
+    /*
+    [HarmonyPatch]
+    internal class MirrorDecorPatcher
+    {
+
+        public static bool loadedMirrorDecor = false;
+
+        [HarmonyPatch(typeof(PreInitSceneScript), "Awake")]
+        [HarmonyPostfix]
+        public static void ApplyPatch()
+        {
+            if (Plugin.IsModLoaded("quackandcheese.mirrordecor"))
+            {
+                Plugin.Log("MirrorDecor is loaded!");
+                loadedMirrorDecor = true;
             }
         }
     }

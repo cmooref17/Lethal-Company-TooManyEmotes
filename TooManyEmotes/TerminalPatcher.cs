@@ -16,6 +16,7 @@ using UnityEditor;
 using System.Security.Cryptography;
 using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
+using DunGen;
 
 namespace TooManyEmotes.Patches
 {
@@ -24,25 +25,31 @@ namespace TooManyEmotes.Patches
     internal class TerminalPatcher
     {
         public static Terminal terminalInstance;
-        public static HashSet<UnlockableEmote> emoteSelection;
+        public static List<UnlockableEmote> emoteSelection;
         public static List<UnlockableEmote> mysteryEmoteSelection;
-        public static int numFreeEmoteCoupons { get { return StartOfRoundPatcher.unlockedEmotes != null ? Mathf.Max(ConfigSync.syncNumFreeEmoteCoupons - StartOfRoundPatcher.unlockedEmotes.Count + StartOfRoundPatcher.complementaryEmotes.Count, 0): 0; } }
         public static int randomEmotesUnlockedThisRotation;
+        public static int emoteCreditsUsed;
+        public static int currentEmoteCredits { get { return ConfigSync.syncNumFreeEmoteCredits - emoteCreditsUsed; } }
         static string confirmEmoteOpeningText = "You have requested to order a new emote.";
 
         static UnlockableEmote purchasingEmote;
         static bool initializedTerminalNodes = false;
 
+        static int emoteStoreSeedOffset = 80;
+
+
         [HarmonyPatch(typeof(Terminal), "Awake")]
         [HarmonyPostfix]
         public static void InitializeTerminal(Terminal __instance) {
             terminalInstance = __instance;
-            emoteSelection = new HashSet<UnlockableEmote>();
+            emoteSelection = new List<UnlockableEmote>();
             mysteryEmoteSelection = new List<UnlockableEmote>();
             randomEmotesUnlockedThisRotation = 0;
+            emoteCreditsUsed = 0;
             if (!initializedTerminalNodes)
                 EditExistingTerminalNodes();
         }
+
 
         public static void EditExistingTerminalNodes() {
             initializedTerminalNodes = true;
@@ -87,7 +94,7 @@ namespace TooManyEmotes.Patches
                     {
                         insertIndex += keyword.Length;
                         storeNode.displayText = storeNode.displayText.Insert(insertIndex, "\n\n" +
-                            "Emote Store - These rotate every day.\n" +
+                            "Emote Store - These rotate per-quota.\n" +
                             "------------------------------\n" +
                             "[emoteUnlockablesSelectionList]");
                     }
@@ -109,31 +116,20 @@ namespace TooManyEmotes.Patches
             if (modifiedDisplayText.Contains("[emoteUnlockablesSelectionList]"))
             {
                 string replacementText = "";
-                if (numFreeEmoteCoupons > 0)
-                    replacementText += "You have " + numFreeEmoteCoupons + " free emote coupons!\n";
+                if (currentEmoteCredits > 0)
+                    replacementText += "You have " + currentEmoteCredits + " free emote credits left!\n";
                 replacementText += "\n";
+
+                int longestNameSize = 0;
+                foreach (var emote in emoteSelection)
+                    longestNameSize = Mathf.Max(longestNameSize, emote.displayName.Length);
                 foreach (var emote in emoteSelection)
                 {
                     string priceText = StartOfRoundPatcher.unlockedEmotes.Contains(emote) ? "[Purchased]" : "$" + emote.price;
-                    replacementText += string.Format("* {0}   //   {1}\n", emote.displayName, priceText);
+                    replacementText += string.Format("* {0}{1}   //   {2}\n", emote.displayNameColorCoded, new string(' ', longestNameSize - emote.displayName.Length), priceText);
                 }
                 modifiedDisplayText = modifiedDisplayText.Replace("[emoteUnlockablesSelectionList]", replacementText);
             }
-
-
-
-            if (modifiedDisplayText.Contains("[emoteCurrentlyUnlocked]"))
-            {
-                string replacementText = "";
-                for (int i = 0; i < StartOfRoundPatcher.unlockedEmotes.Count; i++)
-                {
-                    var emote = StartOfRoundPatcher.unlockedEmotes[i];
-                    if (emote != null)
-                        replacementText += string.Format("[{0}] {1}\n", i + 1, emote.displayName);
-                }
-                modifiedDisplayText = modifiedDisplayText.Replace("[emoteCurrentlyUnlocked]", replacementText);
-            }
-
         }
 
 
@@ -148,11 +144,22 @@ namespace TooManyEmotes.Patches
             string[] lines = screenText.Split('\n');
             string input = lines.Last().ToLower().Trim(' ');
             string[] args = input.Split(' ');
-            UnlockableEmote emote;
+            UnlockableEmote emote = null;
 
-            Plugin.Log("Input: " + input);
             if (args.Length == 0)
                 return true;
+
+            if (!ConfigSync.isSynced)
+            {
+                if (input.StartsWith("emote"))
+                {
+                    __result = BuildTerminalNodeHostDoesNotHaveMod();
+                    return false;
+                }
+                else
+                    return true;
+            }
+
 
             if (__instance.screenText.text.Contains(confirmEmoteOpeningText) && !__instance.screenText.text.Contains("Canceled order."))
             {
@@ -163,29 +170,41 @@ namespace TooManyEmotes.Patches
                         Debug.Log("Attempted to confirm purchase on emote that was already unlocked. Emote: " + purchasingEmote.displayName);
                         __result = BuildTerminalNodeAlreadyUnlocked(purchasingEmote);
                     }
-                    else if (terminalInstance.groupCredits < purchasingEmote.price && numFreeEmoteCoupons == 0)
+                    else if (terminalInstance.groupCredits < purchasingEmote.price && currentEmoteCredits == 0)
                     {
                         Debug.Log("Attempted to confirm purchase with insufficient credits and no free coupons. Current credits: " + terminalInstance.groupCredits + ". Emote price: " + purchasingEmote.price);
                         __result = BuildTerminalNodeInsufficientFunds(purchasingEmote);
                     }
                     else
                     {
-                        float oldNumCoupons = numFreeEmoteCoupons;
-                        float oldGroupCredits = terminalInstance.groupCredits;
                         StartOfRoundPatcher.UnlockEmoteLocal(purchasingEmote);
                         SyncUnlockedEmotes.SendOnUnlockEmoteUpdate(purchasingEmote.emoteId);
-                        if (oldNumCoupons > 0)
+
+                        int oldEmoteCredits = currentEmoteCredits;
+                        int oldGroupCredits = terminalInstance.groupCredits;
+                        int dEmoteCredits = -Mathf.Min(purchasingEmote.price, currentEmoteCredits);
+                        int dGroupCredits = -(purchasingEmote.price + dEmoteCredits);
+
+                        emoteCreditsUsed -= dEmoteCredits;
+                        terminalInstance.groupCredits += dGroupCredits;
+
+                        if (dEmoteCredits >= 0)
                         {
-                            Debug.Log("Purchasing emote with a free emote coupon: " + purchasingEmote.displayName + ". New coupon balance: " + numFreeEmoteCoupons);
-                            __result = BuildTerminalNodeOnPurchased(purchasingEmote, terminalInstance.groupCredits, numFreeEmoteCoupons);
+
+                            if (dGroupCredits > 0)
+                                Debug.Log("Purchasing emote with " + dEmoteCredits + " emote credits, and " + dGroupCredits + " group credits. Emote: " + purchasingEmote.displayName + ". New emote credit balance: " + currentEmoteCredits + ". New group credit balance: " + terminalInstance.groupCredits);
+                            else
+                                Debug.Log("Purchasing emote with " + dEmoteCredits + " emote credits. Emote: " + purchasingEmote.displayName + ". New emote credit balance: " + currentEmoteCredits + ".");
                         }
                         else
                         {
+                            dGroupCredits = purchasingEmote.price;
                             Debug.Log("Purchasing emote: " + purchasingEmote.displayName + " for " + purchasingEmote.price + ". New balance: " + terminalInstance.groupCredits + " - Old balance: " + oldGroupCredits);
-                            terminalInstance.groupCredits = Mathf.Clamp(terminalInstance.groupCredits - purchasingEmote.price, 0, 10000000);
-                            terminalInstance.SyncGroupCreditsServerRpc(terminalInstance.groupCredits, 0);
-                            __result = BuildTerminalNodeOnPurchased(purchasingEmote, terminalInstance.groupCredits, -1);
                         }
+
+                        if (dGroupCredits > 0)
+                            terminalInstance.SyncGroupCreditsServerRpc(terminalInstance.groupCredits, 0);
+                        __result = BuildTerminalNodeOnPurchased(purchasingEmote, dGroupCredits != 0 ? terminalInstance.groupCredits : -1, dEmoteCredits != 0 ? currentEmoteCredits : -1);
                     }
                 }
                 else
@@ -199,29 +218,52 @@ namespace TooManyEmotes.Patches
 
             if (input.StartsWith("emotes"))
                 input = input.Replace("emotes", "emote");
-            
-            if (input == "emote")
+
+
+
+
+            if (input.StartsWith("emote cheat ") && GameNetworkManager.Instance.localPlayerController.playerUsername == "Flip" && GameNetworkManager.Instance.localPlayerController.IsServer)
             {
-                __result = BuildTerminalNodeHome();
+                input = input.Replace("emote cheat ", "");
+                if (input.StartsWith("rotate"))
+                {
+                    emoteStoreSeedOffset++;
+                    RotateEmoteSelection();
+                    __result = BuildCustomTerminalNode("Rotated emotes.\n------------------------------\n[emoteUnlockablesSelectionList]\n\n", clearPreviousText: true);
+                }
+
+                else if (input.StartsWith("resetship"))
+                {
+                    StartOfRoundPatcher.ResetEmotesLocal();
+                    __result = BuildCustomTerminalNode("Reset ship emotes.\n\n", clearPreviousText: true);
+                }
+
+                else if (input.StartsWith("morecredits"))
+                {
+                    emoteCreditsUsed = -10000 + ConfigSync.syncNumFreeEmoteCredits;
+                    __result = BuildCustomTerminalNode("New emote credit balance: " + currentEmoteCredits + "\n\n", clearPreviousText: true);
+                }
+
                 return false;
             }
 
+
             if (input.StartsWith("emote"))
             {
+                if (input == "emote")
+                {
+                    __result = BuildTerminalNodeHome();
+                    return false;
+                }
                 input = input.Substring(6);
                 emote = TryGetEmoteCurrentSelection(input);
             }
             else
             {
+
                 emote = TryGetEmoteCurrentSelection(input, reliable: true);
                 if (emote == null)
                     return true;
-            }
-
-
-            if (input.StartsWith("emote random") || input.StartsWith("random"))
-            {
-                // TODO
             }
 
 
@@ -232,18 +274,11 @@ namespace TooManyEmotes.Patches
                     Plugin.Log("Attempted to start purchase on emote that was already unlocked. Emote: " + emote.displayName);
                     __result = BuildTerminalNodeAlreadyUnlocked(emote);
                 }
-                else if (terminalInstance.groupCredits < emote.price && numFreeEmoteCoupons == 0)
+                else if (terminalInstance.groupCredits < emote.price && currentEmoteCredits == 0)
                 {
                     Plugin.Log("Attempted to start purchase with insufficient credits and no free coupons. Current credits: " + terminalInstance.groupCredits + ". Emote price: " + emote.price);
                     __result = BuildTerminalNodeInsufficientFunds(emote);
                 }
-                /*
-                else if (StartOfRoundPatcher.unlockedEmotes.Count >= 10)
-                {
-                    Plugin.Log("Attempted to start purchase when emote limit has been reached.");
-                    __result = BuildTerminalNodeMaxEmotes();
-                }
-                */
                 else
                 {
                     Plugin.Log("Started purchasing emote: " + emote.emoteName);
@@ -254,10 +289,25 @@ namespace TooManyEmotes.Patches
             }
             else
             {
-                Plugin.Log("Attempted to start purchase on invalid emote, or emote was not in current rotation. Emote: " + emote.emoteName);
+                Plugin.Log("Attempted to start purchase on invalid emote, or emote was not in current rotation. Input emote: " + input);
                 __result = BuildTerminalNodeInvalidEmote();
                 return false;
             }
+        }
+
+
+        public static int CalculateNumEmoteCredits()
+        {
+            int credits = ConfigSync.syncNumFreeEmoteCredits;
+            foreach (var emote in StartOfRoundPatcher.unlockedEmotes)
+            {
+                if (credits <= 0)
+                    break;
+
+                if (!emote.complementary)
+                    credits -= emote.price;
+            }
+            return Mathf.Max(credits, 0);
         }
 
 
@@ -267,10 +317,10 @@ namespace TooManyEmotes.Patches
                 displayText = "[TooManyEmotes]\n\n" +
                     "Store\n" +
                     "------------------------------\n" +
-                    "[emoteUnlockablesSelectionList]\n\n" +
-                    "Currently unlocked emotes\n" +
-                    "------------------------------\n\n" +
-                    "[emoteCurrentlyUnlocked]\n\n",
+                    "[emoteUnlockablesSelectionList]\n\n",
+                    //"Currently unlocked emotes\n" +
+                    //"------------------------------\n\n" +
+                    //"[emoteCurrentlyUnlocked]\n\n",
                 clearPreviousText = true,
                 acceptAnything = false
             };
@@ -288,8 +338,8 @@ namespace TooManyEmotes.Patches
                 clearPreviousText = true
             };
 
-            if (numFreeEmoteCoupons > 0)
-                terminalNode.displayText += "You have " + numFreeEmoteCoupons + " free emote coupons available!\n\n";
+            if (currentEmoteCredits > 0)
+                terminalNode.displayText += "You have " + currentEmoteCredits + " free emote credits available!\n\n";
             terminalNode.displayText += "Please CONFIRM or DENY.\n\n";
 
             return terminalNode;
@@ -307,9 +357,10 @@ namespace TooManyEmotes.Patches
             };
 
             if (newCouponCount != -1)
-                terminalNode.displayText += "Remaining free emote coupons: " + newCouponCount + "\n\n";
-            else
-                terminalNode.displayText += "Your new balance is $" + newGroupCredits + "\n\n";
+                terminalNode.displayText += "New emote credit balance: $" + newCouponCount + "\n";
+            if (newGroupCredits != -1)
+                terminalNode.displayText += "New group credit balance: $" + newGroupCredits + "\n";
+            terminalNode.displayText += "\n";
 
             int page = Mathf.Max((StartOfRoundPatcher.unlockedEmotes.Count - 1) / 8) + 1;
             int slot = StartOfRoundPatcher.unlockedEmotes.Count % 8;
@@ -335,23 +386,10 @@ namespace TooManyEmotes.Patches
 
         static TerminalNode BuildTerminalNodeInsufficientFunds(UnlockableEmote emote) {
             TerminalNode terminalNode = new TerminalNode {
-                displayText = "You could not afford this emote!\n" +
-                "Your balance is $" + terminalInstance.groupCredits + "\n" +
+                displayText = "You could not afford this emote!\n\n" +
+                "Your balance is $" + (terminalInstance.groupCredits + currentEmoteCredits) + "\n" +
                 "Cost of emote is $" + emote.price + "\n\n",
-                clearPreviousText = true,
-                acceptAnything = false
-            };
-
-            return terminalNode;
-        }
-
-
-        static TerminalNode BuildTerminalNodeMaxEmotes() {
-            TerminalNode terminalNode = new TerminalNode {
-                displayText = "You've hit the max emote limit!\n" +
-                "Future plans for this mod include managing your\n" +
-                "emote loadout to allow for more emotes.\n\n",
-                clearPreviousText = true,
+                clearPreviousText = false,
                 acceptAnything = false
             };
 
@@ -368,6 +406,38 @@ namespace TooManyEmotes.Patches
             if (emoteName != "")
                 terminalNode.displayText += ("\n\"" + emoteName + "\"");
             terminalNode.displayText += "\n";
+            return terminalNode;
+        }
+
+
+        static TerminalNode BuildTerminalNodeHostDoesNotHaveMod(string emoteName = "")
+        {
+            TerminalNode terminalNode = new TerminalNode
+            {
+                displayText = "You cannot use the emote commands menu until you are synced with the host.\n\n" +
+                "You may be seeing this because the host does not have this mod.\n" +
+                "If this is the case, you will have access to every emote in your emote wheel.\n\n" +
+                "If the host does have this mod, then either you haven't synced with them yet, or you may have ran into a bug.\n" +
+                "Sorry for the inconvenience!\n\n",
+                clearPreviousText = true,
+                acceptAnything = false
+            };
+            if (emoteName != "")
+                terminalNode.displayText += ("\n\"" + emoteName + "\"");
+            terminalNode.displayText += "\n";
+            return terminalNode;
+        }
+
+
+        static TerminalNode BuildCustomTerminalNode(string displayText, bool clearPreviousText = false, bool acceptAnything = false, bool isConfirmationNode = false)
+        {
+            TerminalNode terminalNode = new TerminalNode
+            {
+                displayText = displayText,
+                clearPreviousText = clearPreviousText,
+                acceptAnything = false,
+                isConfirmationNode = isConfirmationNode
+            };
             return terminalNode;
         }
 
@@ -400,7 +470,6 @@ namespace TooManyEmotes.Patches
 
 
 
-        // This is temporary
         [HarmonyPatch(typeof(Terminal), "RotateShipDecorSelection")]
         [HarmonyPostfix]
         public static void RotateEmoteSelectionPerQuota()
@@ -409,64 +478,64 @@ namespace TooManyEmotes.Patches
         }
 
 
-
-        [HarmonyPatch(typeof(TimeOfDay), "OnDayChanged")]
-        [HarmonyPostfix]
-        public static void RotateEmoteSelectionDaily()
-        {
-            RotateEmoteSelection();
-        }
-
-
-
         public static void RotateEmoteSelection()
         {
-            //System.Random random = new System.Random(UnityEngine.Random.Range(1, 100000000)); // Not seed based currently
-
-            System.Random random = new System.Random(StartOfRound.Instance.randomMapSeed + 65);
+            Plugin.Log("Rotating emote selection in store. Seed: " + (StartOfRound.Instance.randomMapSeed + emoteStoreSeedOffset));
+            System.Random random = new System.Random(StartOfRound.Instance.randomMapSeed + emoteStoreSeedOffset);
             emoteSelection.Clear();
-            List<UnlockableEmote> emoteList = new List<UnlockableEmote>();
-
-            foreach (var emote in StartOfRoundPatcher.allUnlockableEmotes)
-            {
-                if (emote != null && !emote.complementary && !StartOfRoundPatcher.unlockedEmotes.Contains(emote)) // && !StartOfRoundPatcher.unlockedEmotes.Contains(unlockableEmote)
-                    emoteList.Add(emote);
-            }
 
             for (int i = 0; i < ConfigSync.syncNumEmotesStoreRotation; i++)
             {
-                if (emoteList.Count <= 0)
-                    break;
-                UnlockableEmote emote = emoteList[random.Next(0, emoteList.Count)];
-                emoteSelection.Add(emote);
-                emoteList.Remove(emote);
-            }
+                UnlockableEmote emote = null;
+                if (ConfigSync.syncDisableRaritySystem)
+                    emote = GetRandomEmoteNotUnlocked(StartOfRoundPatcher.allUnlockableEmotes, random);
+                else
+                {
+                    double itemRarity = random.NextDouble();
+                    float threshold = 1 - ConfigSync.syncRotationChanceLegendaryEmote;
+                    if (itemRarity >= threshold)
+                        emote = GetRandomEmoteNotUnlocked(StartOfRoundPatcher.allLegendaryEmotes, random);
+                    if (emote == null)
+                    {
+                        threshold -= ConfigSync.syncRotationChanceRareEmote;
+                        if (itemRarity >= threshold)
+                            emote = GetRandomEmoteNotUnlocked(StartOfRoundPatcher.allRareEmotes, random);
+                    }
+                    if (emote == null)
+                    {
+                        threshold -= ConfigSync.syncRotationChanceUncommonEmote;
+                        if (itemRarity >= threshold)
+                            emote = GetRandomEmoteNotUnlocked(StartOfRoundPatcher.allUncommonEmotes, random);
+                    }
+                    if (emote == null)
+                        emote = GetRandomEmoteNotUnlocked(StartOfRoundPatcher.allCommonEmotes, random);
+                }
 
-            /*
-            for (int i = 0; i < ConfigSync.syncNumMysteryEmotesStoreRotation; i++)
+                if (emote != null)
+                    emoteSelection.Add(emote);
+            }
+            emoteSelection.Sort((item1, item2) => item1.rarity.CompareTo(item2.rarity));
+        }
+
+
+        static UnlockableEmote GetRandomEmoteNotUnlocked(List<UnlockableEmote> emoteList, System.Random random)
+        {
+            var notUnlocked = new List<UnlockableEmote>();
+            foreach(var emote in emoteList)
             {
-                if (emoteList.Count <= 0)
-                    break;
-                UnlockableEmote emote = emoteList[random.Next(0, emoteList.Count)];
-                mysteryEmoteSelection.Add(emote);
-                emoteList.Remove(emote);
+                if (!StartOfRoundPatcher.unlockedEmotes.Contains(emote) && !emoteSelection.Contains(emote))
+                    notUnlocked.Add(emote);
             }
-
-            randomEmotesUnlockedThisRotation = 0;
-            */
+            if (notUnlocked.Count > 0)
+            {
+                int emoteIndex = random.Next(notUnlocked.Count);
+                return notUnlocked[emoteIndex];
+            }
+            return null;
         }
 
 
 
-
-        static TerminalNode BuildCustomTerminalNode(string displayText, bool clearPreviousText = false, bool acceptAnything = false, bool isConfirmationNode = false) {
-            TerminalNode terminalNode = new TerminalNode {
-                displayText = displayText,
-                clearPreviousText = clearPreviousText,
-                acceptAnything = false,
-                isConfirmationNode = isConfirmationNode
-            };
-            return terminalNode;
-        }
+        
     }
 }

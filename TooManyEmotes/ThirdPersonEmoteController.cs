@@ -48,6 +48,9 @@ namespace TooManyEmotes.Patches {
             emoteCamera.transform.parent = emoteCameraPivot;
             emoteCamera.transform.SetLocalPositionAndRotation(Vector3.back * thirdPersonCameraDistance, Quaternion.identity);
 
+            //emoteCamera.cullingMask |= 1 << 23;
+            //gameplayCamera.cullingMask &= ~(1 << 23);
+
             emoteCamera.enabled = false;
             StartOfRound.Instance.SwitchCamera(StartOfRound.Instance.activeCamera);
 
@@ -96,7 +99,7 @@ namespace TooManyEmotes.Patches {
             playerHUDHelmetModel.SetActive(false);
             emoteCameraPivot.eulerAngles = gameplayCamera.transform.eulerAngles + new Vector3(0, 0, 0);
             HUDManager.Instance.HideHUD(true);
-            //MoreCompanyPatcher.ShowCosmetics(true);
+            MoreCompanyPatcher.ShowCosmetics(true);
         }
 
 
@@ -107,7 +110,7 @@ namespace TooManyEmotes.Patches {
             localPlayerController.thisPlayerModel.shadowCastingMode = defaultShadowCasterMode;
             playerHUDHelmetModel.SetActive(defaultShowHelmetHud);
             HUDManager.Instance.HideHUD(false);
-            //MoreCompanyPatcher.ShowCosmetics(false);
+            MoreCompanyPatcher.ShowCosmetics(false);
         }
     }
 }

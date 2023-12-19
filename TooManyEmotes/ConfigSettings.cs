@@ -13,11 +13,30 @@ using static UnityEngine.EventSystems.EventTrigger;
 namespace TooManyEmotes.Config {
     public static class ConfigSettings {
         public static ConfigEntry<bool> unlockEverything;
+        public static ConfigEntry<bool> disableRaritySystem;
+        public static ConfigEntry<int> basePriceEmoteRaritySystemDisabled;
+
         public static ConfigEntry<float> priceMultiplierEmotesStore;
+        public static ConfigEntry<int> basePriceCommonEmote;
+        public static ConfigEntry<int> basePriceUncommonEmote;
+        public static ConfigEntry<int> basePriceRareEmote;
+        public static ConfigEntry<int> basePriceLegendaryEmote;
+
         public static ConfigEntry<int> numEmotesStoreRotation;
+        public static ConfigEntry<float> rotationChanceCommonEmote;
+        public static ConfigEntry<float> rotationChanceUncommonEmote;
+        public static ConfigEntry<float> rotationChanceRareEmote;
+        public static ConfigEntry<float> rotationChanceLegendaryEmote;
+
         public static ConfigEntry<int> numMysteryEmotesStoreRotation;
-        public static ConfigEntry<int> numFreeEmoteCoupons;
+        public static ConfigEntry<int> numFreeEmoteCredits;
         public static ConfigEntry<string> openEmoteMenuKeybind;
+
+        public static ConfigEntry<bool> overrideCommonEmoteNameColor;
+        public static ConfigEntry<string> emoteNameColorCommon;
+        public static ConfigEntry<string> emoteNameColorUncommon;
+        public static ConfigEntry<string> emoteNameColorRare;
+        public static ConfigEntry<string> emoteNameColorLegendary;
 
         public static Dictionary<string, ConfigEntryBase> currentConfigEntries = new Dictionary<string, ConfigEntryBase>();
 
@@ -25,19 +44,75 @@ namespace TooManyEmotes.Config {
             Plugin.Log("BindingConfigs");
 
 
-            unlockEverything = Plugin.instance.Config.Bind("Server settings", "UnlockEverythingAtStart", false, "[Host only] If true, every emote will be unlocked in your emote wheel.");
+            unlockEverything = Plugin.instance.Config.Bind("Server settings", "I AM A PARTY POOPER", false, "[Host only] If true, every emote will be unlocked in your emote wheel at the start of the game.");
+
+            disableRaritySystem = Plugin.instance.Config.Bind("Server settings", "DisableRaritySystem", false, "[Host only] If true, every emote will have the same likelyhood of appearing in the emote store.");
+            basePriceEmoteRaritySystemDisabled = Plugin.instance.Config.Bind("Server settings", "BasePriceEmote - Rarity System Disabled", 100, "[Host only] Base price of emotes if the rarity system is disabled.");
+
             priceMultiplierEmotesStore = Plugin.instance.Config.Bind("Server settings", "PriceMultiplierEmotesStore", 1.0f, "[Host only] Price multiplier for emotes in the store. Only applies if UnlockEverythingAtStart is false.");
-            numEmotesStoreRotation = Plugin.instance.Config.Bind("Server settings", "NumEmotesInStoreRotation", 3, "[Host only] The number of (non-mystery) emotes that will be available at a time in the store. Only applies if UnlockEverythingAtStart is false.");
+            basePriceCommonEmote = Plugin.instance.Config.Bind("Server settings", "BasePriceCommonEmote", 50, "[Host only] The base price of a Common emote in the store.");
+            basePriceUncommonEmote = Plugin.instance.Config.Bind("Server settings", "BasePriceUncommonEmote", 100, "[Host only] The base price of an Uncommon emote in the store.");
+            basePriceRareEmote = Plugin.instance.Config.Bind("Server settings", "BasePriceRareEmote", 200, "[Host only] The base price of a Rare emote in the store.");
+            basePriceLegendaryEmote = Plugin.instance.Config.Bind("Server settings", "BasePriceLegendaryEmote", 500, "[Host only] The base price of a Legendary emote in the store.");
+
+            numEmotesStoreRotation = Plugin.instance.Config.Bind("Server settings", "EmotesInStoreRotation", 6, "[Host only] The number of emotes that will be available at a time in the store. Only applies if UnlockEverythingAtStart is false.");
+            rotationChanceCommonEmote = Plugin.instance.Config.Bind("Server settings", "RotationChanceCommonEmote", 0.55f, "[Host only] The likelyhood of a Common emote appearing (per slot) in the store rotation.");
+            rotationChanceUncommonEmote = Plugin.instance.Config.Bind("Server settings", "RotationChanceUncommonEmote", 0.325f, "[Host only] The likelyhood of a Uncommon emote appearing (per slot) in the store rotation.");
+            rotationChanceRareEmote = Plugin.instance.Config.Bind("Server settings", "RotationChanceRareEmote", 0.1f, "[Host only] The likelyhood of a Rare emote appearing (per slot) in the store rotation.");
+            rotationChanceLegendaryEmote = Plugin.instance.Config.Bind("Server settings", "RotationChanceLegendaryEmote", 0.025f, "[Host only] The likelyhood of a Legendary emote appearing (per slot) in the store rotation.");
+
             numMysteryEmotesStoreRotation = Plugin.instance.Config.Bind("Server settings", "NumMysteryEmotesInStoreRotation", 1, "[Host only] The number of \"mystery\" emotes that will be available at a time in the store. These emotes will be a mystery until unlocked. Only applies if UnlockEverythingAtStart is false.");
-            numFreeEmoteCoupons = Plugin.instance.Config.Bind("Server settings", "NumFreeEmoteCoupons", 1, "[Host only] The number of free emote coupons you start with each round. Only applies if UnlockEverythingAtStart is false.");
+            numFreeEmoteCredits = Plugin.instance.Config.Bind("Server settings", "NumFreeEmoteCredits", 100, "[Host only] The number of free emote coupons you start with each round. Only applies if UnlockEverythingAtStart is false.");
             openEmoteMenuKeybind = Plugin.instance.Config.Bind("Client", "OpenEmoteMenuKeybind", "<Keyboard>/backquote", "Keybind for opening the emote radial menu.");
 
+            overrideCommonEmoteNameColor = Plugin.instance.Config.Bind("Accessibility", "OverrideEmoteNameColorCommon", false, "If true, the terminal will use the color in the config for [common] emote names.");
+            emoteNameColorCommon = Plugin.instance.Config.Bind("Accessibility", "CommonEmoteNameColor", "#00FF00", "The color of the [common] emote name in the terminal. Only applies if OverrideEmoteNameColorCommon is true.");
+            emoteNameColorUncommon = Plugin.instance.Config.Bind("Accessibility", "UncommonEmoteNameColor", "#2828FF", "The color of the [uncommon] emote name in the terminal.");
+            emoteNameColorRare = Plugin.instance.Config.Bind("Accessibility", "RareEmoteNameColor", "#AA00EE", "The color of the [rare] emote name in the terminal.");
+            emoteNameColorLegendary = Plugin.instance.Config.Bind("Accessibility", "LegendaryEmoteNameColor", "#FF2222", "The color of the [legendary] emote name in the terminal.");
+
+
             currentConfigEntries.Add(unlockEverything.Definition.Key, unlockEverything);
+            currentConfigEntries.Add(disableRaritySystem.Definition.Key, disableRaritySystem);
+            currentConfigEntries.Add(basePriceEmoteRaritySystemDisabled.Definition.Key, basePriceEmoteRaritySystemDisabled);
+
             currentConfigEntries.Add(priceMultiplierEmotesStore.Definition.Key, priceMultiplierEmotesStore);
+            currentConfigEntries.Add(basePriceCommonEmote.Definition.Key, basePriceCommonEmote);
+            currentConfigEntries.Add(basePriceUncommonEmote.Definition.Key, basePriceUncommonEmote);
+            currentConfigEntries.Add(basePriceRareEmote.Definition.Key, basePriceRareEmote);
+            currentConfigEntries.Add(basePriceLegendaryEmote.Definition.Key, basePriceLegendaryEmote);
+
             currentConfigEntries.Add(numEmotesStoreRotation.Definition.Key, numEmotesStoreRotation);
+            currentConfigEntries.Add(rotationChanceCommonEmote.Definition.Key, rotationChanceCommonEmote);
+            currentConfigEntries.Add(rotationChanceUncommonEmote.Definition.Key, rotationChanceUncommonEmote);
+            currentConfigEntries.Add(rotationChanceRareEmote.Definition.Key, rotationChanceRareEmote);
+            currentConfigEntries.Add(rotationChanceLegendaryEmote.Definition.Key, rotationChanceLegendaryEmote);
+
             currentConfigEntries.Add(numMysteryEmotesStoreRotation.Definition.Key, numMysteryEmotesStoreRotation);
-            currentConfigEntries.Add(numFreeEmoteCoupons.Definition.Key, numFreeEmoteCoupons);
+            currentConfigEntries.Add(numFreeEmoteCredits.Definition.Key, numFreeEmoteCredits);
             currentConfigEntries.Add(openEmoteMenuKeybind.Definition.Key, openEmoteMenuKeybind);
+
+            currentConfigEntries.Add(overrideCommonEmoteNameColor.Definition.Key, overrideCommonEmoteNameColor);
+            currentConfigEntries.Add(emoteNameColorCommon.Definition.Key, emoteNameColorCommon);
+            currentConfigEntries.Add(emoteNameColorUncommon.Definition.Key, emoteNameColorUncommon);
+            currentConfigEntries.Add(emoteNameColorRare.Definition.Key, emoteNameColorRare);
+            currentConfigEntries.Add(emoteNameColorLegendary.Definition.Key, emoteNameColorLegendary);
+
+
+            // fix weights
+            float totalChances = rotationChanceCommonEmote.Value;
+            totalChances += rotationChanceUncommonEmote.Value;
+            totalChances += rotationChanceRareEmote.Value;
+            totalChances += rotationChanceLegendaryEmote.Value;
+
+            if (totalChances != 1)
+            {
+                rotationChanceCommonEmote.Value /= totalChances;
+                rotationChanceUncommonEmote.Value /= totalChances;
+                rotationChanceRareEmote.Value /= totalChances;
+                rotationChanceLegendaryEmote.Value /= totalChances;
+                Plugin.instance.Config.Save();
+            }
 
             TryRemoveOldConfigSettings();
             ConfigSync.BuildDefaultConfigSync();
