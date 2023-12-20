@@ -32,36 +32,41 @@ namespace TooManyEmotes.Patches {
         public static bool defaultShowHud;
 
 
+
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
-        public static void InitializeThirdPersonController(PlayerControllerB __instance) {
+        public static void InitLocalPlayerController(PlayerControllerB __instance) {
             gameplayCamera = __instance.gameplayCamera;
             if (emoteCamera == null)
             {
                 emoteCameraPivot = new GameObject("EmoteCameraPivot").transform;
                 emoteCamera = new GameObject("EmoteCamera").AddComponent<Camera>();
                 emoteCamera.CopyFrom(gameplayCamera);
+                cameraCollideLayerMask = (1 << LayerMask.NameToLayer("Room")) | 1 << LayerMask.NameToLayer("PlaceableShipObject") | 1 << LayerMask.NameToLayer("Terrain") | 1 << LayerMask.NameToLayer("MiscLevelGeometry");
             }
+        }
+
+
+        [HarmonyPatch(typeof(PlayerControllerB), "SpawnPlayerAnimation")]
+        [HarmonyPostfix]
+        public static void OnPlayerSpawn(PlayerControllerB __instance)
+        {
+            emoteCamera.enabled = false;
+            StartOfRound.Instance.SwitchCamera(StartOfRound.Instance.activeCamera);
+
+            __instance.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
+            __instance.thisPlayerModel.gameObject.layer = 23;
+            __instance.thisPlayerModelArms.gameObject.layer = 5;
+            gameplayCamera.cullingMask &= ~(1 << 23);
+            emoteCamera.cullingMask |= 1 << 23;
+            emoteCamera.cullingMask &= ~((1 << 5) | (1 << 7));
 
             emoteCameraPivot.transform.parent = __instance.transform;
             emoteCameraPivot.SetLocalPositionAndRotation(Vector3.up * 1.8f, Quaternion.identity);
             emoteCamera.transform.parent = emoteCameraPivot;
             emoteCamera.transform.SetLocalPositionAndRotation(Vector3.back * thirdPersonCameraDistance, Quaternion.identity);
-
-            //emoteCamera.cullingMask |= 1 << 23;
-            //gameplayCamera.cullingMask &= ~(1 << 23);
-
-            emoteCamera.enabled = false;
-            StartOfRound.Instance.SwitchCamera(StartOfRound.Instance.activeCamera);
-
-            cameraCollideLayerMask = (1 << LayerMask.NameToLayer("Room")) | 1 << LayerMask.NameToLayer("PlaceableShipObject") | 1 << LayerMask.NameToLayer("Terrain") | 1 << LayerMask.NameToLayer("MiscLevelGeometry");
-
-            playerHUDHelmetModel = GameObject.Find("PlayerHUDHelmetModel");
-            defaultShowHelmetHud = playerHUDHelmetModel.activeSelf;
-            defaultShadowCasterMode = __instance.thisPlayerModel.shadowCastingMode;
-            defaultShowArms = __instance.thisPlayerModelArms.gameObject.activeSelf && __instance.thisPlayerModelArms.enabled;
-            defaultShowHud = __instance.playerHudUIContainer.gameObject.activeSelf;
         }
+
 
 
 
@@ -92,25 +97,32 @@ namespace TooManyEmotes.Patches {
 
 
         public static void OnStartCustomEmoteLocal() {
-            StartOfRound.Instance.SwitchCamera(emoteCamera);
-            localPlayerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
+            if (!emoteCamera.enabled)
+            {
+                StartOfRound.Instance.SwitchCamera(emoteCamera);
+                localPlayerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
+                emoteCameraPivot.eulerAngles = gameplayCamera.transform.eulerAngles + new Vector3(0, 0, 0);
+            }
+            /*
             localPlayerController.playerModelArmsMetarig.transform.parent.gameObject.SetActive(false);
             localPlayerController.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
             playerHUDHelmetModel.SetActive(false);
-            emoteCameraPivot.eulerAngles = gameplayCamera.transform.eulerAngles + new Vector3(0, 0, 0);
             HUDManager.Instance.HideHUD(true);
             MoreCompanyPatcher.ShowCosmetics(true);
+            */
         }
 
 
         public static void OnStopCustomEmoteLocal() {
             emoteCamera.enabled = false;
             StartOfRound.Instance.SwitchCamera(gameplayCamera);
+            /*
             localPlayerController.playerModelArmsMetarig.transform.parent.gameObject.SetActive(defaultShowArms);
             localPlayerController.thisPlayerModel.shadowCastingMode = defaultShadowCasterMode;
             playerHUDHelmetModel.SetActive(defaultShowHelmetHud);
             HUDManager.Instance.HideHUD(false);
             MoreCompanyPatcher.ShowCosmetics(false);
-        }
+            */
+        }   
     }
 }

@@ -32,27 +32,17 @@ namespace TooManyEmotes.Patches {
         public static AnimationClip defaultDance1Clip;
         public static int emoteStateHash { get { return Animator.StringToHash(string.Format("{0}.Dance1", localPlayerController.playerBodyAnimator.GetLayerName(1))); } } //Animator.StringToHash("EmotesNoArms.Dance1");
 
-        public static HashSet<PlayerControllerB> performingCustomEmotes;
+        public static HashSet<PlayerControllerB> performingCustomEmotes = new HashSet<PlayerControllerB>();
         public static bool performingCustomEmoteLocal { get { return localPlayerController != null ? performingCustomEmotes.Contains(localPlayerController) : false; } set { if (localPlayerController == null) return; if (value) performingCustomEmotes.Add(localPlayerController); else performingCustomEmotes.Remove(localPlayerController); } }
-        static float timeStartedLastEmote;
-        public static float timeSinceStartedEmote { get { return Time.time - timeStartedLastEmote; } }
 
-
-        [HarmonyPatch(typeof(PlayerControllerB), "Awake")]
-        [HarmonyPostfix]
-        public static void InitializePlayer(PlayerControllerB __instance) {
-            performingCustomEmotes = new HashSet<PlayerControllerB>();
-            timeStartedLastEmote = 0;
-            //__instance.thisPlayerModel.gameObject.layer = 23;
-        }
 
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
         public static void OnLocalClientReady(PlayerControllerB __instance) {
+            performingCustomEmotes?.Clear();
             localPlayerAnimatorOverrideController = (AnimatorOverrideController)StartOfRound.Instance.localClientAnimatorController;
             defaultDance1Clip = localPlayerAnimatorOverrideController["Dance1"];
-            //__instance.thisPlayerModel.gameObject.layer = 23;
         }
 
 
@@ -190,7 +180,7 @@ namespace TooManyEmotes.Patches {
 
                 if (playerController == localPlayerController)
                 {
-                    timeStartedLastEmote = Time.time;
+                    //timeStartedLastEmote = Time.time;
                     ThirdPersonEmoteController.OnStartCustomEmoteLocal();
                 }
             }

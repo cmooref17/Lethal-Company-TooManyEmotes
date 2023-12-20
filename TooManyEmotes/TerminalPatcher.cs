@@ -17,6 +17,7 @@ using System.Security.Cryptography;
 using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
 using DunGen;
+using Unity.Netcode;
 
 namespace TooManyEmotes.Patches
 {
@@ -32,11 +33,10 @@ namespace TooManyEmotes.Patches
         public static int currentEmoteCredits { get { return ConfigSync.syncNumFreeEmoteCredits - emoteCreditsUsed; } }
         static string confirmEmoteOpeningText = "You have requested to order a new emote.";
 
-        static UnlockableEmote purchasingEmote;
-        static bool initializedTerminalNodes = false;
+        public static UnlockableEmote purchasingEmote;
+        public static bool initializedTerminalNodes = false;
 
-        static int emoteStoreSeedOffset = 80;
-
+        public static int emoteStoreSeed = 0;
 
         [HarmonyPatch(typeof(Terminal), "Awake")]
         [HarmonyPostfix]
@@ -178,7 +178,7 @@ namespace TooManyEmotes.Patches
                     else
                     {
                         StartOfRoundPatcher.UnlockEmoteLocal(purchasingEmote);
-                        SyncUnlockedEmotes.SendOnUnlockEmoteUpdate(purchasingEmote.emoteId);
+                        EmoteSyncManager.SendOnUnlockEmoteUpdate(purchasingEmote.emoteId);
 
                         int oldEmoteCredits = currentEmoteCredits;
                         int oldGroupCredits = terminalInstance.groupCredits;
@@ -227,8 +227,7 @@ namespace TooManyEmotes.Patches
                 input = input.Replace("emote cheat ", "");
                 if (input.StartsWith("rotate"))
                 {
-                    emoteStoreSeedOffset++;
-                    RotateEmoteSelection();
+                    EmoteSyncManager.RotateEmoteSelectionServerRpc();
                     __result = BuildCustomTerminalNode("Rotated emotes.\n------------------------------\n[emoteUnlockablesSelectionList]\n\n", clearPreviousText: true);
                 }
 
@@ -469,19 +468,20 @@ namespace TooManyEmotes.Patches
         static UnlockableEmote TryGetEmoteUnlockedEmotes(string emoteNameInput, bool reliable = false) => TryGetEmote(emoteNameInput, StartOfRoundPatcher.unlockedEmotes, reliable);
 
 
-
-        [HarmonyPatch(typeof(Terminal), "RotateShipDecorSelection")]
+        [HarmonyPatch(typeof(TimeOfDay), "SetNewProfitQuota")]
         [HarmonyPostfix]
         public static void RotateEmoteSelectionPerQuota()
         {
-            RotateEmoteSelection();
+            if (NetworkManager.Singleton.IsServer)
+                EmoteSyncManager.RotateEmoteSelectionServerRpc();
         }
 
 
-        public static void RotateEmoteSelection()
+        public static void RotateNewEmoteSelection()
         {
-            Plugin.Log("Rotating emote selection in store. Seed: " + (StartOfRound.Instance.randomMapSeed + emoteStoreSeedOffset));
-            System.Random random = new System.Random(StartOfRound.Instance.randomMapSeed + emoteStoreSeedOffset);
+            Plugin.Log("Rotating emote selection in store. Seed: " + emoteStoreSeed);
+
+            System.Random random = new System.Random(emoteStoreSeed);
             emoteSelection.Clear();
 
             for (int i = 0; i < ConfigSync.syncNumEmotesStoreRotation; i++)

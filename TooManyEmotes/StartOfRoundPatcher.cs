@@ -116,15 +116,7 @@ namespace TooManyEmotes.Patches
             foreach (var emote in complementaryEmotes)
                 UnlockEmoteLocal(emote);
 
-            Plugin.Log("OnServerStart - CurrentSeed: " + StartOfRound.Instance.randomMapSeed);
-            if (StartOfRound.Instance.randomMapSeed == 0)
-            {
-                StartOfRound.Instance.ChooseNewRandomMapSeed();
-                //StartOfRound.Instance.overrideRandomSeed = true;
-                //StartOfRound.Instance.overrideSeedNumber = StartOfRound.Instance.randomMapSeed;
-                Plugin.Log("Generating new seed: " + StartOfRound.Instance.randomMapSeed);
-            }
-            TerminalPatcher.terminalInstance.RotateShipDecorSelection();
+            EmoteSyncManager.RotateEmoteSelectionServerRpc(TerminalPatcher.emoteStoreSeed);
         }
 
 
@@ -132,11 +124,7 @@ namespace TooManyEmotes.Patches
         [HarmonyPostfix]
         public static void ResetOverrideSeedFlag(StartOfRound __instance)
         {
-            if (!__instance.IsServer)
-                return;
-
-            if (__instance.inShipPhase)
-                __instance.overrideRandomSeed = false;
+            __instance.overrideRandomSeed = false;
         }
 
 
@@ -144,18 +132,16 @@ namespace TooManyEmotes.Patches
         [HarmonyPostfix]
         public static void ResetEmotesOnShipReset(StartOfRound __instance)
         {
-            if (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost)
-                unlockedEmotes = new List<UnlockableEmote>(complementaryEmotes);
-            else
-                unlockedEmotes = new List<UnlockableEmote>();
-            TerminalPatcher.emoteCreditsUsed = 0;
+            ResetEmotesLocal();
         }
 
 
         public static void ResetEmotesLocal()
         {
+            Plugin.Log("Resetting progression.");
             unlockedEmotes = new List<UnlockableEmote>(complementaryEmotes);
             TerminalPatcher.emoteCreditsUsed = 0;
+            TerminalPatcher.emoteStoreSeed = 0;
         }
 
 
@@ -167,7 +153,7 @@ namespace TooManyEmotes.Patches
             if (ConfigSync.syncUnlockEverything)
                 return;
             Plugin.Log("Syncing unlocked emotes with clients.");
-            SyncUnlockedEmotes.SendOnUnlockEmoteUpdateMulti(true);
+            EmoteSyncManager.SendOnUnlockEmoteUpdateMulti(TerminalPatcher.emoteCreditsUsed);
         }
 
 

@@ -17,6 +17,7 @@ using UnityEngine.Rendering;
 using System.Collections;
 using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
+using TooManyEmotes.Patches;
 using System.Reflection;
 using Unity.Netcode;
 using MoreEmotes.Patch;
@@ -114,6 +115,7 @@ namespace TooManyEmotes.CompatibilityPatcher {
         }
 
 
+        /*
         public static void ShowCosmetics(bool show) {
             if (loadedMoreCompany && cosmeticInstances != null && cosmeticInstances.Count > 0)
             {
@@ -126,23 +128,26 @@ namespace TooManyEmotes.CompatibilityPatcher {
                 }
             }
         }
+        */
     }
 
     /*
     [HarmonyPatch]
     internal class MirrorDecorPatcher
     {
-
         public static bool loadedMirrorDecor = false;
 
-        [HarmonyPatch(typeof(PreInitSceneScript), "Awake")]
+        [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
-        public static void ApplyPatch()
+        public static void ApplyPatch(PlayerControllerB __instance)
         {
             if (Plugin.IsModLoaded("quackandcheese.mirrordecor"))
             {
-                Plugin.Log("MirrorDecor is loaded!");
+                //ThirdPersonEmoteController.emoteCamera.cullingMask = __instance.gameplayCamera.cullingMask | 1 << 23;
+                //__instance.gameplayCamera.cullingMask &= ~(1 << 23);
+                //__instance.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
                 loadedMirrorDecor = true;
+                Plugin.Log("Applied patch for MirrorDecor");
             }
         }
     }

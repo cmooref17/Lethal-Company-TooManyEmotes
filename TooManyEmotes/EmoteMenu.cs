@@ -17,6 +17,7 @@ using TooManyEmotes.Patches;
 using System.Collections;
 using Dissonance.Integrations.Unity_NFGO;
 using System.Runtime.CompilerServices;
+using TooManyEmotes.Config;
 
 namespace TooManyEmotes {
 
@@ -35,6 +36,7 @@ namespace TooManyEmotes {
         public static Camera renderingCamera;
 
         public static GameObject previewPlayerObject;
+        public static SkinnedMeshRenderer previewPlayerMesh;
         public static Animator previewPlayerAnimator;
         public static AnimatorOverrideController previewPlayerAnimatorController;
         public static int playerLayer = LayerMask.NameToLayer("Player");
@@ -121,7 +123,6 @@ namespace TooManyEmotes {
             if (index != -1)
                 emoteUIElementsList[index].OnHover(true);
             hoveredEmoteUIIndex = index;
-            Plugin.Log("Hover: " + index + " HoveredEmoteUIIndex: " + hoveredEmoteUIIndex);
             SetPreviewAnimation(hoveredEmoteIndex);
         }
 
@@ -147,7 +148,7 @@ namespace TooManyEmotes {
         public static void UpdateEmoteWheel()
         {
             currentPage = Mathf.Clamp(currentPage, 0, numPages - 1);
-            swapPageText.text = string.Format("Page: {0}/ {1}\n[Q / E]", currentPage + 1, numPages);
+            swapPageText.text = string.Format("[{0} / {1}]\nChange page\n[Mouse Scroll]", currentPage + 1, numPages);
             for (int i = 0; i < emoteUIElementsList.Count; i++)
             {
                 var emoteUI = emoteUIElementsList[i];
@@ -170,7 +171,6 @@ namespace TooManyEmotes {
             if (emoteIndex >= 0 && emoteIndex < StartOfRoundPatcher.unlockedEmotes.Count && StartOfRoundPatcher.unlockedEmotes[emoteIndex] != null)
             {
                 UnlockableEmote emote = StartOfRoundPatcher.unlockedEmotes[emoteIndex];
-                Plugin.Log("Setting preview emote to: " + emote.emoteName);
                 previewPlayerObject.SetActive(true);
                 renderingCamera.enabled = true;
 
@@ -181,7 +181,6 @@ namespace TooManyEmotes {
             }
             else
             {
-                Plugin.Log("Stopping preview emote");
                 previewPlayerAnimatorController["EmoteStart"] = null;
                 previewPlayerAnimatorController["EmoteLoop"] = null;
                 previewPlayerObject.SetActive(false);
@@ -212,16 +211,17 @@ namespace TooManyEmotes {
         }
         public static void OpenEmoteMenu()
         {
-            Plugin.Log("Opening emote menu");
+            //Plugin.Log("Opening emote menu");
             menuGameObject.SetActive(true);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             quickMenuManager.isMenuOpen = true;
+            previewPlayerMesh.material = localPlayerController.thisPlayerModel.material;
             UpdateEmoteWheel();
         }
         public static void CloseEmoteMenu()
         {
-            Plugin.Log("Closing emote menu");
+            //Plugin.Log("Closing emote menu");
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             localPlayerController.isFreeCamera = false;
@@ -235,57 +235,6 @@ namespace TooManyEmotes {
             if ((quickMenuManager.isMenuOpen && !isMenuOpen) || localPlayerController.inTerminalMenu || localPlayerController.isTypingChat || localPlayerController.isPlayerDead || localPlayerController.inSpecialInteractAnimation || localPlayerController.inShockingMinigame || localPlayerController.isClimbingLadder || localPlayerController.isSinking)
                 return false;
             return true;
-        }
-
-
-
-        [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
-        [HarmonyPostfix]
-        public static void InitializePlayerCloneRenderObject(PlayerControllerB __instance) {
-            if (Plugin.radialMenuPrefab == null)
-                return;
-
-            previewPlayerObject = GameObject.Instantiate(__instance.gameObject);
-            GameObject modelGameObject = previewPlayerObject.transform.Find("ScavengerModel").gameObject;
-            GameObject metarigGameObject = modelGameObject.transform.Find("metarig").gameObject;
-            PlayerControllerB copyPlayerController = previewPlayerObject.GetComponentInChildren<PlayerControllerB>();
-            copyPlayerController.thisPlayerModel.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-
-            Material copyPlayerObjectMaterial = new Material(copyPlayerController.thisPlayerModel.material);
-            copyPlayerObjectMaterial.shader = Shader.Find("Unlit/Texture");
-            copyPlayerController.thisPlayerModel.material = copyPlayerObjectMaterial;
-
-            GameObject.Destroy(modelGameObject.GetComponentInChildren<LODGroup>());
-            GameObject.DestroyImmediate(metarigGameObject.GetComponentInChildren<RigBuilder>());
-            GameObject.DestroyImmediate(copyPlayerController.playerBodyAnimator);
-
-            previewPlayerAnimator = metarigGameObject.AddComponent<Animator>();
-            previewPlayerAnimatorController = new AnimatorOverrideController(Plugin.previewAnimatorController);
-            previewPlayerAnimator.runtimeAnimatorController = previewPlayerAnimatorController;
-
-            previewPlayerAnimator.Play("EmoteStart", 0, 0);
-
-            GameObject.Destroy(previewPlayerObject.GetComponent<NfgoPlayer>());
-
-            // It's brute force, but w/e
-            foreach (Transform child in previewPlayerObject.transform)
-                if (child.name != "ScavengerModel")
-                    GameObject.Destroy(child.gameObject);
-
-            foreach (Transform child in modelGameObject.transform)
-                if (child.name != "LOD1" && child.name != "metarig")
-                    GameObject.Destroy(child.gameObject);
-
-            foreach (Transform child in metarigGameObject.transform)
-                if (child.name != "spine")
-                    GameObject.Destroy(child.gameObject);
-
-            copyPlayerController.thisPlayerModel.gameObject.layer = playerLayer;
-
-            foreach (MonoBehaviour script in previewPlayerObject.GetComponents<MonoBehaviour>())
-                GameObject.Destroy(script);
-
-            previewPlayerObject.transform.position = renderingCamera.transform.position + renderingCamera.transform.forward * 2.8f + Vector3.down * 1.35f;
         }
 
 
@@ -308,7 +257,95 @@ namespace TooManyEmotes {
             renderingCamera.transform.position = Vector3.down * 1000;
             renderTextureImageUI.texture = renderTexture;
 
+            Light spotlight = new GameObject("Spotlight").AddComponent<Light>();
+            spotlight.type = LightType.Spot;
+            spotlight.transform.position = renderingCamera.transform.position;
+            spotlight.transform.parent = renderingCamera.transform;
+            spotlight.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+            spotlight.intensity = 40;
+            spotlight.range = 40;
+            spotlight.innerSpotAngle = 100;
+            spotlight.spotAngle = 120;
+            spotlight.gameObject.layer = playerLayer;
+
             DisableRenderCameraNextFrame();
+        }
+
+
+        [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
+        [HarmonyPostfix]
+        public static void InitializePlayerCloneRenderObject(PlayerControllerB __instance) {
+
+            IEnumerator InitPlayerCloneAfterSpawnAnimation() {
+                yield return new WaitForSeconds(3);
+                previewPlayerObject = GameObject.Instantiate(__instance.gameObject, renderingCamera.transform);
+                previewPlayerObject.name = "PreviewPlayerAnimationObject";
+                GameObject modelGameObject = previewPlayerObject.transform.Find("ScavengerModel").gameObject;
+                GameObject metarigGameObject = modelGameObject.transform.Find("metarig").gameObject;
+                PlayerControllerB copyPlayerController = previewPlayerObject.GetComponentInChildren<PlayerControllerB>();
+                copyPlayerController.thisPlayerModel.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+
+                previewPlayerMesh = copyPlayerController.thisPlayerModel;
+                GameObject.Destroy(modelGameObject.GetComponentInChildren<LODGroup>());
+                GameObject.DestroyImmediate(metarigGameObject.GetComponentInChildren<RigBuilder>());
+                GameObject.DestroyImmediate(copyPlayerController.playerBodyAnimator);
+
+                previewPlayerAnimator = metarigGameObject.AddComponent<Animator>();
+                previewPlayerAnimatorController = new AnimatorOverrideController(Plugin.previewAnimatorController);
+                previewPlayerAnimator.runtimeAnimatorController = previewPlayerAnimatorController;
+
+                previewPlayerAnimator.Play("EmoteStart", 0, 0);
+
+                GameObject.Destroy(previewPlayerObject.GetComponent<NfgoPlayer>());
+
+                // It's brute force, but w/e
+                foreach (Transform child in previewPlayerObject.transform)
+                    if (child.name != "ScavengerModel")
+                        GameObject.Destroy(child.gameObject);
+
+                foreach (Transform child in modelGameObject.transform)
+                    if (child.name != "LOD1" && child.name != "metarig")
+                        GameObject.Destroy(child.gameObject);
+
+                foreach (Transform child in metarigGameObject.transform)
+                    if (child.name != "spine")
+                        GameObject.Destroy(child.gameObject);
+
+                previewPlayerObject.transform.position = renderingCamera.transform.position + renderingCamera.transform.forward * 2.8f + Vector3.down * 1.35f;
+                previewPlayerObject.transform.LookAt(new Vector3(renderingCamera.transform.position.x, previewPlayerObject.transform.position.y, renderingCamera.transform.position.z));
+                SetObjectLayerRecursive(previewPlayerObject, playerLayer);
+
+                foreach (MonoBehaviour script in previewPlayerObject.GetComponents<MonoBehaviour>())
+                    GameObject.Destroy(script);
+            }
+
+            if (Plugin.radialMenuPrefab == null)
+                return;
+
+            __instance.StartCoroutine(InitPlayerCloneAfterSpawnAnimation());
+        }
+
+
+        static void SetObjectLayerRecursive(GameObject obj, int layer) {
+            if (obj == null) return;
+            obj.layer = layer;
+            for (int i = 0; i < obj.transform.childCount; i++)
+                SetObjectLayerRecursive(obj.transform.GetChild(i)?.gameObject, layer);
+        }
+
+        [HarmonyPatch(typeof(PlayerControllerB), "ScrollMouse_performed")]
+        [HarmonyPrefix]
+        public static bool OnScrollMouse(InputAction.CallbackContext context, PlayerControllerB __instance)
+        {
+            if (!isMenuOpen || __instance != localPlayerController || !context.performed)
+                return true;
+
+            if (context.ReadValue<float>() > 0 && !ConfigSettings.reverseEmoteWheelScrollDirection.Value)
+                SwapNextPage();
+            else
+                SwapPrevPage();
+
+            return false;
         }
 
 

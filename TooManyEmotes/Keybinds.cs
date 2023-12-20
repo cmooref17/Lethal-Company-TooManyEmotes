@@ -49,6 +49,7 @@ namespace TooManyEmotes
             Plugin.Log("Subscribing to OnPressCustomEmoteKey events");
 
             OpenEmoteMenuAction.performed += OnPressOpenEmoteMenu;
+            OpenEmoteMenuAction.canceled += OnPressOpenEmoteMenu;
             SelectEmoteUIAction.performed += OnSelectEmoteUI;
             PrevEmotePageAction.performed += OnSwapPrevEmotePage;
             NextEmotePageAction.performed += OnSwapNextEmotePage;
@@ -77,6 +78,7 @@ namespace TooManyEmotes
             Plugin.Log("Unsubscribing from OnPressCustomEmoteKey events.");
 
             OpenEmoteMenuAction.performed -= OnPressOpenEmoteMenu;
+            OpenEmoteMenuAction.canceled -= OnPressOpenEmoteMenu;
             SelectEmoteUIAction.performed -= OnSelectEmoteUI;
             PrevEmotePageAction.performed -= OnSwapPrevEmotePage;
             NextEmotePageAction.performed -= OnSwapNextEmotePage;
@@ -90,12 +92,29 @@ namespace TooManyEmotes
 
         static void OnPressOpenEmoteMenu(InputAction.CallbackContext context)
         {
-            Plugin.Log("Starting opening emote menu...");
-            if (localPlayerController == null || !context.performed)
+            //Plugin.Log("Starting opening emote menu...");
+            if (localPlayerController == null)
                 return;
 
-            if (EmoteMenuManager.CanOpenEmoteMenu())
-                EmoteMenuManager.ToggleEmoteMenu();
+            if (!EmoteMenuManager.isMenuOpen)
+            {
+                if (context.performed)
+                    EmoteMenuManager.OpenEmoteMenu();
+            }
+            else
+            {
+                if (ConfigSettings.toggleEmoteMenu.Value)
+                {
+                    if (context.performed)
+                        EmoteMenuManager.CloseEmoteMenu();
+                }
+                else if (context.canceled)
+                {
+                    if (EmoteMenuManager.hoveredEmoteIndex != -1)
+                        PerformEmoteLocal(context);
+                    EmoteMenuManager.CloseEmoteMenu();
+                }
+            }
         }
 
 
@@ -106,9 +125,7 @@ namespace TooManyEmotes
 
             if (EmoteMenuManager.isMenuOpen && EmoteMenuManager.hoveredEmoteIndex >= 0 && EmoteMenuManager.hoveredEmoteIndex < StartOfRoundPatcher.unlockedEmotes.Count)
             {
-                UnlockableEmote emote = StartOfRoundPatcher.unlockedEmotes[EmoteMenuManager.hoveredEmoteIndex];
-                if (emote != null)
-                    localPlayerController.PerformEmote(context, -(EmoteMenuManager.hoveredEmoteIndex + 1));
+                PerformEmoteLocal(context);
                 EmoteMenuManager.CloseEmoteMenu();
             }
         }
@@ -133,6 +150,13 @@ namespace TooManyEmotes
                 return;
 
             EmoteMenuManager.SwapNextPage();
+        }
+
+
+        public static void PerformEmoteLocal(InputAction.CallbackContext context) {
+            UnlockableEmote emote = StartOfRoundPatcher.unlockedEmotes[EmoteMenuManager.hoveredEmoteIndex];
+            if (emote != null)
+                localPlayerController.PerformEmote(context, -(EmoteMenuManager.hoveredEmoteIndex + 1));
         }
     }
 }

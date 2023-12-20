@@ -126,7 +126,7 @@
     <Compile Include="ConfigSync.cs" />
     <Compile Include="EmoteMenu.cs" />
     <Compile Include="StartOfRoundPatcher.cs" />
-    <Compile Include="SyncUnlockedEmotes.cs" />
+    <Compile Include="EmoteSyncManager.cs" />
     <Compile Include="ThirdPersonEmoteController.cs" />
     <Compile Include="UnlockableEmote.cs" />
     <Compile Include="ConfigSettings.cs" />

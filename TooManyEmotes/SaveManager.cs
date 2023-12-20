@@ -39,7 +39,10 @@ namespace TooManyEmotes.Patches
                     unlockedEmoteIds[index++] = emote.emoteName;
                 ES3.Save("TooManyEmotes.UnlockedEmotes", unlockedEmoteIds, __instance.currentSaveFileName);
                 ES3.Save("TooManyEmotes.EmoteCreditsUsed", TerminalPatcher.emoteCreditsUsed, __instance.currentSaveFileName);
+                ES3.Save("TooManyEmotes.EmoteStoreSeed", TerminalPatcher.emoteStoreSeed, __instance.currentSaveFileName);
                 Plugin.Log("Saved " + StartOfRoundPatcher.unlockedEmotes.Count + " unlockable emotes.");
+                Plugin.Log("Saved EmoteCreditsused: " + TerminalPatcher.emoteCreditsUsed);
+                Plugin.Log("Saved Seed: " + TerminalPatcher.emoteStoreSeed);
             }
 
             catch (Exception arg)
@@ -75,8 +78,10 @@ namespace TooManyEmotes.Patches
                     }
                 }
                 TerminalPatcher.emoteCreditsUsed = ES3.Load("TooManyEmotes.EmoteCreditsUsed", GameNetworkManager.Instance.currentSaveFileName, 0);
+                TerminalPatcher.emoteStoreSeed = ES3.Load("TooManyEmotes.EmoteStoreSeed", GameNetworkManager.Instance.currentSaveFileName, 0);
                 Plugin.Log("Loaded " + StartOfRoundPatcher.unlockedEmotes.Count + " unlockable emotes.");
                 Plugin.Log("Loaded used emote credits: " + TerminalPatcher.emoteCreditsUsed);
+                Plugin.Log("Loaded seed: " + TerminalPatcher.emoteStoreSeed);
             }
             catch (Exception arg)
             {
@@ -96,6 +101,7 @@ namespace TooManyEmotes.Patches
 
             ES3.DeleteKey("TooManyEmotes.UnlockedEmotes", __instance.currentSaveFileName);
             ES3.DeleteKey("TooManyEmotes.EmoteCreditsUsed", __instance.currentSaveFileName);
+            ES3.DeleteKey("TooManyEmotes.EmoteStoreSeed", __instance.currentSaveFileName);
 
             if (StartOfRoundPatcher.unlockedEmotes != null)
                 StartOfRoundPatcher.unlockedEmotes.Clear();
