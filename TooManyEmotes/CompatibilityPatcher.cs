@@ -20,19 +20,20 @@ using TooManyEmotes.Networking;
 using TooManyEmotes.Patches;
 using System.Reflection;
 using Unity.Netcode;
-using MoreEmotes.Patch;
 using MoreCompany.Cosmetics;
 
 namespace TooManyEmotes.CompatibilityPatcher {
 
     [HarmonyPatch]
-    internal class MoreEmotesPatcher {
+    internal class MoreEmotesPatcher
+    {
 
         public static bool loadedMoreEmotes = false;
 
         [HarmonyPatch(typeof(PreInitSceneScript), "Awake")]
         [HarmonyPostfix]
-        public static void ApplyPatch() {
+        public static void ApplyPatch()
+        {
             if (Plugin.IsModLoaded("MoreEmotes"))
             {
                 if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("MoreEmotes", out var pluginInfo))
@@ -70,6 +71,30 @@ namespace TooManyEmotes.CompatibilityPatcher {
                 }
                 if (!loadedMoreEmotes)
                     Plugin.LogError("Failed to patch compatibility with More_Emotes");
+            }
+        }
+    }
+
+    internal class BiggerLobbyPatcher
+    {
+
+        public static bool loadedMoreEmotes = false;
+
+        [HarmonyPatch(typeof(NetworkSceneManager), "PopulateScenePlacedObjects")]
+        [HarmonyPostfix]
+        public static void ApplyPatch()
+        {
+            if (Plugin.IsModLoaded("BiggerLobby"))
+            {
+                var startOfRound = StartOfRound.Instance;
+                if (startOfRound == null) return;
+                for (int i = 0; i < startOfRound.allPlayerScripts.Length; i++)
+                {
+                    if (startOfRound.allPlayerScripts[i]?.playerBodyAnimator?.runtimeAnimatorController != null)
+                    {
+                        startOfRound.allPlayerScripts[i].playerBodyAnimator.runtimeAnimatorController = new AnimatorOverrideController(startOfRound.otherClientsAnimatorController);
+                    }
+                }
             }
         }
     }

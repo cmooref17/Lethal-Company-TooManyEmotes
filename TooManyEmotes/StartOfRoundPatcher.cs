@@ -103,7 +103,12 @@ namespace TooManyEmotes.Patches
             }
             
             for (int i = 0; i < __instance.allPlayerScripts.Length; i++)
-                __instance.allPlayerScripts[i].playerBodyAnimator.runtimeAnimatorController = new AnimatorOverrideController(__instance.otherClientsAnimatorController);
+            {
+                if (__instance.allPlayerScripts[i]?.playerBodyAnimator?.runtimeAnimatorController != null)
+                {
+                    __instance.allPlayerScripts[i].playerBodyAnimator.runtimeAnimatorController = new AnimatorOverrideController(__instance.otherClientsAnimatorController);
+                }
+            }
         }
 
 
