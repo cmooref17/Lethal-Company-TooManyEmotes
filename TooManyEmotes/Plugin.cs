@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace TooManyEmotes
 {
-    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.4.8")]
+    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.5.2")]
     public class Plugin : BaseUnityPlugin
     {
         private Harmony _harmony;
@@ -22,13 +22,16 @@ namespace TooManyEmotes
         public static Dictionary<string, AnimationClip> customAnimationClipsLoopDict = new Dictionary<string, AnimationClip>();
 
         public static List<AnimationClip> complementaryAnimationClips;
-        public static List<AnimationClip> commonAnimationClips;
-        public static List<AnimationClip> uncommonAnimationClips;
-        public static List<AnimationClip> rareAnimationClips;
-        public static List<AnimationClip> legendaryAnimationClips;
+        public static List<AnimationClip> animationClipsTier0;
+        public static List<AnimationClip> animationClipsTier1;
+        public static List<AnimationClip> animationClipsTier2;
+        public static List<AnimationClip> animationClipsTier3;
 
         public static GameObject radialMenuPrefab;
         public static RuntimeAnimatorController previewAnimatorController;
+
+        //public static Dictionary<string, AnimationClip> miscAnimationClips;
+        public static Dictionary<string, AudioClip> musicClips;
 
         private void Awake()
         {
@@ -41,16 +44,26 @@ namespace TooManyEmotes
             customAnimationClipsLoopDict = new Dictionary<string, AnimationClip>();
 
             complementaryAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_complementary"));
-            commonAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_0"));
-            uncommonAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_1"));
-            rareAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_2"));
-            legendaryAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_3"));
+            animationClipsTier0 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_0"));
+            animationClipsTier1 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_1"));
+            animationClipsTier2 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_2"));
+            animationClipsTier3 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_3"));
+
+            /*
+            musicClips = new Dictionary<string, AudioClip>();
+            string assetsPath = Path.Combine(Path.GetDirectoryName(instance.Info.Location), "Assets/misc_assets");
+            AssetBundle musicAssetBundle = AssetBundle.LoadFromFile(assetsPath);
+            var audioClips = musicAssetBundle.LoadAllAssets<AudioClip>();
+
+            foreach (var clip in audioClips)
+                musicClips.Add(clip.name, clip);
+            */
 
             customAnimationClips.AddRange(complementaryAnimationClips);
-            customAnimationClips.AddRange(commonAnimationClips);
-            customAnimationClips.AddRange(uncommonAnimationClips);
-            customAnimationClips.AddRange(rareAnimationClips);
-            customAnimationClips.AddRange(legendaryAnimationClips);
+            customAnimationClips.AddRange(animationClipsTier0);
+            customAnimationClips.AddRange(animationClipsTier1);
+            customAnimationClips.AddRange(animationClipsTier2);
+            customAnimationClips.AddRange(animationClipsTier3);
 
             foreach (var clip in customAnimationClips)
             {
@@ -76,7 +89,6 @@ namespace TooManyEmotes
 
 
         static AnimationClip[] LoadEmoteAssetBundle(string assetBundleName) {
-
             try
             {
                 string assetsPath = Path.Combine(Path.GetDirectoryName(instance.Info.Location), assetBundleName);

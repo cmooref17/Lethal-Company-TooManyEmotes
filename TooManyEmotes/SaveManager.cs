@@ -15,12 +15,13 @@ using UnityEngine.Animations.Rigging;
 using UnityEditor;
 using System.Security.Cryptography;
 using System.Collections;
+using TooManyEmotes.Networking;
 
 namespace TooManyEmotes.Patches
 {
 
     [HarmonyPatch]
-    internal class SaveManager
+    public class SaveManager
     {
         [HarmonyPatch(typeof(GameNetworkManager), "SaveGameValues")]
         [HarmonyPostfix]
@@ -38,10 +39,10 @@ namespace TooManyEmotes.Patches
                 foreach (var emote in StartOfRoundPatcher.unlockedEmotes)
                     unlockedEmoteIds[index++] = emote.emoteName;
                 ES3.Save("TooManyEmotes.UnlockedEmotes", unlockedEmoteIds, __instance.currentSaveFileName);
-                ES3.Save("TooManyEmotes.EmoteCreditsUsed", TerminalPatcher.emoteCreditsUsed, __instance.currentSaveFileName);
+                ES3.Save("TooManyEmotes.CurrentEmoteCredits", TerminalPatcher.currentEmoteCredits, __instance.currentSaveFileName);
                 ES3.Save("TooManyEmotes.EmoteStoreSeed", TerminalPatcher.emoteStoreSeed, __instance.currentSaveFileName);
                 Plugin.Log("Saved " + StartOfRoundPatcher.unlockedEmotes.Count + " unlockable emotes.");
-                Plugin.Log("Saved EmoteCreditsused: " + TerminalPatcher.emoteCreditsUsed);
+                Plugin.Log("Saved CurrentEmoteCredits: " + TerminalPatcher.currentEmoteCredits);
                 Plugin.Log("Saved Seed: " + TerminalPatcher.emoteStoreSeed);
             }
 
@@ -59,7 +60,7 @@ namespace TooManyEmotes.Patches
                 return;
 
             StartOfRoundPatcher.unlockedEmotes = new List<UnlockableEmote>(StartOfRoundPatcher.complementaryEmotes);
-            TerminalPatcher.emoteCreditsUsed = 0;
+            TerminalPatcher.currentEmoteCredits = ConfigSync.syncStartingEmoteCredits;
             try
             {
                 if (ES3.KeyExists("TooManyEmotes.UnlockedEmotes", GameNetworkManager.Instance.currentSaveFileName))
@@ -77,11 +78,11 @@ namespace TooManyEmotes.Patches
                             Plugin.LogError("Tried to load emote that doesn't exist: " + emoteIds[i]);
                     }
                 }
-                TerminalPatcher.emoteCreditsUsed = ES3.Load("TooManyEmotes.EmoteCreditsUsed", GameNetworkManager.Instance.currentSaveFileName, 0);
+                TerminalPatcher.currentEmoteCredits = ES3.Load("TooManyEmotes.CurrentEmoteCredits", GameNetworkManager.Instance.currentSaveFileName, ConfigSync.syncStartingEmoteCredits);
                 TerminalPatcher.emoteStoreSeed = ES3.Load("TooManyEmotes.EmoteStoreSeed", GameNetworkManager.Instance.currentSaveFileName, 0);
                 Plugin.Log("Loaded " + StartOfRoundPatcher.unlockedEmotes.Count + " unlockable emotes.");
-                Plugin.Log("Loaded used emote credits: " + TerminalPatcher.emoteCreditsUsed);
-                Plugin.Log("Loaded seed: " + TerminalPatcher.emoteStoreSeed);
+                Plugin.Log("Loaded CurrentEmoteCredits: " + TerminalPatcher.currentEmoteCredits);
+                Plugin.Log("Loaded Seed: " + TerminalPatcher.emoteStoreSeed);
             }
             catch (Exception arg)
             {
@@ -100,12 +101,12 @@ namespace TooManyEmotes.Patches
             Plugin.Log("Resetting TooManyEmotes saved game values.");
 
             ES3.DeleteKey("TooManyEmotes.UnlockedEmotes", __instance.currentSaveFileName);
-            ES3.DeleteKey("TooManyEmotes.EmoteCreditsUsed", __instance.currentSaveFileName);
+            ES3.DeleteKey("TooManyEmotes.CurrentEmoteCredits", __instance.currentSaveFileName);
             ES3.DeleteKey("TooManyEmotes.EmoteStoreSeed", __instance.currentSaveFileName);
 
             if (StartOfRoundPatcher.unlockedEmotes != null)
                 StartOfRoundPatcher.unlockedEmotes.Clear();
-            TerminalPatcher.emoteCreditsUsed = 0;
+            TerminalPatcher.currentEmoteCredits = ConfigSync.syncStartingEmoteCredits;
         }
     }
 }

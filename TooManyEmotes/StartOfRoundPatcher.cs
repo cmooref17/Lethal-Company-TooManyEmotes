@@ -17,23 +17,24 @@ using System.Collections;
 using Unity.Netcode;
 using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
+using static UnityEditor.Progress;
 
 namespace TooManyEmotes.Patches
 {
 
     [HarmonyPatch]
-    internal class StartOfRoundPatcher
+    public class StartOfRoundPatcher
     {
         public static List<UnlockableEmote> allUnlockableEmotes;
         public static Dictionary<string, UnlockableEmote> allUnlockableEmotesDict;
 
-        public static List<UnlockableEmote> allCommonEmotes;
-        public static List<UnlockableEmote> allUncommonEmotes;
-        public static List<UnlockableEmote> allRareEmotes;
-        public static List<UnlockableEmote> allLegendaryEmotes;
+        public static List<UnlockableEmote> complementaryEmotes;
+        public static List<UnlockableEmote> allEmotesTier0;
+        public static List<UnlockableEmote> allEmotesTier1;
+        public static List<UnlockableEmote> allEmotesTier2;
+        public static List<UnlockableEmote> allEmotesTier3;
 
         public static List<UnlockableEmote> unlockedEmotes;
-        public static List<UnlockableEmote> complementaryEmotes;
 
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
         [HarmonyPostfix]
@@ -46,10 +47,10 @@ namespace TooManyEmotes.Patches
             unlockedEmotes = new List<UnlockableEmote>();
 
             complementaryEmotes = new List<UnlockableEmote>();
-            allCommonEmotes = new List<UnlockableEmote>();
-            allUncommonEmotes = new List<UnlockableEmote>();
-            allRareEmotes = new List<UnlockableEmote>();
-            allLegendaryEmotes = new List<UnlockableEmote>();
+            allEmotesTier0 = new List<UnlockableEmote>();
+            allEmotesTier1 = new List<UnlockableEmote>();
+            allEmotesTier2 = new List<UnlockableEmote>();
+            allEmotesTier3 = new List<UnlockableEmote>();
 
             for (int i = 0; i < Plugin.customAnimationClips.Count; i++)
             {
@@ -62,33 +63,16 @@ namespace TooManyEmotes.Patches
                     rarity = 0
                 };
 
-                if (Plugin.commonAnimationClips.Contains(clip))
-                {
-                    emote.rarity = 0;
-                    allCommonEmotes.Add(emote);
-                }
-                else if (Plugin.uncommonAnimationClips.Contains(clip))
-                {
-                    emote.rarity = 1;
-                    allUncommonEmotes.Add(emote);
-                }
-                else if (Plugin.rareAnimationClips.Contains(clip))
-                {
-                    emote.rarity = 2;
-                    allRareEmotes.Add(emote);
-                }
-                else if (Plugin.legendaryAnimationClips.Contains(clip))
-                {
-                    emote.rarity = 3;
-                    allLegendaryEmotes.Add(emote);
-                }
+                emote.rarity = Plugin.animationClipsTier1.Contains(clip) ? 1 :
+                    Plugin.animationClipsTier2.Contains(clip) ? 2 :
+                    Plugin.animationClipsTier3.Contains(clip) ? 3 : 0;
 
                 if (emote.emoteName.Contains("_start"))
                 {
                     string emoteLoopName = emote.emoteName.Replace("_start", "_loop");
                     var emoteLoop = Plugin.customAnimationClipsLoopDict[emoteLoopName];
                     emote.transitionsToClip = emoteLoop;
-                    emote.displayName = emote.emoteName.Replace("_start", ""); ;
+                    emote.emoteName = emote.emoteName.Replace("_start", "");
                 }
                 emote.displayName = emote.displayName.Replace('_', ' ').Trim(' ');
                 emote.displayName = char.ToUpper(emote.displayName[0]) + emote.displayName.Substring(1).ToLower();
@@ -101,7 +85,24 @@ namespace TooManyEmotes.Patches
                     complementaryEmotes.Add(emote);
                 }
             }
-            
+
+            allUnlockableEmotes = allUnlockableEmotes.OrderBy(item => item.rarity).ThenBy(item => item.emoteName).ToList();
+
+            int id = 0;
+            foreach (var emote in allUnlockableEmotes)
+            {
+                emote.emoteId = id;
+                if (emote.rarity == 0)
+                    allEmotesTier0.Add(emote);
+                else if (emote.rarity == 1)
+                    allEmotesTier1.Add(emote);
+                else if (emote.rarity == 2)
+                    allEmotesTier2.Add(emote);
+                else if (emote.rarity == 3)
+                    allEmotesTier3.Add(emote);
+                id++;
+            }
+
             for (int i = 0; i < __instance.allPlayerScripts.Length; i++)
             {
                 if (__instance.allPlayerScripts[i]?.playerBodyAnimator?.runtimeAnimatorController != null)
@@ -145,7 +146,7 @@ namespace TooManyEmotes.Patches
         {
             Plugin.Log("Resetting progression.");
             unlockedEmotes = new List<UnlockableEmote>(complementaryEmotes);
-            TerminalPatcher.emoteCreditsUsed = 0;
+            TerminalPatcher.currentEmoteCredits = ConfigSync.syncStartingEmoteCredits;
             TerminalPatcher.emoteStoreSeed = 0;
         }
 
@@ -158,7 +159,7 @@ namespace TooManyEmotes.Patches
             if (ConfigSync.syncUnlockEverything)
                 return;
             Plugin.Log("Syncing unlocked emotes with clients.");
-            EmoteSyncManager.SendOnUnlockEmoteUpdateMulti(TerminalPatcher.emoteCreditsUsed);
+            EmoteSyncManager.SendOnUnlockEmoteUpdateMulti(TerminalPatcher.currentEmoteCredits);
         }
 
 
@@ -167,6 +168,12 @@ namespace TooManyEmotes.Patches
             if (emote == null || unlockedEmotes.Contains(emote))
                 return;
             unlockedEmotes.Add(emote);
+        }
+
+
+        public static void SortUnlockedEmotes()
+        {
+            unlockedEmotes = unlockedEmotes.OrderBy(item => item.rarity).ThenBy(item => item.emoteName).ToList();
         }
     }
 }

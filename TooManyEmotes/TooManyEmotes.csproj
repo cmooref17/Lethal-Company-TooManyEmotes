@@ -122,6 +122,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BoomboxMusicPlayer.cs" />
     <Compile Include="CompatibilityPatcher.cs" />
     <Compile Include="ConfigSync.cs" />
     <Compile Include="EmoteMenu.cs" />

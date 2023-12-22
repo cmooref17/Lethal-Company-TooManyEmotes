@@ -14,7 +14,7 @@ using MoreCompany.Cosmetics;
 namespace TooManyEmotes.Patches {
 
     [HarmonyPatch]
-    internal class ThirdPersonEmoteController {
+    public class ThirdPersonEmoteController {
 
         public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
 
@@ -25,11 +25,6 @@ namespace TooManyEmotes.Patches {
         public static float thirdPersonCameraDistance = 3f;
 
         static int cameraCollideLayerMask;
-
-        public static ShadowCastingMode defaultShadowCasterMode;
-        public static bool defaultShowHelmetHud;
-        public static bool defaultShowArms;
-        public static bool defaultShowHud;
 
 
 

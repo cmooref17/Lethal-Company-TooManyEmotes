@@ -25,7 +25,7 @@ using MoreCompany.Cosmetics;
 namespace TooManyEmotes.CompatibilityPatcher {
 
     [HarmonyPatch]
-    internal class MoreEmotesPatcher
+    public class MoreEmotesPatcher
     {
 
         public static bool loadedMoreEmotes = false;
@@ -49,11 +49,7 @@ namespace TooManyEmotes.CompatibilityPatcher {
                         if (animatorControllerLocal != null)
                         {
                             if (!(animatorControllerLocal is AnimatorOverrideController))
-                            {
-                                loadedMoreEmotes = true;
-                                animatorControllerLocal = new AnimatorOverrideController(animatorControllerLocal);
-                                animatorControllerFieldLocal.SetValue(null, animatorControllerLocal);
-                            }
+                                animatorControllerFieldLocal.SetValue(null, new AnimatorOverrideController(animatorControllerLocal));
                         }
 
                         FieldInfo animatorControllerFieldOther = internalClassType.GetField("others", BindingFlags.Public | BindingFlags.Static);
@@ -61,16 +57,10 @@ namespace TooManyEmotes.CompatibilityPatcher {
                         if (animatorControllerOther != null)
                         {
                             if (!(animatorControllerOther is AnimatorOverrideController))
-                            {
-                                loadedMoreEmotes = true;
-                                animatorControllerOther = new AnimatorOverrideController(animatorControllerOther);
-                                animatorControllerFieldOther.SetValue(null, animatorControllerOther);
-                            }
+                                animatorControllerFieldOther.SetValue(null, new AnimatorOverrideController(animatorControllerOther));
                         }
                     }
                 }
-                if (!loadedMoreEmotes)
-                    Plugin.LogError("Failed to patch compatibility with More_Emotes");
             }
         }
     }
@@ -78,7 +68,7 @@ namespace TooManyEmotes.CompatibilityPatcher {
     internal class BiggerLobbyPatcher
     {
 
-        public static bool loadedMoreEmotes = false;
+        public static bool loadedBiggerLobby = false;
 
         [HarmonyPatch(typeof(NetworkSceneManager), "PopulateScenePlacedObjects")]
         [HarmonyPostfix]
@@ -95,6 +85,7 @@ namespace TooManyEmotes.CompatibilityPatcher {
                         startOfRound.allPlayerScripts[i].playerBodyAnimator.runtimeAnimatorController = new AnimatorOverrideController(startOfRound.otherClientsAnimatorController);
                     }
                 }
+                loadedBiggerLobby = true;
             }
         }
     }
@@ -138,43 +129,5 @@ namespace TooManyEmotes.CompatibilityPatcher {
             foreach (Transform item in transform)
                 SetAllChildrenLayer(item, layer);
         }
-
-
-        /*
-        public static void ShowCosmetics(bool show) {
-            if (loadedMoreCompany && cosmeticInstances != null && cosmeticInstances.Count > 0)
-            {
-                int i = 0;
-                foreach (var cosmetic in cosmeticInstances)
-                {
-                    if (cosmetic == null) continue;
-                    cosmetic.gameObject.SetActive(show);
-                    i++;
-                }
-            }
-        }
-        */
     }
-
-    /*
-    [HarmonyPatch]
-    internal class MirrorDecorPatcher
-    {
-        public static bool loadedMirrorDecor = false;
-
-        [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
-        [HarmonyPostfix]
-        public static void ApplyPatch(PlayerControllerB __instance)
-        {
-            if (Plugin.IsModLoaded("quackandcheese.mirrordecor"))
-            {
-                //ThirdPersonEmoteController.emoteCamera.cullingMask = __instance.gameplayCamera.cullingMask | 1 << 23;
-                //__instance.gameplayCamera.cullingMask &= ~(1 << 23);
-                //__instance.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
-                loadedMirrorDecor = true;
-                Plugin.Log("Applied patch for MirrorDecor");
-            }
-        }
-    }
-    */
 }

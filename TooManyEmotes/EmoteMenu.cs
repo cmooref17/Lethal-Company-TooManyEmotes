@@ -42,8 +42,11 @@ namespace TooManyEmotes {
         public static int playerLayer = LayerMask.NameToLayer("Player");
         public static int playerLayerMask { get { return 1 << playerLayer; } }
 
-        public static Color colorUnhovered = new Color(0.05f, 0.05f, 0.05f, 0.5f);
-        public static Color colorHovered = new Color(0.3f, 0.3f, 0.3f, 0.6f);
+        public static float hoveredAlpha = 0.75f;
+        public static float unhoveredAlpha = 0.75f;
+        public static Color defaultUIColor = new Color(0.3f, 0.3f, 0.3f);
+        //public static Color colorUnhovered = new Color(0.05f, 0.05f, 0.05f, 0.5f);
+        //public static Color colorHovered = new Color(0.3f, 0.3f, 0.3f, 0.6f);
 
         public static List<EmoteUIElement> emoteUIElementsList;
         public static int hoveredEmoteUIIndex = 0;
@@ -82,7 +85,7 @@ namespace TooManyEmotes {
                     backgroundImage = emoteUIObject.GetComponentInChildren<Image>(),
                     textContainer = emoteUIObject.GetComponentInChildren<TextMeshPro>()
                 };
-                emoteUIElement.backgroundImage.color = colorUnhovered;
+                //emoteUIElement.backgroundImage.color = colorUnhovered;
                 emoteUIElementsList.Add(emoteUIElement);
             }
 
@@ -154,12 +157,22 @@ namespace TooManyEmotes {
                 var emoteUI = emoteUIElementsList[i];
                 int emoteIndex = i + 8 * currentPage;
                 emoteUI.textContainer.text = "";
+                emoteUI.emote = null;
+                Color color = defaultUIColor;
                 if (emoteIndex < StartOfRoundPatcher.unlockedEmotes.Count)
                 {
                     UnlockableEmote emote = StartOfRoundPatcher.unlockedEmotes[emoteIndex];
                     if (emote != null)
+                    {
+                        emoteUI.emote = emote;
                         emoteUI.textContainer.text = emote.displayName;
+
+                        //if (ColorUtility.TryParseHtmlString(UnlockableEmote.rarityColorCodes[emote.rarity], out var emoteColor))
+                            //color = emoteColor;
+                    }
                 }
+                emoteUI.baseColor = color;
+                emoteUI.OnHover(false);
             }
             if (hoveredEmoteUIIndex >= 0 && hoveredEmoteUIIndex < 8)
                 OnHoveredNewElement(hoveredEmoteUIIndex);
@@ -202,6 +215,8 @@ namespace TooManyEmotes {
 
 
         public static bool isMenuOpen { get { return menuGameObject.activeSelf; } }
+
+
         public static void ToggleEmoteMenu()
         {
             if (!isMenuOpen)
@@ -209,9 +224,10 @@ namespace TooManyEmotes {
             else
                 CloseEmoteMenu();
         }
+
+
         public static void OpenEmoteMenu()
         {
-            //Plugin.Log("Opening emote menu");
             menuGameObject.SetActive(true);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -219,9 +235,10 @@ namespace TooManyEmotes {
             previewPlayerMesh.material = localPlayerController.thisPlayerModel.material;
             UpdateEmoteWheel();
         }
+
+
         public static void CloseEmoteMenu()
         {
-            //Plugin.Log("Closing emote menu");
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             localPlayerController.isFreeCamera = false;
@@ -232,7 +249,9 @@ namespace TooManyEmotes {
 
         public static bool CanOpenEmoteMenu()
         {
-            if ((quickMenuManager.isMenuOpen && !isMenuOpen) || localPlayerController.inTerminalMenu || localPlayerController.isTypingChat || localPlayerController.isPlayerDead || localPlayerController.inSpecialInteractAnimation || localPlayerController.inShockingMinigame || localPlayerController.isClimbingLadder || localPlayerController.isSinking)
+            if ((quickMenuManager.isMenuOpen && !isMenuOpen) || previewPlayerObject == null)
+                return false;
+            if (localPlayerController.isPlayerDead || localPlayerController.inTerminalMenu || localPlayerController.isTypingChat || localPlayerController.isPlayerDead || localPlayerController.inSpecialInteractAnimation || localPlayerController.inShockingMinigame || localPlayerController.isClimbingLadder || localPlayerController.isSinking)
                 return false;
             return true;
         }
@@ -262,7 +281,7 @@ namespace TooManyEmotes {
             spotlight.transform.position = renderingCamera.transform.position;
             spotlight.transform.parent = renderingCamera.transform;
             spotlight.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-            spotlight.intensity = 40;
+            spotlight.intensity = 50;
             spotlight.range = 40;
             spotlight.innerSpotAngle = 100;
             spotlight.spotAngle = 120;
@@ -277,7 +296,7 @@ namespace TooManyEmotes {
         public static void InitializePlayerCloneRenderObject(PlayerControllerB __instance) {
 
             IEnumerator InitPlayerCloneAfterSpawnAnimation() {
-                yield return new WaitForSeconds(3);
+                yield return new WaitForSeconds(2);
                 previewPlayerObject = GameObject.Instantiate(__instance.gameObject, renderingCamera.transform);
                 previewPlayerObject.name = "PreviewPlayerAnimationObject";
                 GameObject modelGameObject = previewPlayerObject.transform.Find("ScavengerModel").gameObject;
@@ -340,7 +359,7 @@ namespace TooManyEmotes {
             if (!isMenuOpen || __instance != localPlayerController || !context.performed)
                 return true;
 
-            if (context.ReadValue<float>() > 0 && !ConfigSettings.reverseEmoteWheelScrollDirection.Value)
+            if (context.ReadValue<float>() < 0 && !ConfigSettings.reverseEmoteWheelScrollDirection.Value)
                 SwapNextPage();
             else
                 SwapPrevPage();
@@ -401,14 +420,16 @@ namespace TooManyEmotes {
         public int id;
         public Image backgroundImage;
         public TextMeshPro textContainer;
-
+        public Color baseColor;
+        public UnlockableEmote emote;
+        //public static string favoriteText = "[F] Favorite";
 
         public void OnHover(bool hovered = true)
         {
-            backgroundImage.color = hovered ? EmoteMenuManager.colorHovered : EmoteMenuManager.colorUnhovered;
+            Color newColor = baseColor * (hovered ? 1f : 0.5f);
+            newColor.a = hovered ? EmoteMenuManager.hoveredAlpha : EmoteMenuManager.unhoveredAlpha;
+            backgroundImage.color = newColor;
         }
-
-
     }
 }
 

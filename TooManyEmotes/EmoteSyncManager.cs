@@ -15,7 +15,7 @@ namespace TooManyEmotes.Networking {
 
 
     [HarmonyPatch]
-    internal class EmoteSyncManager {
+    public class EmoteSyncManager {
 
         public static bool requestedSync = false;
         public static bool isSynced = false;
@@ -87,7 +87,7 @@ namespace TooManyEmotes.Networking {
                 numEmotes = StartOfRoundPatcher.unlockedEmotes.Count;
 
             var writer = new FastBufferWriter(sizeof(int) * 3 + sizeof(int) * Mathf.Max(numEmotes, 0), Allocator.Temp);
-            writer.WriteValueSafe(TerminalPatcher.emoteCreditsUsed);
+            writer.WriteValueSafe(TerminalPatcher.currentEmoteCredits);
             writer.WriteValueSafe(TerminalPatcher.emoteStoreSeed);
             writer.WriteValueSafe(numEmotes);
             for (int i = 0; i < numEmotes; i++)
@@ -109,7 +109,7 @@ namespace TooManyEmotes.Networking {
             if (reader.TryBeginRead(sizeof(int) * 3))
             {
                 int numEmotes;
-                reader.ReadValue(out TerminalPatcher.emoteCreditsUsed);
+                reader.ReadValue(out TerminalPatcher.currentEmoteCredits);
                 reader.ReadValue(out TerminalPatcher.emoteStoreSeed);
                 reader.ReadValue(out numEmotes);
 
@@ -171,17 +171,17 @@ namespace TooManyEmotes.Networking {
 
             if (reader.TryBeginRead(sizeof(int) * 2))
             {
-                int emoteCreditsUsed;
+                int currentEmoteCredits;
                 int numEmotes;
-                reader.ReadValue(out emoteCreditsUsed);
+                reader.ReadValue(out currentEmoteCredits);
                 reader.ReadValue(out numEmotes);
 
-                if (emoteCreditsUsed != -1)
-                    TerminalPatcher.emoteCreditsUsed = emoteCreditsUsed;
+                if (currentEmoteCredits != -1)
+                    TerminalPatcher.currentEmoteCredits = currentEmoteCredits;
 
                 Plugin.Log("Receiving unlocked emote update from client for " + numEmotes + " emotes.");
                 var writer = new FastBufferWriter(sizeof(int) * 2 + sizeof(int) * numEmotes, Allocator.Temp);
-                writer.WriteValueSafe(TerminalPatcher.emoteCreditsUsed);
+                writer.WriteValueSafe(TerminalPatcher.currentEmoteCredits);
                 writer.WriteValueSafe(numEmotes);
                 if (reader.TryBeginRead(sizeof(int) * numEmotes))
                 {
@@ -208,13 +208,13 @@ namespace TooManyEmotes.Networking {
 
             if (reader.TryBeginRead(sizeof(int) * 2))
             {
-                int emoteCreditsUsed;
+                int currentEmoteCredits;
                 int numEmotes;
-                reader.ReadValue(out emoteCreditsUsed);
+                reader.ReadValue(out currentEmoteCredits);
                 reader.ReadValue(out numEmotes);
 
-                if (emoteCreditsUsed != -1)
-                    TerminalPatcher.emoteCreditsUsed = emoteCreditsUsed;
+                if (currentEmoteCredits != -1)
+                    TerminalPatcher.currentEmoteCredits = currentEmoteCredits;
 
                 if (reader.TryBeginRead(sizeof(int) * numEmotes))
                 {

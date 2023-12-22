@@ -22,20 +22,22 @@ namespace TooManyEmotes.Networking {
         public static bool syncUnlockEverything;
         public static bool syncDisableRaritySystem;
 
+        public static int syncStartingEmoteCredits;
+        public static float syncAddEmoteCreditsMultiplier;
         public static float syncPriceMultiplierEmotesStore;
-        public static int syncBasePriceCommonEmote;
-        public static int syncBasePriceUncommonEmote;
-        public static int syncBasePriceRareEmote;
-        public static int syncBasePriceLegendaryEmote;
+
+        public static int syncBasePriceEmoteTier0;
+        public static int syncBasePriceEmoteTier1;
+        public static int syncBasePriceEmoteTier2;
+        public static int syncBasePriceEmoteTier3;
 
         public static int syncNumEmotesStoreRotation;
-        public static float syncRotationChanceCommonEmote;
-        public static float syncRotationChanceUncommonEmote;
-        public static float syncRotationChanceRareEmote;
-        public static float syncRotationChanceLegendaryEmote;
+        public static float syncRotationChanceEmoteTier0;
+        public static float syncRotationChanceEmoteTier1;
+        public static float syncRotationChanceEmoteTier2;
+        public static float syncRotationChanceEmoteTier3;
 
-        public static int syncNumMysteryEmotesStoreRotation;
-        public static int syncNumFreeEmoteCredits;
+        //public static int syncNumMysteryEmotesStoreRotation;
 
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
@@ -70,30 +72,31 @@ namespace TooManyEmotes.Networking {
             syncUnlockEverything = ConfigSettings.unlockEverything.Value;
             syncDisableRaritySystem = ConfigSettings.disableRaritySystem.Value;
 
+            syncStartingEmoteCredits = ConfigSettings.startingEmoteCredits.Value;
+            syncAddEmoteCreditsMultiplier = ConfigSettings.addEmoteCreditsMultiplier.Value;
             syncPriceMultiplierEmotesStore = ConfigSettings.priceMultiplierEmotesStore.Value;
 
             syncNumEmotesStoreRotation = ConfigSettings.numEmotesStoreRotation.Value;
-            syncRotationChanceCommonEmote = ConfigSettings.rotationChanceCommonEmote.Value;
-            syncRotationChanceUncommonEmote = ConfigSettings.rotationChanceUncommonEmote.Value;
-            syncRotationChanceRareEmote = ConfigSettings.rotationChanceRareEmote.Value;
-            syncRotationChanceLegendaryEmote = ConfigSettings.rotationChanceLegendaryEmote.Value;
+            syncRotationChanceEmoteTier0 = ConfigSettings.rotationChanceEmoteTier0.Value;
+            syncRotationChanceEmoteTier1 = ConfigSettings.rotationChanceEmoteTier1.Value;
+            syncRotationChanceEmoteTier2 = ConfigSettings.rotationChanceEmoteTier2.Value;
+            syncRotationChanceEmoteTier3 = ConfigSettings.rotationChanceEmoteTier3.Value;
 
-            syncNumMysteryEmotesStoreRotation = ConfigSettings.numMysteryEmotesStoreRotation.Value;
-            syncNumFreeEmoteCredits = ConfigSettings.numFreeEmoteCredits.Value;
+            //syncNumMysteryEmotesStoreRotation = ConfigSettings.numMysteryEmotesStoreRotation.Value;
 
             if (ConfigSettings.disableRaritySystem.Value)
             {
-                syncBasePriceCommonEmote = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
-                syncBasePriceUncommonEmote = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
-                syncBasePriceRareEmote = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
-                syncBasePriceLegendaryEmote = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
+                syncBasePriceEmoteTier0 = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
+                syncBasePriceEmoteTier1 = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
+                syncBasePriceEmoteTier2 = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
+                syncBasePriceEmoteTier3 = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
             }
             else
             {
-                syncBasePriceCommonEmote = ConfigSettings.basePriceCommonEmote.Value;
-                syncBasePriceUncommonEmote = ConfigSettings.basePriceUncommonEmote.Value;
-                syncBasePriceRareEmote = ConfigSettings.basePriceRareEmote.Value;
-                syncBasePriceLegendaryEmote = ConfigSettings.basePriceLegendaryEmote.Value;
+                syncBasePriceEmoteTier0 = ConfigSettings.basePriceEmoteTier0.Value;
+                syncBasePriceEmoteTier1 = ConfigSettings.basePriceEmoteTier1.Value;
+                syncBasePriceEmoteTier2 = ConfigSettings.basePriceEmoteTier2.Value;
+                syncBasePriceEmoteTier3 = ConfigSettings.basePriceEmoteTier3.Value;
             }
         }
 
@@ -114,24 +117,26 @@ namespace TooManyEmotes.Networking {
             if (!NetworkManager.Singleton.IsServer)
                 return;
             Plugin.Log("Receiving config sync request from client: " + clientId);
-            var writer = new FastBufferWriter(sizeof(bool) * 2 + sizeof(float) * 5 + sizeof(int) * 7, Allocator.Temp);
+            var writer = new FastBufferWriter(sizeof(bool) * 2 + sizeof(float) * 6 + sizeof(int) * 6, Allocator.Temp);
             writer.WriteValueSafe(syncUnlockEverything);
             writer.WriteValueSafe(syncDisableRaritySystem);
 
+            writer.WriteValueSafe(syncStartingEmoteCredits);
+            writer.WriteValueSafe(syncAddEmoteCreditsMultiplier);
             writer.WriteValueSafe(syncPriceMultiplierEmotesStore);
-            writer.WriteValueSafe(syncBasePriceCommonEmote);
-            writer.WriteValueSafe(syncBasePriceUncommonEmote);
-            writer.WriteValueSafe(syncBasePriceRareEmote);
-            writer.WriteValueSafe(syncBasePriceLegendaryEmote);
+
+            writer.WriteValueSafe(syncBasePriceEmoteTier0);
+            writer.WriteValueSafe(syncBasePriceEmoteTier1);
+            writer.WriteValueSafe(syncBasePriceEmoteTier2);
+            writer.WriteValueSafe(syncBasePriceEmoteTier3);
 
             writer.WriteValueSafe(syncNumEmotesStoreRotation);
-            writer.WriteValueSafe(syncRotationChanceCommonEmote);
-            writer.WriteValueSafe(syncRotationChanceUncommonEmote);
-            writer.WriteValueSafe(syncRotationChanceRareEmote);
-            writer.WriteValueSafe(syncRotationChanceLegendaryEmote);
+            writer.WriteValueSafe(syncRotationChanceEmoteTier0);
+            writer.WriteValueSafe(syncRotationChanceEmoteTier1);
+            writer.WriteValueSafe(syncRotationChanceEmoteTier2);
+            writer.WriteValueSafe(syncRotationChanceEmoteTier3);
 
-            writer.WriteValueSafe(syncNumMysteryEmotesStoreRotation);
-            writer.WriteValueSafe(syncNumFreeEmoteCredits);
+            //writer.WriteValueSafe(syncNumMysteryEmotesStoreRotation);
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnRequestConfigSyncClientRpc", clientId, writer);
         }
 
@@ -140,64 +145,29 @@ namespace TooManyEmotes.Networking {
             if (!NetworkManager.Singleton.IsClient)
                 return;
 
-            if (reader.TryBeginRead(sizeof(bool) + sizeof(float) * 5 + sizeof(int) * 7))
+            if (reader.TryBeginRead(sizeof(bool) + sizeof(float) * 6 + sizeof(int) * 6))
             {
                 Plugin.Log("Receiving Config sync from server.");
-                bool syncUnlockEverythingUpdate;
-                bool syncDisableRaritySystemUpdate;
+                
+                reader.ReadValue(out syncUnlockEverything);
+                reader.ReadValue(out syncDisableRaritySystem);
 
-                float syncPriceMultiplierEmotesStoreUpdate;
-                int syncBasePriceCommonEmoteUpdate;
-                int syncBasePriceUncommonEmoteUpdate;
-                int syncBasePriceRareEmoteUpdate;
-                int syncBasePriceLegendaryEmoteUpdate;
+                reader.ReadValue(out syncStartingEmoteCredits);
+                reader.ReadValue(out syncAddEmoteCreditsMultiplier);
+                reader.ReadValue(out syncPriceMultiplierEmotesStore);
 
-                int syncNumEmotesStoreRotationUpdate;
-                float syncRotationChanceCommonEmoteUpdate;
-                float syncRotationChanceUncommonEmoteUpdate;
-                float syncRotationChanceRareEmoteUpdate;
-                float syncRotationChanceLegendaryEmoteUpdate;
+                reader.ReadValue(out syncBasePriceEmoteTier0);
+                reader.ReadValue(out syncBasePriceEmoteTier1);
+                reader.ReadValue(out syncBasePriceEmoteTier2);
+                reader.ReadValue(out syncBasePriceEmoteTier3);
 
-                int syncNumMysteryEmotesStoreRotationUpdate;
-                int syncNumFreeEmoteCouponsUpdate;
+                reader.ReadValue(out syncNumEmotesStoreRotation);
+                reader.ReadValue(out syncRotationChanceEmoteTier0);
+                reader.ReadValue(out syncRotationChanceEmoteTier1);
+                reader.ReadValue(out syncRotationChanceEmoteTier2);
+                reader.ReadValue(out syncRotationChanceEmoteTier3);
 
-
-                reader.ReadValue(out syncUnlockEverythingUpdate);
-                reader.ReadValue(out syncDisableRaritySystemUpdate);
-
-                reader.ReadValue(out syncPriceMultiplierEmotesStoreUpdate);
-                reader.ReadValue(out syncBasePriceCommonEmoteUpdate);
-                reader.ReadValue(out syncBasePriceUncommonEmoteUpdate);
-                reader.ReadValue(out syncBasePriceRareEmoteUpdate);
-                reader.ReadValue(out syncBasePriceLegendaryEmoteUpdate);
-
-                reader.ReadValue(out syncNumEmotesStoreRotationUpdate);
-                reader.ReadValue(out syncRotationChanceCommonEmoteUpdate);
-                reader.ReadValue(out syncRotationChanceUncommonEmoteUpdate);
-                reader.ReadValue(out syncRotationChanceRareEmoteUpdate);
-                reader.ReadValue(out syncRotationChanceLegendaryEmoteUpdate);
-
-                reader.ReadValue(out syncNumMysteryEmotesStoreRotationUpdate);
-                reader.ReadValue(out syncNumFreeEmoteCouponsUpdate);
-
-
-                syncUnlockEverything = syncUnlockEverythingUpdate;
-                syncDisableRaritySystem = syncDisableRaritySystemUpdate;
-
-                syncPriceMultiplierEmotesStore = syncPriceMultiplierEmotesStoreUpdate;
-                syncBasePriceCommonEmote = syncBasePriceCommonEmoteUpdate;
-                syncBasePriceUncommonEmote = syncBasePriceUncommonEmoteUpdate;
-                syncBasePriceRareEmote = syncBasePriceRareEmoteUpdate;
-                syncBasePriceLegendaryEmote = syncBasePriceLegendaryEmoteUpdate;
-
-                syncNumEmotesStoreRotation = syncNumEmotesStoreRotationUpdate;
-                syncRotationChanceCommonEmote = syncRotationChanceCommonEmoteUpdate;
-                syncRotationChanceUncommonEmote = syncRotationChanceUncommonEmoteUpdate;
-                syncRotationChanceRareEmote = syncRotationChanceRareEmoteUpdate;
-                syncRotationChanceLegendaryEmote = syncRotationChanceLegendaryEmoteUpdate;
-
-                syncNumMysteryEmotesStoreRotation = syncNumMysteryEmotesStoreRotationUpdate;
-                syncNumFreeEmoteCredits = syncNumFreeEmoteCouponsUpdate;
+                //reader.ReadValue(out syncNumMysteryEmotesStoreRotation);
 
                 isSynced = true;
 

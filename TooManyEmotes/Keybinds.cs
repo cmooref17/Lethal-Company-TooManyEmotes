@@ -17,7 +17,7 @@ using TooManyEmotes.Patches;
 namespace TooManyEmotes
 {
     [HarmonyPatch]
-    internal class Keybinds
+    public class Keybinds
     {
         public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
 
@@ -25,8 +25,6 @@ namespace TooManyEmotes
         static InputAction SelectEmoteUIAction;
         static InputAction NextEmotePageAction;
         static InputAction PrevEmotePageAction;
-
-        //static int maxEmotes = 10;
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
@@ -98,7 +96,7 @@ namespace TooManyEmotes
 
             if (!EmoteMenuManager.isMenuOpen)
             {
-                if (context.performed)
+                if (context.performed && EmoteMenuManager.CanOpenEmoteMenu())
                     EmoteMenuManager.OpenEmoteMenu();
             }
             else
@@ -154,6 +152,8 @@ namespace TooManyEmotes
 
 
         public static void PerformEmoteLocal(InputAction.CallbackContext context) {
+            if (EmoteMenuManager.hoveredEmoteIndex < 0 || EmoteMenuManager.hoveredEmoteIndex >= StartOfRoundPatcher.unlockedEmotes.Count)
+                return;
             UnlockableEmote emote = StartOfRoundPatcher.unlockedEmotes[EmoteMenuManager.hoveredEmoteIndex];
             if (emote != null)
                 localPlayerController.PerformEmote(context, -(EmoteMenuManager.hoveredEmoteIndex + 1));
