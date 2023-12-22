@@ -22,7 +22,7 @@ using TooManyEmotes.Config;
 namespace TooManyEmotes {
 
     [HarmonyPatch]
-    public class EmoteMenuManager {
+    public static class EmoteMenuManager {
 
         public static QuickMenuManager quickMenuManager { get { return StartOfRound.Instance?.localPlayerController?.quickMenuManager; } }
         public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }

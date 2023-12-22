@@ -23,7 +23,7 @@ namespace TooManyEmotes.Patches
 {
 
     [HarmonyPatch]
-    public class TerminalPatcher
+    public static class TerminalPatcher
     {
         public static Terminal terminalInstance;
         public static List<UnlockableEmote> emoteSelection;
@@ -310,7 +310,7 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static UnlockableEmote GetRandomEmoteNotUnlocked(List<UnlockableEmote> emoteList, System.Random random)
+        public static UnlockableEmote GetRandomEmoteNotUnlocked(List<UnlockableEmote> emoteList, System.Random random)
         {
             var notUnlocked = new List<UnlockableEmote>();
             foreach (var emote in emoteList)

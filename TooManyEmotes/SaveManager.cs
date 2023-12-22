@@ -21,7 +21,7 @@ namespace TooManyEmotes.Patches
 {
 
     [HarmonyPatch]
-    public class SaveManager
+    public static class SaveManager
     {
         [HarmonyPatch(typeof(GameNetworkManager), "SaveGameValues")]
         [HarmonyPostfix]

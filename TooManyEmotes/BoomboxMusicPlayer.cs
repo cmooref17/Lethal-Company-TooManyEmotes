@@ -11,7 +11,7 @@ namespace TooManyEmotes.Patches
 {
 
     [HarmonyPatch]
-    public class BoomboxMusicPlayer
+    public static class BoomboxMusicPlayer
     {
         public static List<BoomboxItem> allBoomboxes = new List<BoomboxItem>();
 

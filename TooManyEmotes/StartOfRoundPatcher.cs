@@ -23,7 +23,7 @@ namespace TooManyEmotes.Patches
 {
 
     [HarmonyPatch]
-    public class StartOfRoundPatcher
+    public static class StartOfRoundPatcher
     {
         public static List<UnlockableEmote> allUnlockableEmotes;
         public static Dictionary<string, UnlockableEmote> allUnlockableEmotesDict;

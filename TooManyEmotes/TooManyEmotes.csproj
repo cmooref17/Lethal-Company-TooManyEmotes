@@ -89,6 +89,7 @@
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.AIModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" />
     <Reference Include="UnityEngine.AnimationModule">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
     </Reference>
@@ -125,6 +126,7 @@
     <Compile Include="BoomboxMusicPlayer.cs" />
     <Compile Include="CompatibilityPatcher.cs" />
     <Compile Include="ConfigSync.cs" />
+    <Compile Include="EmoteGifts.cs" />
     <Compile Include="EmoteMenu.cs" />
     <Compile Include="StartOfRoundPatcher.cs" />
     <Compile Include="EmoteSyncManager.cs" />

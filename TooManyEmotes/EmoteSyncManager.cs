@@ -15,7 +15,7 @@ namespace TooManyEmotes.Networking {
 
 
     [HarmonyPatch]
-    public class EmoteSyncManager {
+    public static class EmoteSyncManager {
 
         public static bool requestedSync = false;
         public static bool isSynced = false;

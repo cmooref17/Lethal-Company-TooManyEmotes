@@ -17,7 +17,7 @@ using TooManyEmotes.Patches;
 namespace TooManyEmotes
 {
     [HarmonyPatch]
-    public class Keybinds
+    public static class Keybinds
     {
         public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
 
