@@ -89,9 +89,9 @@ namespace TooManyEmotes.Patches
 
             if (modifiedDisplayText.Contains("[emoteUnlockablesSelectionList]"))
             {
-                string replacementText = "";
-                if (currentEmoteCredits > 0)
-                    replacementText += "You have " + currentEmoteCredits + " emote credits left!\n";
+                string replacementText = "Remaining emote credit balance: $" + currentEmoteCredits + ".\n";
+                if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency)
+                    replacementText += "Remaining group credit balance: $" + terminalInstance.groupCredits + ".\n";
                 replacementText += "\n";
 
                 int longestNameSize = 0;
@@ -144,18 +144,27 @@ namespace TooManyEmotes.Patches
                         Debug.Log("Attempted to confirm purchase on emote that was already unlocked. Emote: " + purchasingEmote.displayName);
                         __result = BuildTerminalNodeAlreadyUnlocked(purchasingEmote);
                     }
-                    else if (currentEmoteCredits < purchasingEmote.price)
+                    else if (currentEmoteCredits + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency ? terminalInstance.groupCredits : 0) < purchasingEmote.price)
                     {
-                        Debug.Log("Attempted to confirm purchase with insufficient emote credits. Current credits: " + currentEmoteCredits + ". Emote price: " + purchasingEmote.price);
+                        Debug.Log("Attempted to confirm purchase with insufficient emote credits. Current credits: " + currentEmoteCredits + ". " + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency ? ("Group credits: " + terminalInstance.groupCredits + ". ") : "") + "Emote price: " + purchasingEmote.price);
                         __result = BuildTerminalNodeInsufficientFunds(purchasingEmote);
                     }
                     else
                     {
                         //StartOfRoundPatcher.UnlockEmoteLocal(purchasingEmote);
-                        currentEmoteCredits -= purchasingEmote.price;
+
+                        int oldEmoteCredits = currentEmoteCredits;
+                        int oldGroupCredits = terminalInstance.groupCredits;
+
+                        int dEmoteCredits = -Mathf.Min(currentEmoteCredits, purchasingEmote.price);
+                        int dGroupCredits = (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency) ? -Mathf.Min(terminalInstance.groupCredits, purchasingEmote.price + dEmoteCredits) : 0;
+
+                        currentEmoteCredits += dEmoteCredits;
+                        terminalInstance.groupCredits += dGroupCredits;
+
                         EmoteSyncManager.SendOnUnlockEmoteUpdate(purchasingEmote.emoteId);
                         Debug.Log("Purchasing emote: " + purchasingEmote.displayName + ". Price: " + purchasingEmote.price);
-                        __result = BuildTerminalNodeOnPurchased(purchasingEmote, currentEmoteCredits);
+                        __result = BuildTerminalNodeOnPurchased(purchasingEmote, dEmoteCredits != 0 ? currentEmoteCredits : -1, dGroupCredits != 0 ? terminalInstance.groupCredits : -1);
                     }
                 }
                 else
@@ -210,7 +219,6 @@ namespace TooManyEmotes.Patches
             }
             else
             {
-
                 emote = TryGetEmoteCurrentSelection(input, reliable: true);
                 if (emote == null)
                     return true;
@@ -224,9 +232,9 @@ namespace TooManyEmotes.Patches
                     Plugin.Log("Attempted to start purchase on emote that was already unlocked. Emote: " + emote.displayName);
                     __result = BuildTerminalNodeAlreadyUnlocked(emote);
                 }
-                else if (currentEmoteCredits < emote.price)
+                else if (currentEmoteCredits + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency ? terminalInstance.groupCredits : 0) < emote.price)
                 {
-                    Plugin.Log("Attempted to start purchase with insufficient emote credits. Current credits: " + currentEmoteCredits + ". Emote price: " + emote.price);
+                    Plugin.Log("Attempted to start purchase with insufficient emote credits. Current credits: " + currentEmoteCredits + ". " + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency ? ("Group credits: " + terminalInstance.groupCredits + ". ") : "") + "Emote price: " + emote.price);
                     __result = BuildTerminalNodeInsufficientFunds(emote);
                 }
                 else
@@ -252,9 +260,9 @@ namespace TooManyEmotes.Patches
         {
             if (((int)Traverse.Create(__instance).Field("__rpc_exec_stage").GetValue()) == 2 && (NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsHost))
             {
-                int emoteCreditsProfit = (int)(itemProfit * ConfigSync.syncAddEmoteCreditsMultiplier);
+                int emoteCreditsProfit = (int)(itemProfit * ConfigSync.instance.syncAddEmoteCreditsMultiplier);
                 Plugin.Log("Gained " + itemProfit + " group credits.");
-                Plugin.Log("Gained " + emoteCreditsProfit + " emote credits. GainEmoteCreditsMultiplier: " + ConfigSync.syncAddEmoteCreditsMultiplier);
+                Plugin.Log("Gained " + emoteCreditsProfit + " emote credits. GainEmoteCreditsMultiplier: " + ConfigSync.instance.syncAddEmoteCreditsMultiplier);
                 currentEmoteCredits += emoteCreditsProfit;
             }
         }
@@ -276,26 +284,26 @@ namespace TooManyEmotes.Patches
             System.Random random = new System.Random(emoteStoreSeed);
             emoteSelection.Clear();
 
-            for (int i = 0; i < ConfigSync.syncNumEmotesStoreRotation; i++)
+            for (int i = 0; i < ConfigSync.instance.syncNumEmotesStoreRotation; i++)
             {
                 UnlockableEmote emote = null;
-                if (ConfigSync.syncDisableRaritySystem)
+                if (ConfigSync.instance.syncDisableRaritySystem)
                     emote = GetRandomEmoteNotUnlocked(StartOfRoundPatcher.allUnlockableEmotes, random);
                 else
                 {
                     double itemRarity = random.NextDouble();
-                    float threshold = 1 - ConfigSync.syncRotationChanceEmoteTier3;
+                    float threshold = 1 - ConfigSync.instance.syncRotationChanceEmoteTier3;
                     if (itemRarity >= threshold)
                         emote = GetRandomEmoteNotUnlocked(StartOfRoundPatcher.allEmotesTier3, random);
                     if (emote == null)
                     {
-                        threshold -= ConfigSync.syncRotationChanceEmoteTier2;
+                        threshold -= ConfigSync.instance.syncRotationChanceEmoteTier2;
                         if (itemRarity >= threshold)
                             emote = GetRandomEmoteNotUnlocked(StartOfRoundPatcher.allEmotesTier2, random);
                     }
                     if (emote == null)
                     {
-                        threshold -= ConfigSync.syncRotationChanceEmoteTier1;
+                        threshold -= ConfigSync.instance.syncRotationChanceEmoteTier1;
                         if (itemRarity >= threshold)
                             emote = GetRandomEmoteNotUnlocked(StartOfRoundPatcher.allEmotesTier1, random);
                     }
@@ -345,31 +353,37 @@ namespace TooManyEmotes.Patches
         static TerminalNode BuildTerminalNodeConfirmDenyPurchase(UnlockableEmote emote) {
             TerminalNode terminalNode = new TerminalNode {
                 displayText = confirmEmoteOpeningText + "\n" +
-                "> [" + emote.displayName + "]\n\n",
+                "> [" + emote.displayNameColorCoded + "]\n\n",
                 isConfirmationNode = true,
                 acceptAnything = false,
                 clearPreviousText = true
             };
 
-            if (currentEmoteCredits > 0)
-                terminalNode.displayText += "Emote credit balance: " + currentEmoteCredits + "\n\n";
+            terminalNode.displayText += "Emote credit balance: $" + currentEmoteCredits + "\n";
+            if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency)
+                terminalNode.displayText += "Group credit balance: $" + currentEmoteCredits + "\n";
+            terminalNode.displayText += "\n";
             terminalNode.displayText += "Please CONFIRM or DENY.\n\n";
 
             return terminalNode;
         }
 
 
-        static TerminalNode BuildTerminalNodeOnPurchased(UnlockableEmote emote, int newEmoteCredits) {
+        static TerminalNode BuildTerminalNodeOnPurchased(UnlockableEmote emote, int newEmoteCredits, int newGroupCredits) {
             TerminalNode terminalNode = new TerminalNode {
                 displayText = "You have successfully purchased a new emote!\n" +
-                "> [" + emote.displayName + "]\n\n",
+                "> [" + emote.displayNameColorCoded + "]\n\n",
                 buyUnlockable = true,
                 clearPreviousText = true,
                 acceptAnything = false,
                 playSyncedClip = 0
             };
 
-            terminalNode.displayText += "New emote credit balance: $" + newEmoteCredits + "\n\n";
+            if (newEmoteCredits != -1)
+                terminalNode.displayText += "New emote credit balance: $" + newEmoteCredits + "\n";
+            if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && newGroupCredits != -1)
+                terminalNode.displayText += "New group credit balance: $" + newGroupCredits + "\n";
+            terminalNode.displayText += "\n";
 
             int page = Mathf.Max((StartOfRoundPatcher.unlockedEmotes.Count - 1) / 8) + 1;
             int slot = StartOfRoundPatcher.unlockedEmotes.Count % 8;
@@ -383,7 +397,8 @@ namespace TooManyEmotes.Patches
 
         static TerminalNode BuildTerminalNodeAlreadyUnlocked(UnlockableEmote emote) {
             TerminalNode terminalNode = new TerminalNode {
-                displayText = "You have already purchased this emote!\n\n",
+                displayText = "You have already purchased this emote!\n" +
+                "> [" + emote.displayNameColorCoded + "]\n\n",
                 clearPreviousText = false,
                 acceptAnything = false
             };
@@ -394,13 +409,17 @@ namespace TooManyEmotes.Patches
 
         static TerminalNode BuildTerminalNodeInsufficientFunds(UnlockableEmote emote) {
             TerminalNode terminalNode = new TerminalNode {
-                displayText = "You could not afford this emote!\n\n" +
-                "Emote credit balance is $" + currentEmoteCredits + "\n" +
-                "Cost of emote is $" + emote.price + "\n\n",
+                displayText = "You could not afford this emote!\n" +
+                "> [" + emote.displayNameColorCoded + "]\n\n" +
+                "Emote credit balance is $" + currentEmoteCredits + "\n",
                 clearPreviousText = true,
                 acceptAnything = false
             };
 
+            if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency)
+                terminalNode.displayText += "Group credit balance is $" + currentEmoteCredits + "\n";
+
+            terminalNode.displayText += "Cost of emote is $" + emote.price + "\n\n";
             return terminalNode;
         }
 
@@ -423,10 +442,8 @@ namespace TooManyEmotes.Patches
             TerminalNode terminalNode = new TerminalNode
             {
                 displayText = "You cannot use the emote commands menu until you are synced with the host.\n\n" +
-                "You may be seeing this because the host does not have this mod.\n" +
-                "If this is the case, you will have access to every emote in your emote wheel.\n\n" +
-                "If the host does have this mod, then either you haven't synced with them yet, or you may have ran into a bug.\n" +
-                "Sorry for the inconvenience!\n\n",
+                "You may also be seeing this because the host does not have this mod.\n" +
+                "If this is the case, you will already have access to every emote in your emote wheel. Enjoy!\n\n",
                 clearPreviousText = true,
                 acceptAnything = false
             };

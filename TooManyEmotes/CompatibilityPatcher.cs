@@ -65,6 +65,7 @@ namespace TooManyEmotes.CompatibilityPatcher {
         }
     }
 
+
     internal class BiggerLobbyPatcher
     {
 
@@ -128,6 +129,26 @@ namespace TooManyEmotes.CompatibilityPatcher {
             transform.gameObject.layer = layer;
             foreach (Transform item in transform)
                 SetAllChildrenLayer(item, layer);
+        }
+    }
+
+
+    [HarmonyPatch]
+    internal class MirrorDecorPatcher
+    {
+        public static bool loadedMirrorDecor = false;
+
+        [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
+        [HarmonyPrefix]
+        public static void ApplyPatch()
+        {
+            if (Plugin.IsModLoaded("quackandcheese.mirrordecor"))
+            {
+                loadedMirrorDecor = true;
+                ThirdPersonEmoteController.localPlayerBodyLayer = 23;
+                ThirdPersonEmoteController.defaultShadowCastingMode = ShadowCastingMode.On;
+                Plugin.Log("Applied patch for MirrorDecor");
+            }
         }
     }
 }

@@ -83,7 +83,7 @@ namespace TooManyEmotes.Networking {
                 Plugin.Log("Syncing with all clients.");
 
             int numEmotes = 0;
-            if (!ConfigSync.syncUnlockEverything)
+            if (!ConfigSync.instance.syncUnlockEverything)
                 numEmotes = StartOfRoundPatcher.unlockedEmotes.Count;
 
             var writer = new FastBufferWriter(sizeof(int) * 3 + sizeof(int) * Mathf.Max(numEmotes, 0), Allocator.Temp);

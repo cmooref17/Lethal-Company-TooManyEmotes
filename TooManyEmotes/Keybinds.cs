@@ -25,6 +25,7 @@ namespace TooManyEmotes
         static InputAction SelectEmoteUIAction;
         static InputAction NextEmotePageAction;
         static InputAction PrevEmotePageAction;
+        static InputAction FavoriteEmoteAction;
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
@@ -36,6 +37,7 @@ namespace TooManyEmotes
             SelectEmoteUIAction = new InputAction(binding: "<Mouse>/leftButton", interactions: "Press");
             PrevEmotePageAction = new InputAction(binding: "<Keyboard>/q", interactions: "Press");
             NextEmotePageAction = new InputAction(binding: "<Keyboard>/e", interactions: "Press");
+            FavoriteEmoteAction = new InputAction(binding: "<Mouse>/middleButton", interactions: "Press");
 
             if (__instance.gameObject.activeSelf)
                 SubscribeToEvents();
@@ -51,11 +53,13 @@ namespace TooManyEmotes
             SelectEmoteUIAction.performed += OnSelectEmoteUI;
             PrevEmotePageAction.performed += OnSwapPrevEmotePage;
             NextEmotePageAction.performed += OnSwapNextEmotePage;
+            FavoriteEmoteAction.performed += OnFavoriteEmote;
 
             OpenEmoteMenuAction.Enable();
             SelectEmoteUIAction.Enable();
             PrevEmotePageAction.Enable();
             NextEmotePageAction.Enable();
+            FavoriteEmoteAction.Enable();
         }
 
 
@@ -80,11 +84,13 @@ namespace TooManyEmotes
             SelectEmoteUIAction.performed -= OnSelectEmoteUI;
             PrevEmotePageAction.performed -= OnSwapPrevEmotePage;
             NextEmotePageAction.performed -= OnSwapNextEmotePage;
+            FavoriteEmoteAction.performed -= OnFavoriteEmote;
 
             OpenEmoteMenuAction.Disable();
             SelectEmoteUIAction.Disable();
             PrevEmotePageAction.Disable();
             NextEmotePageAction.Disable();
+            FavoriteEmoteAction.Disable();
         }
 
 
@@ -120,8 +126,12 @@ namespace TooManyEmotes
         {
             if (localPlayerController == null || !context.performed)
                 return;
+            if (!EmoteMenuManager.isMenuOpen)
+                return;
 
-            if (EmoteMenuManager.isMenuOpen && EmoteMenuManager.hoveredEmoteIndex >= 0 && EmoteMenuManager.hoveredEmoteIndex < StartOfRoundPatcher.unlockedEmotes.Count)
+            if (EmoteMenuManager.hoveredLoadoutUIIndex != -1 && EmoteMenuManager.hoveredLoadoutUIIndex != EmoteMenuManager.currentLoadoutIndex)
+                EmoteMenuManager.SetCurrentEmoteLoadout(EmoteMenuManager.hoveredLoadoutUIIndex);
+            else if (EmoteMenuManager.hoveredEmoteIndex >= 0 && EmoteMenuManager.hoveredEmoteIndex < EmoteMenuManager.currentLoadoutEmotesList.Count)
             {
                 PerformEmoteLocal(context);
                 EmoteMenuManager.CloseEmoteMenu();
@@ -152,11 +162,22 @@ namespace TooManyEmotes
 
 
         public static void PerformEmoteLocal(InputAction.CallbackContext context) {
-            if (EmoteMenuManager.hoveredEmoteIndex < 0 || EmoteMenuManager.hoveredEmoteIndex >= StartOfRoundPatcher.unlockedEmotes.Count)
+            if (EmoteMenuManager.hoveredEmoteIndex < 0 || EmoteMenuManager.hoveredEmoteIndex >= EmoteMenuManager.currentLoadoutEmotesList.Count)
                 return;
-            UnlockableEmote emote = StartOfRoundPatcher.unlockedEmotes[EmoteMenuManager.hoveredEmoteIndex];
+            UnlockableEmote emote = EmoteMenuManager.currentLoadoutEmotesList[EmoteMenuManager.hoveredEmoteIndex];
             if (emote != null)
-                localPlayerController.PerformEmote(context, -(EmoteMenuManager.hoveredEmoteIndex + 1));
+                localPlayerController.PerformEmote(context, -(emote.emoteId + 1));
+        }
+
+
+        public static void OnFavoriteEmote(InputAction.CallbackContext context)
+        {
+            if (localPlayerController == null || !context.performed)
+                return;
+            if (!EmoteMenuManager.isMenuOpen || EmoteMenuManager.hoveredEmoteUIIndex == -1 || EmoteMenuManager.previewingEmote == null)
+                return;
+
+            EmoteMenuManager.ToggleFavoriteHoveredEmote();
         }
     }
 }

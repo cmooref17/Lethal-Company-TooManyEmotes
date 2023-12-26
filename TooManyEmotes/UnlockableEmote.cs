@@ -39,11 +39,11 @@ namespace TooManyEmotes
             {
                 int price = -1;
                 if (complementary) price = 0;
-                else if (rarity == 0) price = ConfigSync.syncBasePriceEmoteTier0;
-                else if (rarity == 1) price = ConfigSync.syncBasePriceEmoteTier1;
-                else if (rarity == 2) price = ConfigSync.syncBasePriceEmoteTier2;
-                else if (rarity == 3) price = ConfigSync.syncBasePriceEmoteTier3;
-                return (int)Mathf.Max(price * ConfigSync.syncPriceMultiplierEmotesStore, 0);
+                else if (rarity == 0) price = ConfigSync.instance.syncBasePriceEmoteTier0;
+                else if (rarity == 1) price = ConfigSync.instance.syncBasePriceEmoteTier1;
+                else if (rarity == 2) price = ConfigSync.instance.syncBasePriceEmoteTier2;
+                else if (rarity == 3) price = ConfigSync.instance.syncBasePriceEmoteTier3;
+                return (int)Mathf.Max(price * ConfigSync.instance.syncPriceMultiplierEmotesStore, 0);
             }
         }
         public string nameColor { get { return rarityColorCodes[rarity]; } }

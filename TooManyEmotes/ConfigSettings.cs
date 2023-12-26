@@ -16,6 +16,10 @@ namespace TooManyEmotes.Config {
         public static ConfigEntry<bool> disableRaritySystem;
         public static ConfigEntry<int> basePriceEmoteRaritySystemDisabled;
 
+        public static ConfigEntry<int> startingEmoteCredits;
+        public static ConfigEntry<float> addEmoteCreditsMultiplier;
+        public static ConfigEntry<bool> purchaseEmotesWithDefaultCurrency;
+
         public static ConfigEntry<float> priceMultiplierEmotesStore;
         public static ConfigEntry<int> basePriceEmoteTier0;
         public static ConfigEntry<int> basePriceEmoteTier1;
@@ -28,14 +32,11 @@ namespace TooManyEmotes.Config {
         public static ConfigEntry<float> rotationChanceEmoteTier2;
         public static ConfigEntry<float> rotationChanceEmoteTier3;
 
-        public static ConfigEntry<int> numMysteryEmotesStoreRotation;
-        public static ConfigEntry<int> startingEmoteCredits;
-        public static ConfigEntry<float> addEmoteCreditsMultiplier;
+        //public static ConfigEntry<int> numMysteryEmotesStoreRotation;
         public static ConfigEntry<string> openEmoteMenuKeybind;
         public static ConfigEntry<bool> toggleEmoteMenu;
         public static ConfigEntry<bool> reverseEmoteWheelScrollDirection;
 
-        //public static ConfigEntry<bool> overrideCommonEmoteNameColor;
         public static ConfigEntry<string> emoteNameColorTier0;
         public static ConfigEntry<string> emoteNameColorTier1;
         public static ConfigEntry<string> emoteNameColorTier2;
@@ -53,8 +54,10 @@ namespace TooManyEmotes.Config {
 
             startingEmoteCredits = Plugin.instance.Config.Bind("Server settings", "StartingEmoteCredits", 100, "[Host only] The number of emote credits you start each game with.");
             addEmoteCreditsMultiplier = Plugin.instance.Config.Bind("Server settings", "AddEmoteCreditsMultiplier", 0.5f, "[Host only] You gain emote credits based off this multiplier of normal group credits earned. Example: If set to the default, 0.5, and you earn 200 group credits, you will also gain 100 emote credits.");
-            priceMultiplierEmotesStore = Plugin.instance.Config.Bind("Server settings", "PriceMultiplierEmotesStore", 1.0f, "[Host only] Price multiplier for emotes in the store. Only applies if UnlockEverythingAtStart is false.");
+            purchaseEmotesWithDefaultCurrency = Plugin.instance.Config.Bind("Server settings", "PurchaseEmotesWithDefaultCredits", false, "[Host only] Setting this to true will allow you to purchase emotes with normal group credits once you run out of emote credits.");
+            purchaseEmotesWithDefaultCurrency = Plugin.instance.Config.Bind("Server settings", "PurchaseEmotesWithDefaultCredits", false, "[Host only] Setting this to true will allow you to purchase emotes with normal group credits once you run out of emote credits.");
 
+            priceMultiplierEmotesStore = Plugin.instance.Config.Bind("Server settings", "PriceMultiplierEmotesStore", 1.0f, "[Host only] Price multiplier for emotes in the store. Only applies if UnlockEverythingAtStart is false.");
             basePriceEmoteTier0 = Plugin.instance.Config.Bind("Server settings", "PriceCommonEmote", 50, "[Host only] The base price of [common]emotes in the store.");
             basePriceEmoteTier1 = Plugin.instance.Config.Bind("Server settings", "PriceUncommonEmote", 100, "[Host only] The base price of [uncommon] emotes in the store.");
             basePriceEmoteTier2 = Plugin.instance.Config.Bind("Server settings", "PriceRareEmote", 200, "[Host only] The base price of [rare] emotes in the store.");
@@ -71,11 +74,11 @@ namespace TooManyEmotes.Config {
             toggleEmoteMenu = Plugin.instance.Config.Bind("Client", "ToggleEmoteMenu", true, "If set to false, the emote menu will open upon pressing the related keybind, and close upon releasing, and will play the currently hovered emote.");
             reverseEmoteWheelScrollDirection = Plugin.instance.Config.Bind("Client", "ReverseEmoteWheelScrollDirection", false, "Reverses the page swapping direction in your emote when scrolling.");
 
-            //overrideCommonEmoteNameColor = Plugin.instance.Config.Bind("Accessibility", "OverrideEmoteNameColorCommon", false, "If true, the terminal will use the color in the config for [common] emote names.");
             emoteNameColorTier0 = Plugin.instance.Config.Bind("Accessibility", "CommonEmoteNameColor", "#00FF00", "The color of the [common] emote name in the terminal.");
             emoteNameColorTier1 = Plugin.instance.Config.Bind("Accessibility", "UncommonEmoteNameColor", "#2828FF", "The color of the [uncommon] emote name in the terminal.");
             emoteNameColorTier2 = Plugin.instance.Config.Bind("Accessibility", "RareEmoteNameColor", "#AA00EE", "The color of the [rare] emote name in the terminal.");
             emoteNameColorTier3 = Plugin.instance.Config.Bind("Accessibility", "LegendaryEmoteNameColor", "#FF2222", "The color of the [legendary] emote name in the terminal.");
+            
 
 
             currentConfigEntries.Add(unlockEverything.Definition.Key, unlockEverything);
@@ -84,8 +87,9 @@ namespace TooManyEmotes.Config {
 
             currentConfigEntries.Add(startingEmoteCredits.Definition.Key, startingEmoteCredits);
             currentConfigEntries.Add(addEmoteCreditsMultiplier.Definition.Key, addEmoteCreditsMultiplier);
-            currentConfigEntries.Add(priceMultiplierEmotesStore.Definition.Key, priceMultiplierEmotesStore);
+            currentConfigEntries.Add(purchaseEmotesWithDefaultCurrency.Definition.Key, purchaseEmotesWithDefaultCurrency);
 
+            currentConfigEntries.Add(priceMultiplierEmotesStore.Definition.Key, priceMultiplierEmotesStore);
             currentConfigEntries.Add(basePriceEmoteTier0.Definition.Key, basePriceEmoteTier0);
             currentConfigEntries.Add(basePriceEmoteTier1.Definition.Key, basePriceEmoteTier1);
             currentConfigEntries.Add(basePriceEmoteTier2.Definition.Key, basePriceEmoteTier2);
@@ -102,7 +106,6 @@ namespace TooManyEmotes.Config {
             currentConfigEntries.Add(toggleEmoteMenu.Definition.Key, toggleEmoteMenu);
             currentConfigEntries.Add(reverseEmoteWheelScrollDirection.Definition.Key, reverseEmoteWheelScrollDirection);
 
-            //currentConfigEntries.Add(overrideCommonEmoteNameColor.Definition.Key, overrideCommonEmoteNameColor);
             currentConfigEntries.Add(emoteNameColorTier0.Definition.Key, emoteNameColorTier0);
             currentConfigEntries.Add(emoteNameColorTier1.Definition.Key, emoteNameColorTier1);
             currentConfigEntries.Add(emoteNameColorTier2.Definition.Key, emoteNameColorTier2);

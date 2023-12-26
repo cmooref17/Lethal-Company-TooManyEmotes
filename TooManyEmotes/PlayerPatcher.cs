@@ -63,16 +63,13 @@ namespace TooManyEmotes.Patches {
                 if (emoteID < 0)
                 {
                     localPlayerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
-                    int emoteIndex = Mathf.Abs(emoteID) - 1;
-                    if (emoteIndex >= 0 && emoteIndex < StartOfRoundPatcher.unlockedEmotes.Count)
+                    emoteID = Mathf.Abs(emoteID) - 1;
+                    var emote = StartOfRoundPatcher.allUnlockableEmotes[emoteID];
+                    if (emote != null && StartOfRoundPatcher.unlockedEmotes.Contains(emote))
                     {
-                        UnlockableEmote emote = StartOfRoundPatcher.unlockedEmotes[emoteIndex];
-                        if (emote != null /* && emote != GetCurrentlyPlayingEmote(localPlayerController) */)
-                        {
-                            OnUpdateCustomEmote(emote.emoteId, localPlayerController);
-                            ThirdPersonEmoteController.OnStartCustomEmoteLocal();
-                            ForceSendAnimationUpdateLocal(emote.emoteId);
-                        }
+                        OnUpdateCustomEmote(emote.emoteId, localPlayerController);
+                        ThirdPersonEmoteController.OnStartCustomEmoteLocal();
+                        ForceSendAnimationUpdateLocal(emote.emoteId);
                     }
                 }
                 // Normal emote

@@ -18,6 +18,8 @@ using System.Collections;
 using Dissonance.Integrations.Unity_NFGO;
 using System.Runtime.CompilerServices;
 using TooManyEmotes.Config;
+using UnityEngine.EventSystems;
+using System.Xml.Linq;
 
 namespace TooManyEmotes {
 
@@ -31,6 +33,7 @@ namespace TooManyEmotes {
         public static CanvasGroup canvasGroup;
         public static RawImage renderTextureImageUI;
         public static TextMeshPro swapPageText;
+        public static TextMeshPro currentEmoteText;
 
         public static RenderTexture renderTexture;
         public static Camera renderingCamera;
@@ -45,20 +48,28 @@ namespace TooManyEmotes {
         public static float hoveredAlpha = 0.75f;
         public static float unhoveredAlpha = 0.75f;
         public static Color defaultUIColor = new Color(0.3f, 0.3f, 0.3f);
-        //public static Color colorUnhovered = new Color(0.05f, 0.05f, 0.05f, 0.5f);
-        //public static Color colorHovered = new Color(0.3f, 0.3f, 0.3f, 0.6f);
 
         public static List<EmoteUIElement> emoteUIElementsList;
-        public static int hoveredEmoteUIIndex = 0;
+        public static int hoveredEmoteUIIndex = -1;
         public static int hoveredEmoteIndex { get { return hoveredEmoteUIIndex >= 0 ? hoveredEmoteUIIndex + 8 * currentPage : -1; } }
         public static int currentPage = 0;
-        public static int numPages { get { return Mathf.Max((StartOfRoundPatcher.unlockedEmotes.Count - 1) / emoteUIElementsList.Count, 0) + 1; } }
-        public static UnlockableEmote previewingEmote { get { return hoveredEmoteUIIndex >= 0 && hoveredEmoteUIIndex < StartOfRoundPatcher.unlockedEmotes.Count ? StartOfRoundPatcher.unlockedEmotes[hoveredEmoteUIIndex] : null; } }
+        public static int numPages { get { return Mathf.Max((currentLoadoutEmotesList.Count - 1) / emoteUIElementsList.Count, 0) + 1; } }
+        public static UnlockableEmote previewingEmote { get { return hoveredEmoteIndex >= 0 && hoveredEmoteIndex < currentLoadoutEmotesList.Count ? currentLoadoutEmotesList[hoveredEmoteIndex] : null; } }
+
+        public static List<UnlockableEmote> currentLoadoutEmotesList { get { return emoteLoadouts[currentLoadoutIndex]; } }
+
+        public static List<EmoteLoadoutUIElement> emoteLoadoutUIElementsList;
+        public static List<List<UnlockableEmote>> emoteLoadouts; // = new List<List<string>>();
+        public static Color selectedLoadoutUIColor = new Color(0.2f, 0.2f, 1f);
+        public static int currentLoadoutIndex = -1;
+        public static int numLoadouts = 3;
+
+        public static int hoveredLoadoutUIIndex = -1;
 
 
 
 
-        [HarmonyPatch(typeof(HUDManager), "Awake")]
+        [HarmonyPatch(typeof(HUDManager), "Start")]
         [HarmonyPostfix]
         public static void InitializeUI(HUDManager __instance) {
             if (Plugin.radialMenuPrefab == null)
@@ -69,8 +80,10 @@ namespace TooManyEmotes {
             menuGameObject.name = "EmotesRadialMenu";
             menuTransform = menuGameObject.GetComponent<RectTransform>();
             renderTextureImageUI = menuGameObject.GetComponentInChildren<RawImage>();
-            Transform emoteUIElementsParent = menuTransform.Find("RadialElements").transform;
-            swapPageText = menuTransform.Find("RadialBase/SwapPageText").GetComponent<TextMeshPro>();
+            Transform emoteUIElementsParent = menuTransform.Find("RadialMenuUI/RadialElements").transform;
+            swapPageText = menuTransform.Find("RadialMenuUI/RadialBase/SwapPageText").GetComponent<TextMeshPro>();
+            currentEmoteText = menuTransform.Find("RadialMenuUI/RadialBase/CurrentEmoteText").GetComponent<TextMeshPro>();
+            currentEmoteText.text = "";
             emoteUIElementsList = new List<EmoteUIElement>();
 
             currentPage = 0;
@@ -78,16 +91,43 @@ namespace TooManyEmotes {
 
             for (int i = 0; i < emoteUIElementsParent.childCount; i++)
             {
-                Transform emoteUIObject = emoteUIElementsParent.GetChild(i);
-                EmoteUIElement emoteUIElement = new EmoteUIElement {
-                    uiGameObject = emoteUIObject.gameObject,
+                Transform uiObject = emoteUIElementsParent.GetChild(i);
+                EmoteUIElement uiElement = new EmoteUIElement {
+                    uiGameObject = uiObject.gameObject,
                     id = i,
-                    backgroundImage = emoteUIObject.GetComponentInChildren<Image>(),
-                    textContainer = emoteUIObject.GetComponentInChildren<TextMeshPro>()
+                    backgroundImage = uiObject.GetComponentInChildren<Image>(),
+                    textContainer = uiObject.GetComponentInChildren<TextMeshPro>()
                 };
                 //emoteUIElement.backgroundImage.color = colorUnhovered;
-                emoteUIElementsList.Add(emoteUIElement);
+                emoteUIElementsList.Add(uiElement);
+
             }
+
+            EmoteLoadoutUIElement.uiCount = 0;
+            Transform emoteLoadoutsUIParent = menuTransform.Find("RadialMenuUI/EmoteLoadouts").transform;
+            emoteLoadoutsUIParent.gameObject.AddComponent<EmoteLoadoutUIContainer>();
+            emoteLoadoutUIElementsList = new List<EmoteLoadoutUIElement>();
+            emoteLoadoutUIElementsList.Add(emoteLoadoutsUIParent.GetChild(0).gameObject.AddComponent<EmoteLoadoutUIElement>());
+            emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent));
+            //emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0]));
+
+            for (int i = 0; i < emoteLoadoutUIElementsList.Count; i++)
+                emoteLoadoutUIElementsList[i].name = "EmoteLoadout_" + i;
+
+            emoteLoadoutUIElementsList[0].loadoutName = "Favorites";
+            //emoteLoadoutUIElementsList[0].loadoutName = "Complementary";
+            emoteLoadoutUIElementsList[1].loadoutName = "All";
+
+            SaveManager.LoadFavoritedEmotes();
+            emoteLoadouts = new List<List<UnlockableEmote>>()
+            {
+                StartOfRoundPatcher.unlockedFavoriteEmotes,
+                //StartOfRoundPatcher.complementaryEmotes,
+                StartOfRoundPatcher.unlockedEmotes
+            };
+
+            if (currentLoadoutIndex < 0 || currentLoadoutIndex >= emoteLoadouts.Count)
+                currentLoadoutIndex = emoteLoadouts.Count - 1;
 
             InitializeAnimationRenderer();
             menuGameObject.SetActive(false);
@@ -101,21 +141,38 @@ namespace TooManyEmotes {
             if (previewPlayerAnimatorController == null || !isMenuOpen)
                 return;
 
-
-            Vector2 mousePosition = Mouse.current.position.ReadValue();
-
-            Vector2 screenCenter = new Vector2(Screen.width / 2, Screen.height / 2);
-            Vector2 direction = mousePosition - screenCenter;
-            int emoteIndex = -1;
-            if (direction.magnitude / Screen.height >= 0.18f)
+            if (EmoteLoadoutUIContainer.hovered || hoveredLoadoutUIIndex != -1)
             {
-                float angle = Mathf.Atan2(direction.y, -direction.x) * Mathf.Rad2Deg - 67.5f;
-                if (angle < 0) angle += 360;
-                emoteIndex = Mathf.FloorToInt(angle / 45);
+                if (hoveredEmoteUIIndex != -1)
+                    OnHoveredNewElement(-1);
             }
+            else
+            {
+                Vector2 mousePosition = Mouse.current.position.ReadValue();
+                Vector2 screenCenter = new Vector2(Screen.width / 2, Screen.height / 2);
+                Vector2 direction = mousePosition - screenCenter;
+                int emoteIndex = -1;
+                if (direction.magnitude / Screen.height >= 0.17f)
+                {
+                    float angle = Mathf.Atan2(direction.y, -direction.x) * Mathf.Rad2Deg - 67.5f;
+                    if (angle < 0) angle += 360;
+                    emoteIndex = Mathf.FloorToInt(angle / 45);
+                }
 
-            if (emoteIndex != hoveredEmoteUIIndex)
-                OnHoveredNewElement(emoteIndex);
+                if (emoteIndex != hoveredEmoteUIIndex)
+                    OnHoveredNewElement(emoteIndex);
+            }
+        }
+
+
+        public static void OnHoveredNewLoadoutElement(int index)
+        {
+            if (hoveredLoadoutUIIndex == index)
+                return;
+
+            hoveredLoadoutUIIndex = index;
+            foreach (var loadoutUIElement in emoteLoadoutUIElementsList)
+                loadoutUIElement.OnHover(loadoutUIElement.id == index);
         }
 
 
@@ -151,7 +208,14 @@ namespace TooManyEmotes {
         public static void UpdateEmoteWheel()
         {
             currentPage = Mathf.Clamp(currentPage, 0, numPages - 1);
-            swapPageText.text = string.Format("[{0} / {1}]\nChange page\n[Mouse Scroll]", currentPage + 1, numPages);
+            swapPageText.text = string.Format("[{0} / {1}]\n[Mouse Scroll]", currentPage + 1, numPages);
+
+            for (int i = 0; i < emoteLoadoutUIElementsList.Count; i++)
+            {
+                var uiElement = emoteLoadoutUIElementsList[i];
+                uiElement.OnHover(hoveredLoadoutUIIndex == uiElement.id);
+            }
+
             for (int i = 0; i < emoteUIElementsList.Count; i++)
             {
                 var emoteUI = emoteUIElementsList[i];
@@ -159,16 +223,15 @@ namespace TooManyEmotes {
                 emoteUI.textContainer.text = "";
                 emoteUI.emote = null;
                 Color color = defaultUIColor;
-                if (emoteIndex < StartOfRoundPatcher.unlockedEmotes.Count)
+                if (emoteIndex < currentLoadoutEmotesList.Count)
                 {
-                    UnlockableEmote emote = StartOfRoundPatcher.unlockedEmotes[emoteIndex];
+                    UnlockableEmote emote = currentLoadoutEmotesList[emoteIndex];
                     if (emote != null)
                     {
                         emoteUI.emote = emote;
                         emoteUI.textContainer.text = emote.displayName;
-
                         //if (ColorUtility.TryParseHtmlString(UnlockableEmote.rarityColorCodes[emote.rarity], out var emoteColor))
-                            //color = emoteColor;
+                        //color = emoteColor;
                     }
                 }
                 emoteUI.baseColor = color;
@@ -181,9 +244,9 @@ namespace TooManyEmotes {
 
         public static void SetPreviewAnimation(int emoteIndex)
         {
-            if (emoteIndex >= 0 && emoteIndex < StartOfRoundPatcher.unlockedEmotes.Count && StartOfRoundPatcher.unlockedEmotes[emoteIndex] != null)
+            if (emoteIndex >= 0 && emoteIndex < currentLoadoutEmotesList.Count && currentLoadoutEmotesList[emoteIndex] != null)
             {
-                UnlockableEmote emote = StartOfRoundPatcher.unlockedEmotes[emoteIndex];
+                UnlockableEmote emote = currentLoadoutEmotesList[emoteIndex];
                 previewPlayerObject.SetActive(true);
                 renderingCamera.enabled = true;
 
@@ -191,12 +254,15 @@ namespace TooManyEmotes {
                 previewPlayerAnimatorController["EmoteLoop"] = emote.transitionsToClip != null ? emote.transitionsToClip : null;
                 previewPlayerAnimator.SetBool("hasTransition", emote.transitionsToClip != null);
                 previewPlayerAnimator.Play("EmoteStart", 0, 0);
+
+                currentEmoteText.text = "[" + emote.displayNameColorCoded + "]\n[MMB] " + (StartOfRoundPatcher.allFavoriteEmotes.Contains(emote.emoteName) ? "Unfavorite" : "Favorite");
             }
             else
             {
                 previewPlayerAnimatorController["EmoteStart"] = null;
                 previewPlayerAnimatorController["EmoteLoop"] = null;
                 previewPlayerObject.SetActive(false);
+                currentEmoteText.text = "";
                 DisableRenderCameraNextFrame();
             }
         }
@@ -211,6 +277,32 @@ namespace TooManyEmotes {
             }
 
             HUDManager.Instance.StartCoroutine(DisableRenderCameraNextFrameCoroutine());
+        }
+
+
+        public static void SetCurrentEmoteLoadout(int loadoutIndex)
+        {
+            if (currentLoadoutIndex == loadoutIndex)
+                return;
+            currentPage = 0;
+            currentLoadoutIndex = loadoutIndex;
+            UpdateEmoteWheel();
+        }
+
+
+        public static void ToggleFavoriteHoveredEmote()
+        {
+            if (!isMenuOpen || previewingEmote == null)
+                return;
+
+            string emoteName = previewingEmote.emoteName;
+            if (StartOfRoundPatcher.allFavoriteEmotes.Contains(emoteName))
+                StartOfRoundPatcher.allFavoriteEmotes.Remove(emoteName);
+            else
+                StartOfRoundPatcher.allFavoriteEmotes.Add(emoteName);
+            StartOfRoundPatcher.UpdateUnlockedFavoriteEmotes();
+            SaveManager.SaveFavoritedEmotes();
+            UpdateEmoteWheel();
         }
 
 
@@ -352,6 +444,7 @@ namespace TooManyEmotes {
                 SetObjectLayerRecursive(obj.transform.GetChild(i)?.gameObject, layer);
         }
 
+
         [HarmonyPatch(typeof(PlayerControllerB), "ScrollMouse_performed")]
         [HarmonyPrefix]
         public static bool OnScrollMouse(InputAction.CallbackContext context, PlayerControllerB __instance)
@@ -413,22 +506,79 @@ namespace TooManyEmotes {
     }
 
 
-
-    public class EmoteUIElement {
-
+    public class EmoteUIElement
+    {
         public GameObject uiGameObject;
         public int id;
         public Image backgroundImage;
         public TextMeshPro textContainer;
         public Color baseColor;
         public UnlockableEmote emote;
-        //public static string favoriteText = "[F] Favorite";
 
         public void OnHover(bool hovered = true)
         {
             Color newColor = baseColor * (hovered ? 1f : 0.5f);
             newColor.a = hovered ? EmoteMenuManager.hoveredAlpha : EmoteMenuManager.unhoveredAlpha;
             backgroundImage.color = newColor;
+        }
+    }
+
+
+    public class EmoteLoadoutUIElement : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        public static int uiCount = 0;
+        public int id;
+        public string loadoutName;
+        public Image backgroundImage;
+        public TextMeshPro textContainer;
+
+
+        void Awake()
+        {
+            id = uiCount++;
+            backgroundImage = GetComponentInChildren<Image>();
+            textContainer = GetComponentInChildren<TextMeshPro>();
+        }
+
+        void Start()
+        {
+            textContainer.text = loadoutName;
+        }
+
+        public void OnHover(bool hovered = true)
+        {
+            Color newColor = (EmoteMenuManager.currentLoadoutIndex == id ? EmoteMenuManager.selectedLoadoutUIColor : EmoteMenuManager.defaultUIColor) * (hovered ? 1f : 0.5f);
+            newColor.a = hovered ? EmoteMenuManager.hoveredAlpha : EmoteMenuManager.unhoveredAlpha;
+            backgroundImage.color = newColor;
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            EmoteMenuManager.OnHoveredNewLoadoutElement(id);
+            OnHover(true);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            EmoteMenuManager.OnHoveredNewLoadoutElement(-1);
+            OnHover(false);
+        }
+    }
+
+
+    // Prevent selecting emote ui elements when mouse is between loadout ui elements (temporary)
+    public class EmoteLoadoutUIContainer : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        public static bool hovered = false;
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            hovered = true;
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            hovered = false;
         }
     }
 }

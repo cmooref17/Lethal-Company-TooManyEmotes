@@ -1,4 +1,5 @@
-﻿using GameNetcodeStuff;
+﻿using BepInEx.Configuration;
+using GameNetcodeStuff;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
@@ -15,65 +16,43 @@ using Unity.Netcode;
 namespace TooManyEmotes.Networking {
 
     [HarmonyPatch]
-    public static class ConfigSync {
+    public class ConfigSync {
 
         public static bool isSynced = false;
+        public static ConfigSync defaultConfig;
+        public static ConfigSync instance;
 
-        public static bool syncUnlockEverything;
-        public static bool syncDisableRaritySystem;
+        public bool syncUnlockEverything;
+        public bool syncDisableRaritySystem;
 
-        public static int syncStartingEmoteCredits;
-        public static float syncAddEmoteCreditsMultiplier;
-        public static float syncPriceMultiplierEmotesStore;
+        public int syncStartingEmoteCredits;
+        public float syncAddEmoteCreditsMultiplier;
+        public bool syncPurchaseEmotesWithDefaultCurrency;
 
-        public static int syncBasePriceEmoteTier0;
-        public static int syncBasePriceEmoteTier1;
-        public static int syncBasePriceEmoteTier2;
-        public static int syncBasePriceEmoteTier3;
+        public float syncPriceMultiplierEmotesStore;
+        public int syncBasePriceEmoteTier0;
+        public int syncBasePriceEmoteTier1;
+        public int syncBasePriceEmoteTier2;
+        public int syncBasePriceEmoteTier3;
 
-        public static int syncNumEmotesStoreRotation;
-        public static float syncRotationChanceEmoteTier0;
-        public static float syncRotationChanceEmoteTier1;
-        public static float syncRotationChanceEmoteTier2;
-        public static float syncRotationChanceEmoteTier3;
+        public int syncNumEmotesStoreRotation;
+        public float syncRotationChanceEmoteTier0;
+        public float syncRotationChanceEmoteTier1;
+        public float syncRotationChanceEmoteTier2;
+        public float syncRotationChanceEmoteTier3;
 
         //public static int syncNumMysteryEmotesStoreRotation;
 
 
-        [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
-        [HarmonyPostfix]
-        public static void Init(PlayerControllerB __instance) {
-            if (GameNetworkManager.Instance.localPlayerController == __instance)
-            {
-                isSynced = false;
-                if (NetworkManager.Singleton.IsServer)
-                {
-                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestConfigSyncServerRpc", OnRequestConfigSyncServerRpc);
-                    isSynced = true;
-                    if (syncUnlockEverything)
-                    {
-                        foreach (var emote in StartOfRoundPatcher.allUnlockableEmotes)
-                            StartOfRoundPatcher.UnlockEmoteLocal(emote);
-                    }
-                }
-                else
-                {
-                    // Unlock all emotes until synced with host
-                    foreach (var emote in StartOfRoundPatcher.allUnlockableEmotes)
-                        StartOfRoundPatcher.UnlockEmoteLocal(emote);
-                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestConfigSyncClientRpc", OnRequestConfigSyncClientRpc);
-                    RequestConfigSync();
-                }
-            }
-        }
-
-
-        public static void BuildDefaultConfigSync() {
+        public ConfigSync()
+        {
             syncUnlockEverything = ConfigSettings.unlockEverything.Value;
             syncDisableRaritySystem = ConfigSettings.disableRaritySystem.Value;
 
             syncStartingEmoteCredits = ConfigSettings.startingEmoteCredits.Value;
             syncAddEmoteCreditsMultiplier = ConfigSettings.addEmoteCreditsMultiplier.Value;
+            syncPurchaseEmotesWithDefaultCurrency = ConfigSettings.purchaseEmotesWithDefaultCurrency.Value;
+
             syncPriceMultiplierEmotesStore = ConfigSettings.priceMultiplierEmotesStore.Value;
 
             syncNumEmotesStoreRotation = ConfigSettings.numEmotesStoreRotation.Value;
@@ -101,6 +80,43 @@ namespace TooManyEmotes.Networking {
         }
 
 
+        public static void BuildDefaultConfigSync()
+        {
+            defaultConfig = new ConfigSync();
+            instance = new ConfigSync();
+        }
+
+
+
+
+        [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
+        [HarmonyPostfix]
+        public static void Init(PlayerControllerB __instance) {
+            if (GameNetworkManager.Instance.localPlayerController == __instance)
+            {
+                isSynced = false;
+                if (NetworkManager.Singleton.IsServer)
+                {
+                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestConfigSyncServerRpc", OnRequestConfigSyncServerRpc);
+                    isSynced = true;
+                    if (instance.syncUnlockEverything)
+                    {
+                        foreach (var emote in StartOfRoundPatcher.allUnlockableEmotes)
+                            StartOfRoundPatcher.UnlockEmoteLocal(emote);
+                    }
+                }
+                else
+                {
+                    // Unlock all emotes until synced with host
+                    foreach (var emote in StartOfRoundPatcher.allUnlockableEmotes)
+                        StartOfRoundPatcher.UnlockEmoteLocal(emote);
+                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestConfigSyncClientRpc", OnRequestConfigSyncClientRpc);
+                    RequestConfigSync();
+                }
+            }
+        }
+
+
         public static void RequestConfigSync() {
             if (NetworkManager.Singleton.IsClient)
             {
@@ -117,26 +133,10 @@ namespace TooManyEmotes.Networking {
             if (!NetworkManager.Singleton.IsServer)
                 return;
             Plugin.Log("Receiving config sync request from client: " + clientId);
-            var writer = new FastBufferWriter(sizeof(bool) * 2 + sizeof(float) * 6 + sizeof(int) * 6, Allocator.Temp);
-            writer.WriteValueSafe(syncUnlockEverything);
-            writer.WriteValueSafe(syncDisableRaritySystem);
-
-            writer.WriteValueSafe(syncStartingEmoteCredits);
-            writer.WriteValueSafe(syncAddEmoteCreditsMultiplier);
-            writer.WriteValueSafe(syncPriceMultiplierEmotesStore);
-
-            writer.WriteValueSafe(syncBasePriceEmoteTier0);
-            writer.WriteValueSafe(syncBasePriceEmoteTier1);
-            writer.WriteValueSafe(syncBasePriceEmoteTier2);
-            writer.WriteValueSafe(syncBasePriceEmoteTier3);
-
-            writer.WriteValueSafe(syncNumEmotesStoreRotation);
-            writer.WriteValueSafe(syncRotationChanceEmoteTier0);
-            writer.WriteValueSafe(syncRotationChanceEmoteTier1);
-            writer.WriteValueSafe(syncRotationChanceEmoteTier2);
-            writer.WriteValueSafe(syncRotationChanceEmoteTier3);
-
-            //writer.WriteValueSafe(syncNumMysteryEmotesStoreRotation);
+            byte[] bytes = SerializeConfigToByteArray(instance);
+            var writer = new FastBufferWriter(sizeof(int) + bytes.Length, Allocator.Temp);
+            writer.WriteValueSafe(bytes.Length);
+            writer.WriteBytesSafe(bytes);
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnRequestConfigSyncClientRpc", clientId, writer);
         }
 
@@ -145,46 +145,51 @@ namespace TooManyEmotes.Networking {
             if (!NetworkManager.Singleton.IsClient)
                 return;
 
-            if (reader.TryBeginRead(sizeof(bool) + sizeof(float) * 6 + sizeof(int) * 6))
+            int dataLength;
+            if (reader.TryBeginRead(sizeof(int)))
             {
-                Plugin.Log("Receiving Config sync from server.");
-                
-                reader.ReadValue(out syncUnlockEverything);
-                reader.ReadValue(out syncDisableRaritySystem);
-
-                reader.ReadValue(out syncStartingEmoteCredits);
-                reader.ReadValue(out syncAddEmoteCreditsMultiplier);
-                reader.ReadValue(out syncPriceMultiplierEmotesStore);
-
-                reader.ReadValue(out syncBasePriceEmoteTier0);
-                reader.ReadValue(out syncBasePriceEmoteTier1);
-                reader.ReadValue(out syncBasePriceEmoteTier2);
-                reader.ReadValue(out syncBasePriceEmoteTier3);
-
-                reader.ReadValue(out syncNumEmotesStoreRotation);
-                reader.ReadValue(out syncRotationChanceEmoteTier0);
-                reader.ReadValue(out syncRotationChanceEmoteTier1);
-                reader.ReadValue(out syncRotationChanceEmoteTier2);
-                reader.ReadValue(out syncRotationChanceEmoteTier3);
-
-                //reader.ReadValue(out syncNumMysteryEmotesStoreRotation);
-
-                isSynced = true;
-
-
-                if (StartOfRoundPatcher.allUnlockableEmotes != null && StartOfRoundPatcher.unlockedEmotes != null)
+                reader.ReadValueSafe(out dataLength);
+                if (reader.TryBeginRead(dataLength))
                 {
-                    if (syncUnlockEverything)
+                    Plugin.Log("Receiving config sync from server.");
+                    byte[] bytes = new byte[dataLength];
+                    reader.ReadBytesSafe(ref bytes, dataLength);
+                    instance = DeserializeFromByteArray(bytes);
+                    isSynced = true;
+
+                    if (StartOfRoundPatcher.allUnlockableEmotes != null && StartOfRoundPatcher.unlockedEmotes != null)
                     {
-                        foreach (var emote in StartOfRoundPatcher.allUnlockableEmotes)
-                            StartOfRoundPatcher.UnlockEmoteLocal(emote);
+                        if (instance.syncUnlockEverything)
+                        {
+                            foreach (var emote in StartOfRoundPatcher.allUnlockableEmotes)
+                                StartOfRoundPatcher.UnlockEmoteLocal(emote);
+                        }
+                        else
+                            StartOfRoundPatcher.unlockedEmotes = new List<UnlockableEmote>(StartOfRoundPatcher.complementaryEmotes);
                     }
-                    else
-                        StartOfRoundPatcher.unlockedEmotes = new List<UnlockableEmote>(StartOfRoundPatcher.complementaryEmotes);
+                    return;
                 }
+                Plugin.LogError("Error receiving sync from server.");
                 return;
             }
-            Plugin.LogError("Failed to receive config sync from server.");
+            Plugin.LogError("Error receiving bytes length.");
+        }
+
+
+
+        public static byte[] SerializeConfigToByteArray(ConfigSync config)
+        {
+            BinaryFormatter binaryFormatter = new BinaryFormatter();
+            MemoryStream memoryStream = new MemoryStream();
+            binaryFormatter.Serialize(memoryStream, config);
+            return memoryStream.ToArray();
+        }
+
+        public static ConfigSync DeserializeFromByteArray(byte[] data)
+        {
+            MemoryStream s = new MemoryStream(data);
+            BinaryFormatter b = new BinaryFormatter();
+            return (ConfigSync)b.Deserialize(s);
         }
     }
 }

@@ -27,14 +27,25 @@ namespace TooManyEmotes.Patches
     {
         public static List<UnlockableEmote> allUnlockableEmotes;
         public static Dictionary<string, UnlockableEmote> allUnlockableEmotesDict;
-
         public static List<UnlockableEmote> complementaryEmotes;
+        public static List<UnlockableEmote> unlockedFavoriteEmotes;
+        public static List<string> allFavoriteEmotes;
+
         public static List<UnlockableEmote> allEmotesTier0;
         public static List<UnlockableEmote> allEmotesTier1;
         public static List<UnlockableEmote> allEmotesTier2;
         public static List<UnlockableEmote> allEmotesTier3;
 
         public static List<UnlockableEmote> unlockedEmotes;
+
+
+        [HarmonyPatch(typeof(PreInitSceneScript), "Awake")]
+        [HarmonyPostfix]
+        public static void CreateEmoteLists()
+        {
+
+        }
+
 
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
         [HarmonyPostfix]
@@ -45,8 +56,10 @@ namespace TooManyEmotes.Patches
             allUnlockableEmotes = new List<UnlockableEmote>();
             allUnlockableEmotesDict = new Dictionary<string, UnlockableEmote>();
             unlockedEmotes = new List<UnlockableEmote>();
-
             complementaryEmotes = new List<UnlockableEmote>();
+            unlockedFavoriteEmotes = new List<UnlockableEmote>();
+            allFavoriteEmotes = new List<string>();
+
             allEmotesTier0 = new List<UnlockableEmote>();
             allEmotesTier1 = new List<UnlockableEmote>();
             allEmotesTier2 = new List<UnlockableEmote>();
@@ -74,7 +87,7 @@ namespace TooManyEmotes.Patches
                     emote.transitionsToClip = emoteLoop;
                     emote.emoteName = emote.emoteName.Replace("_start", "");
                 }
-                emote.displayName = emote.displayName.Replace('_', ' ').Trim(' ');
+                emote.displayName = emote.emoteName.Replace('_', ' ').Trim(' ');
                 emote.displayName = char.ToUpper(emote.displayName[0]) + emote.displayName.Substring(1).ToLower();
                 allUnlockableEmotes.Add(emote);
                 allUnlockableEmotesDict.Add(emote.emoteName, emote);
@@ -145,18 +158,30 @@ namespace TooManyEmotes.Patches
         public static void ResetEmotesLocal()
         {
             Plugin.Log("Resetting progression.");
-            unlockedEmotes = new List<UnlockableEmote>(complementaryEmotes);
-            TerminalPatcher.currentEmoteCredits = ConfigSync.syncStartingEmoteCredits;
+            unlockedEmotes.Clear();
+            unlockedEmotes.AddRange(complementaryEmotes);
+            TerminalPatcher.currentEmoteCredits = ConfigSync.instance.syncStartingEmoteCredits;
             TerminalPatcher.emoteStoreSeed = 0;
         }
 
+
+        public static void UpdateUnlockedFavoriteEmotes()
+        {
+            unlockedFavoriteEmotes.Clear();
+            foreach (string emoteName in allFavoriteEmotes)
+            {
+                var emote = allUnlockableEmotesDict[emoteName];
+                if (emote != null && unlockedEmotes.Contains(emote))
+                    unlockedFavoriteEmotes.Add(emote);
+            }
+        }
 
         [HarmonyPatch(typeof(StartOfRound), "SyncShipUnlockablesServerRpc")]
         [HarmonyPostfix]
         public static void SyncUnlockedEmotesWithClients(StartOfRound __instance) {
             if (!NetworkManager.Singleton.IsServer && !NetworkManager.Singleton.IsHost)
                 return;
-            if (ConfigSync.syncUnlockEverything)
+            if (ConfigSync.instance.syncUnlockEverything)
                 return;
             Plugin.Log("Syncing unlocked emotes with clients.");
             EmoteSyncManager.SendOnUnlockEmoteUpdateMulti(TerminalPatcher.currentEmoteCredits);
