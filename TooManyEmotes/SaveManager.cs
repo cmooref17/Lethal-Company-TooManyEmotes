@@ -61,7 +61,12 @@ namespace TooManyEmotes.Patches
                 return;
 
             StartOfRoundPatcher.unlockedEmotes.Clear();
-            StartOfRoundPatcher.unlockedEmotes.AddRange(StartOfRoundPatcher.complementaryEmotes);
+            StartOfRoundPatcher.unlockedEmotesTier0.Clear();
+            StartOfRoundPatcher.unlockedEmotesTier1.Clear();
+            StartOfRoundPatcher.unlockedEmotesTier2.Clear();
+            StartOfRoundPatcher.unlockedEmotesTier3.Clear();
+            StartOfRoundPatcher.unlockedFavoriteEmotes.Clear();
+            StartOfRoundPatcher.UnlockEmotesLocal(StartOfRoundPatcher.complementaryEmotes);
             TerminalPatcher.currentEmoteCredits = ConfigSync.instance.syncStartingEmoteCredits;
             try
             {
@@ -107,8 +112,7 @@ namespace TooManyEmotes.Patches
             ES3.DeleteKey("TooManyEmotes.CurrentEmoteCredits", __instance.currentSaveFileName);
             ES3.DeleteKey("TooManyEmotes.EmoteStoreSeed", __instance.currentSaveFileName);
 
-            StartOfRoundPatcher.unlockedEmotes?.Clear();
-            TerminalPatcher.currentEmoteCredits = ConfigSync.instance.syncStartingEmoteCredits;
+            StartOfRoundPatcher.ResetEmotesLocal();
         }
 
 
@@ -120,6 +124,7 @@ namespace TooManyEmotes.Patches
 
         public static void LoadFavoritedEmotes()
         {
+            StartOfRoundPatcher.allFavoriteEmotes.Clear();
             StartOfRoundPatcher.allFavoriteEmotes.AddRange(ES3.Load("TooManyEmotes.FavoriteEmotes", new string[0]));
             StartOfRoundPatcher.UpdateUnlockedFavoriteEmotes();
         }

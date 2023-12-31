@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace TooManyEmotes
 {
-    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.5.5")]
+    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.5.10")]
     public class Plugin : BaseUnityPlugin
     {
         private Harmony _harmony;

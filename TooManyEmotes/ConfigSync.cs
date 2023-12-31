@@ -15,6 +15,7 @@ using Unity.Netcode;
 
 namespace TooManyEmotes.Networking {
 
+    [Serializable]
     [HarmonyPatch]
     public class ConfigSync {
 
@@ -159,13 +160,12 @@ namespace TooManyEmotes.Networking {
 
                     if (StartOfRoundPatcher.allUnlockableEmotes != null && StartOfRoundPatcher.unlockedEmotes != null)
                     {
+                        StartOfRoundPatcher.ResetEmotesLocal();
                         if (instance.syncUnlockEverything)
-                        {
-                            foreach (var emote in StartOfRoundPatcher.allUnlockableEmotes)
-                                StartOfRoundPatcher.UnlockEmoteLocal(emote);
-                        }
+                            StartOfRoundPatcher.UnlockEmotesLocal(StartOfRoundPatcher.allUnlockableEmotes);
                         else
-                            StartOfRoundPatcher.unlockedEmotes = new List<UnlockableEmote>(StartOfRoundPatcher.complementaryEmotes);
+                            StartOfRoundPatcher.UnlockEmotesLocal(StartOfRoundPatcher.complementaryEmotes);
+                        StartOfRoundPatcher.UpdateUnlockedFavoriteEmotes();
                     }
                     return;
                 }

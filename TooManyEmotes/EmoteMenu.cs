@@ -20,6 +20,7 @@ using System.Runtime.CompilerServices;
 using TooManyEmotes.Config;
 using UnityEngine.EventSystems;
 using System.Xml.Linq;
+using TooManyEmotes.Networking;
 
 namespace TooManyEmotes {
 
@@ -109,20 +110,32 @@ namespace TooManyEmotes {
             emoteLoadoutUIElementsList = new List<EmoteLoadoutUIElement>();
             emoteLoadoutUIElementsList.Add(emoteLoadoutsUIParent.GetChild(0).gameObject.AddComponent<EmoteLoadoutUIElement>());
             emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent));
-            //emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0]));
+            emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent));
+            emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent));
+            emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent));
+            emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent));
+            emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent));
 
             for (int i = 0; i < emoteLoadoutUIElementsList.Count; i++)
                 emoteLoadoutUIElementsList[i].name = "EmoteLoadout_" + i;
 
             emoteLoadoutUIElementsList[0].loadoutName = "Favorites";
-            //emoteLoadoutUIElementsList[0].loadoutName = "Complementary";
-            emoteLoadoutUIElementsList[1].loadoutName = "All";
+            emoteLoadoutUIElementsList[1].loadoutName = string.Format("<color={0}>Legendary</color>", UnlockableEmote.rarityColorCodes[3]);
+            emoteLoadoutUIElementsList[2].loadoutName = string.Format("<color={0}>Rare</color>", UnlockableEmote.rarityColorCodes[2]);
+            emoteLoadoutUIElementsList[3].loadoutName = string.Format("<color={0}>Uncommon</color>", UnlockableEmote.rarityColorCodes[1]);
+            emoteLoadoutUIElementsList[4].loadoutName = string.Format("<color={0}>Common</color>", UnlockableEmote.rarityColorCodes[0]);
+            emoteLoadoutUIElementsList[5].loadoutName = "Complementary";
+            emoteLoadoutUIElementsList[6].loadoutName = "All";
 
             SaveManager.LoadFavoritedEmotes();
             emoteLoadouts = new List<List<UnlockableEmote>>()
             {
                 StartOfRoundPatcher.unlockedFavoriteEmotes,
-                //StartOfRoundPatcher.complementaryEmotes,
+                StartOfRoundPatcher.unlockedEmotesTier3,
+                StartOfRoundPatcher.unlockedEmotesTier2,
+                StartOfRoundPatcher.unlockedEmotesTier1,
+                StartOfRoundPatcher.unlockedEmotesTier0,
+                StartOfRoundPatcher.complementaryEmotes,
                 StartOfRoundPatcher.unlockedEmotes
             };
 

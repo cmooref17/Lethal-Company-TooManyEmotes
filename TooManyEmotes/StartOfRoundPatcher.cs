@@ -37,6 +37,10 @@ namespace TooManyEmotes.Patches
         public static List<UnlockableEmote> allEmotesTier3;
 
         public static List<UnlockableEmote> unlockedEmotes;
+        public static List<UnlockableEmote> unlockedEmotesTier0;
+        public static List<UnlockableEmote> unlockedEmotesTier1;
+        public static List<UnlockableEmote> unlockedEmotesTier2;
+        public static List<UnlockableEmote> unlockedEmotesTier3;
 
 
         [HarmonyPatch(typeof(PreInitSceneScript), "Awake")]
@@ -55,7 +59,13 @@ namespace TooManyEmotes.Patches
 
             allUnlockableEmotes = new List<UnlockableEmote>();
             allUnlockableEmotesDict = new Dictionary<string, UnlockableEmote>();
+
             unlockedEmotes = new List<UnlockableEmote>();
+            unlockedEmotesTier0 = new List<UnlockableEmote>();
+            unlockedEmotesTier1 = new List<UnlockableEmote>();
+            unlockedEmotesTier2 = new List<UnlockableEmote>();
+            unlockedEmotesTier3 = new List<UnlockableEmote>();
+
             complementaryEmotes = new List<UnlockableEmote>();
             unlockedFavoriteEmotes = new List<UnlockableEmote>();
             allFavoriteEmotes = new List<string>();
@@ -65,13 +75,15 @@ namespace TooManyEmotes.Patches
             allEmotesTier2 = new List<UnlockableEmote>();
             allEmotesTier3 = new List<UnlockableEmote>();
 
+            var randomEmotePools = new Dictionary<string, List<UnlockableEmote>>();
+
             for (int i = 0; i < Plugin.customAnimationClips.Count; i++)
             {
                 AnimationClip clip = Plugin.customAnimationClips[i];
                 UnlockableEmote emote = new UnlockableEmote {
                     emoteId = i,
                     emoteName = clip.name,
-                    displayName = clip.name,
+                    displayName = "",
                     animationClip = clip,
                     rarity = 0
                 };
@@ -87,12 +99,45 @@ namespace TooManyEmotes.Patches
                     emote.transitionsToClip = emoteLoop;
                     emote.emoteName = emote.emoteName.Replace("_start", "");
                 }
-                emote.displayName = emote.emoteName.Replace('_', ' ').Trim(' ');
-                emote.displayName = char.ToUpper(emote.displayName[0]) + emote.displayName.Substring(1).ToLower();
-                allUnlockableEmotes.Add(emote);
-                allUnlockableEmotesDict.Add(emote.emoteName, emote);
+                if (emote.emoteName.Contains("_pose"))
+                {
+                    emote.emoteName = emote.emoteName.Replace("_pose", "");
+                    emote.isPose = true;
+                }
+                if (emote.emoteName.Contains("_sync"))
+                {
+                    emote.emoteName = emote.emoteName.Replace("_syncable", "");
+                    emote.canSyncEmote = true;
+                }
+                if (emote.emoteName.Contains("_random"))
+                {
+                    emote.randomEmotePoolName = emote.emoteName.Substring(0, emote.emoteName.IndexOf("_random"));
+                    if (!randomEmotePools.ContainsKey(emote.randomEmotePoolName))
+                        randomEmotePools.Add(emote.randomEmotePoolName, new List<UnlockableEmote> { emote });
+                    else
+                    {
+                        emote.purchasable = false;
+                        randomEmotePools[emote.randomEmotePoolName].Add(emote);
+                    }
+                    emote.randomEmotePool = randomEmotePools[emote.randomEmotePoolName];
 
-                if (Plugin.complementaryAnimationClips.Contains(clip))
+                    emote.emoteName = emote.emoteName.Replace("_random", "");
+                    emote.displayName = emote.randomEmotePoolName;
+                }
+
+                if (emote.displayName == "")
+                    emote.displayName = emote.emoteName;
+
+                emote.displayName = emote.displayName.Replace('_', ' ').Trim(' ');
+                emote.displayName = char.ToUpper(emote.displayName[0]) + emote.displayName.Substring(1).ToLower();
+
+                if (!allUnlockableEmotes.Contains(emote))
+                {
+                    allUnlockableEmotes.Add(emote);
+                    allUnlockableEmotesDict.Add(emote.emoteName, emote);
+                }
+
+                if (Plugin.complementaryAnimationClips.Contains(clip) && emote.purchasable)
                 {
                     emote.complementary = true;
                     complementaryEmotes.Add(emote);
@@ -104,7 +149,7 @@ namespace TooManyEmotes.Patches
             int id = 0;
             foreach (var emote in allUnlockableEmotes)
             {
-                emote.emoteId = id;
+                emote.emoteId = id++;
                 if (emote.rarity == 0)
                     allEmotesTier0.Add(emote);
                 else if (emote.rarity == 1)
@@ -113,8 +158,9 @@ namespace TooManyEmotes.Patches
                     allEmotesTier2.Add(emote);
                 else if (emote.rarity == 3)
                     allEmotesTier3.Add(emote);
-                id++;
             }
+
+            SaveManager.LoadFavoritedEmotes();
 
             for (int i = 0; i < __instance.allPlayerScripts.Length; i++)
             {
@@ -132,9 +178,7 @@ namespace TooManyEmotes.Patches
             if (!__instance.IsServer)
                 return;
 
-            foreach (var emote in complementaryEmotes)
-                UnlockEmoteLocal(emote);
-
+            UnlockEmotesLocal(ConfigSync.instance.syncUnlockEverything ? allUnlockableEmotes : complementaryEmotes);
             EmoteSyncManager.RotateEmoteSelectionServerRpc(TerminalPatcher.emoteStoreSeed);
         }
 
@@ -151,7 +195,10 @@ namespace TooManyEmotes.Patches
         [HarmonyPostfix]
         public static void ResetEmotesOnShipReset(StartOfRound __instance)
         {
-            ResetEmotesLocal();
+            if (!ConfigSync.instance.syncUnlockEverything)
+                ResetEmotesLocal();
+            if (NetworkManager.Singleton.IsServer)
+                EmoteSyncManager.RotateEmoteSelectionServerRpc();
         }
 
 
@@ -159,7 +206,12 @@ namespace TooManyEmotes.Patches
         {
             Plugin.Log("Resetting progression.");
             unlockedEmotes.Clear();
-            unlockedEmotes.AddRange(complementaryEmotes);
+            unlockedEmotesTier0.Clear();
+            unlockedEmotesTier1.Clear();
+            unlockedEmotesTier2.Clear();
+            unlockedEmotesTier3.Clear();
+            UnlockEmotesLocal(ConfigSync.instance.syncUnlockEverything ? allUnlockableEmotes : complementaryEmotes);
+            UpdateUnlockedFavoriteEmotes();
             TerminalPatcher.currentEmoteCredits = ConfigSync.instance.syncStartingEmoteCredits;
             TerminalPatcher.emoteStoreSeed = 0;
         }
@@ -170,9 +222,14 @@ namespace TooManyEmotes.Patches
             unlockedFavoriteEmotes.Clear();
             foreach (string emoteName in allFavoriteEmotes)
             {
-                var emote = allUnlockableEmotesDict[emoteName];
-                if (emote != null && unlockedEmotes.Contains(emote))
-                    unlockedFavoriteEmotes.Add(emote);
+                if (allUnlockableEmotesDict.ContainsKey(emoteName))
+                {
+                    var emote = allUnlockableEmotesDict[emoteName];
+                    if (emote != null && unlockedEmotes.Contains(emote))
+                        unlockedFavoriteEmotes.Add(emote);
+                }
+                else
+                    Plugin.LogWarning("Error loading favorited emote. Emote does not exist. The emote has likely been temporarily removed in this update.");
             }
         }
 
@@ -188,11 +245,35 @@ namespace TooManyEmotes.Patches
         }
 
 
+        public static void UnlockEmotesLocal(List<UnlockableEmote> emotes)
+        {
+            foreach (var emote in emotes)
+                UnlockEmoteLocal(emote);
+        }
         public static void UnlockEmoteLocal(int emoteId) => UnlockEmoteLocal(emoteId >= 0 && emoteId < allUnlockableEmotes.Count ? allUnlockableEmotes[emoteId] : null);
         public static void UnlockEmoteLocal(UnlockableEmote emote) {
             if (emote == null || unlockedEmotes.Contains(emote))
                 return;
+            if (emote.randomEmotePool != null)
+            {
+                foreach (var rEmote in emote.randomEmotePool)
+                {
+                    if (unlockedEmotes.Contains(rEmote))
+                        return;
+                }
+            }
             unlockedEmotes.Add(emote);
+            if (emote.rarity == 3)
+                unlockedEmotesTier3.Add(emote);
+            else if (emote.rarity == 2)
+                unlockedEmotesTier2.Add(emote);
+            else if (emote.rarity == 1)
+                unlockedEmotesTier1.Add(emote);
+            else
+                unlockedEmotesTier0.Add(emote);
+
+            if (allFavoriteEmotes.Contains(emote.emoteName) && !unlockedFavoriteEmotes.Contains(emote))
+                unlockedFavoriteEmotes.Add(emote);
         }
 
 

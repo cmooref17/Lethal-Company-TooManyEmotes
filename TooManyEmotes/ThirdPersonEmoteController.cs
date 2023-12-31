@@ -50,9 +50,9 @@ namespace TooManyEmotes.Patches {
             emoteCamera.enabled = false;
             StartOfRound.Instance.SwitchCamera(StartOfRound.Instance.activeCamera);
 
-            __instance.GetComponentInChildren<LODGroup>().enabled = false;
             __instance.thisPlayerModelLOD1.gameObject.layer = 5;
             __instance.thisPlayerModelLOD1.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+            __instance.thisPlayerModelLOD2.shadowCastingMode = ShadowCastingMode.Off;
             __instance.thisPlayerModelLOD2.enabled = false;
 
             __instance.thisPlayerModel.gameObject.layer = localPlayerBodyLayer;
@@ -60,6 +60,7 @@ namespace TooManyEmotes.Patches {
 
             __instance.thisPlayerModelArms.gameObject.layer = 5;
             gameplayCamera.cullingMask &= ~(1 << 23);
+            emoteCamera.cullingMask |= (1 << 23);
             emoteCamera.cullingMask |= 1 << localPlayerBodyLayer;
             emoteCamera.cullingMask &= ~((1 << 5) | (1 << 7)); // ui/helmet visor
 
@@ -76,7 +77,7 @@ namespace TooManyEmotes.Patches {
         [HarmonyPatch(typeof(PlayerControllerB), "PlayerLookInput")]
         [HarmonyPrefix]
         public static bool UseFreeCamWhileEmoting(PlayerControllerB __instance) {
-            if (__instance == localPlayerController && PlayerPatcher.performingCustomEmoteLocal && !localPlayerController.quickMenuManager.isMenuOpen)
+            if (__instance == localPlayerController && PlayerPatcher.performingCustomEmoteLocal != null  && !localPlayerController.quickMenuManager.isMenuOpen)
             {
                 Vector2 vector = localPlayerController.playerActions.Movement.Look.ReadValue<Vector2>() * 0.008f * IngamePlayerSettings.Instance.settings.lookSensitivity;
                 emoteCameraPivot.Rotate(new Vector3(0f, vector.x, 0f));
@@ -85,8 +86,7 @@ namespace TooManyEmotes.Patches {
                 cameraPitch = Mathf.Clamp(cameraPitch, -45, 45);
                 emoteCameraPivot.transform.eulerAngles = new Vector3(cameraPitch, emoteCameraPivot.eulerAngles.y, 0f);
 
-                RaycastHit hit;
-                if (Physics.Raycast(emoteCameraPivot.position, -emoteCameraPivot.forward * thirdPersonCameraDistance, out hit, thirdPersonCameraDistance, cameraCollideLayerMask))
+                if (Physics.Raycast(emoteCameraPivot.position, -emoteCameraPivot.forward * thirdPersonCameraDistance, out var hit, thirdPersonCameraDistance, cameraCollideLayerMask))
                     emoteCamera.transform.localPosition = Vector3.back * Mathf.Clamp(hit.distance - 0.1f, 0, thirdPersonCameraDistance);
                 else
                     emoteCamera.transform.localPosition = Vector3.back * thirdPersonCameraDistance;

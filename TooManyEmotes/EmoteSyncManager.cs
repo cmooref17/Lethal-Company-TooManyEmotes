@@ -34,8 +34,8 @@ namespace TooManyEmotes.Networking {
             {
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestSyncClientRpc", OnRequestSyncClientRpc);
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnUnlockEmoteClientRpc", OnUnlockEmoteClientRpc);
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRotateEmotesClientRpc", RotateEmoteSelectionClientRpc);
             }
-            NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRotateEmotesClientRpc", RotateEmoteSelectionClientRpc);
         }
 
 
@@ -53,15 +53,12 @@ namespace TooManyEmotes.Networking {
 
         public static void SendSyncRequest()
         {
-            if (NetworkManager.Singleton.IsClient)
-            {
-                Plugin.Log("Sending sync request to server.");
-                var writer = new FastBufferWriter(sizeof(ulong), Allocator.Temp);
-                writer.WriteValueSafe(StartOfRound.Instance.localPlayerController.actualClientId);
-                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnRequestSyncServerRpc", NetworkManager.ServerClientId, writer);
+            if (!NetworkManager.Singleton.IsClient)
                 return;
-            }
-            Plugin.LogError("Failed to send sync request to server.");
+            Plugin.Log("Sending sync request to server.");
+            var writer = new FastBufferWriter(sizeof(ulong), Allocator.Temp);
+            writer.WriteValueSafe(StartOfRound.Instance.localPlayerController.actualClientId);
+            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnRequestSyncServerRpc", NetworkManager.ServerClientId, writer);
         }
 
 
@@ -108,11 +105,11 @@ namespace TooManyEmotes.Networking {
             isSynced = true;
             if (reader.TryBeginRead(sizeof(int) * 3))
             {
-                int numEmotes;
                 reader.ReadValue(out TerminalPatcher.currentEmoteCredits);
                 reader.ReadValue(out TerminalPatcher.emoteStoreSeed);
-                reader.ReadValue(out numEmotes);
+                reader.ReadValue(out int numEmotes);
 
+                StartOfRoundPatcher.ResetEmotesLocal();
                 TerminalPatcher.RotateNewEmoteSelection();
 
                 if (numEmotes <= 0)

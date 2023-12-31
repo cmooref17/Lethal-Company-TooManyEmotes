@@ -57,7 +57,6 @@ namespace TooManyEmotes.Patches
                     int insertIndex = node.displayText.IndexOf(keyword);
                     if (insertIndex != -1)
                     {
-                        Plugin.Log("Appending to terminal start text.");
                         insertIndex += keyword.Length;
                         string addText = "\n\n[TooManyEmotes]\nType \"Emotes\" for a list of commands.";
                         node.displayText = node.displayText.Insert(insertIndex, addText);
@@ -323,7 +322,7 @@ namespace TooManyEmotes.Patches
             var notUnlocked = new List<UnlockableEmote>();
             foreach (var emote in emoteList)
             {
-                if (!StartOfRoundPatcher.unlockedEmotes.Contains(emote) && !emoteSelection.Contains(emote))
+                if (!StartOfRoundPatcher.unlockedEmotes.Contains(emote) && !emoteSelection.Contains(emote) && emote.purchasable)
                     notUnlocked.Add(emote);
             }
             if (notUnlocked.Count > 0)
@@ -361,7 +360,7 @@ namespace TooManyEmotes.Patches
 
             terminalNode.displayText += "Emote credit balance: $" + currentEmoteCredits + "\n";
             if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency)
-                terminalNode.displayText += "Group credit balance: $" + currentEmoteCredits + "\n";
+                terminalNode.displayText += "Group credit balance: $" + terminalInstance.groupCredits + "\n";
             terminalNode.displayText += "\n";
             terminalNode.displayText += "Please CONFIRM or DENY.\n\n";
 

@@ -15,11 +15,16 @@ namespace TooManyEmotes
     {
         public int emoteId;
         public string emoteName;
-        public string displayName;
+        public string randomEmotePoolName = "";
+        public string displayName = "";
         public string displayNameColorCoded { get { return string.Format("<color={0}>{1}</color>", nameColor, displayName); } }
+        public bool purchasable = true;
         public AnimationClip animationClip;
         public AnimationClip transitionsToClip = null;
+        public List<UnlockableEmote> randomEmotePool;
         public bool complementary = false;
+        public bool isPose = false;
+        public bool canSyncEmote = false;
         public bool favorite = false;
         public int rarity = 0;
         public string rarityText
