@@ -17,7 +17,7 @@ using System.Collections;
 using Unity.Netcode;
 using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
-using static UnityEditor.Progress;
+//using static UnityEditor.Progress;
 
 namespace TooManyEmotes.Patches
 {
@@ -42,6 +42,8 @@ namespace TooManyEmotes.Patches
         public static List<UnlockableEmote> unlockedEmotesTier2;
         public static List<UnlockableEmote> unlockedEmotesTier3;
 
+        public static Dictionary<string, List<UnlockableEmote>> unlockedEmotesByPlayer;
+
 
         [HarmonyPatch(typeof(PreInitSceneScript), "Awake")]
         [HarmonyPostfix]
@@ -65,6 +67,8 @@ namespace TooManyEmotes.Patches
             unlockedEmotesTier1 = new List<UnlockableEmote>();
             unlockedEmotesTier2 = new List<UnlockableEmote>();
             unlockedEmotesTier3 = new List<UnlockableEmote>();
+
+            unlockedEmotesByPlayer = new Dictionary<string, List<UnlockableEmote>>();
 
             complementaryEmotes = new List<UnlockableEmote>();
             unlockedFavoriteEmotes = new List<UnlockableEmote>();
@@ -170,6 +174,15 @@ namespace TooManyEmotes.Patches
         }
 
 
+        [HarmonyPatch(typeof(StartOfRound), "OnClientConnect")]
+        [HarmonyPostfix]
+        public static void OnClientConnect(ulong clientId, StartOfRound __instance)
+        {
+            if (TryGetPlayerByClientId(clientId, out var playerController) && !unlockedEmotesByPlayer.ContainsKey(playerController.playerUsername))
+                unlockedEmotesByPlayer.Add(playerController.playerUsername, playerController == StartOfRound.Instance.localPlayerController ? unlockedEmotes : new List<UnlockableEmote>());
+        }
+
+
         [HarmonyPatch(typeof(StartOfRound), "Start")]
         [HarmonyPostfix]
         public static void OnServerStart(StartOfRound __instance) {
@@ -216,6 +229,8 @@ namespace TooManyEmotes.Patches
             unlockedEmotesTier1.Clear();
             unlockedEmotesTier2.Clear();
             unlockedEmotesTier3.Clear();
+            foreach (var playerController in unlockedEmotesByPlayer.Keys)
+                unlockedEmotesByPlayer[playerController]?.Clear();
             UnlockEmotesLocal(ConfigSync.instance.syncUnlockEverything ? allUnlockableEmotes : complementaryEmotes);
             UpdateUnlockedFavoriteEmotes();
         }
@@ -249,41 +264,78 @@ namespace TooManyEmotes.Patches
         }
 
 
-        public static void UnlockEmotesLocal(List<UnlockableEmote> emotes)
+        public static void UnlockEmotesLocal(List<UnlockableEmote> emotes, string playerUsername = "")
         {
             foreach (var emote in emotes)
-                UnlockEmoteLocal(emote);
+                UnlockEmoteLocal(emote, playerUsername);
         }
-        public static void UnlockEmoteLocal(int emoteId) => UnlockEmoteLocal(emoteId >= 0 && emoteId < allUnlockableEmotes.Count ? allUnlockableEmotes[emoteId] : null);
-        public static void UnlockEmoteLocal(UnlockableEmote emote) {
+        public static void UnlockEmoteLocal(int emoteId, string playerUsername = "") => UnlockEmoteLocal(emoteId >= 0 && emoteId < allUnlockableEmotes.Count ? allUnlockableEmotes[emoteId] : null, playerUsername);
+        public static void UnlockEmoteLocal(UnlockableEmote emote, string playerUsername = "") {
             if (emote == null || unlockedEmotes.Contains(emote))
                 return;
+
+            var _unlockedEmotes = unlockedEmotes;
+            if (playerUsername != "" && !ConfigSync.instance.syncShareEverything && !unlockedEmotesByPlayer.TryGetValue(playerUsername, out _unlockedEmotes))
+                return;
+
             if (emote.randomEmotePool != null)
             {
                 foreach (var rEmote in emote.randomEmotePool)
                 {
-                    if (unlockedEmotes.Contains(rEmote))
+                    if (_unlockedEmotes.Contains(rEmote))
                         return;
                 }
             }
-            unlockedEmotes.Add(emote);
-            if (emote.rarity == 3)
-                unlockedEmotesTier3.Add(emote);
-            else if (emote.rarity == 2)
-                unlockedEmotesTier2.Add(emote);
-            else if (emote.rarity == 1)
-                unlockedEmotesTier1.Add(emote);
-            else
-                unlockedEmotesTier0.Add(emote);
+            _unlockedEmotes.Add(emote);
 
-            if (allFavoriteEmotes.Contains(emote.emoteName) && !unlockedFavoriteEmotes.Contains(emote))
-                unlockedFavoriteEmotes.Add(emote);
+            if (playerUsername == "" || ConfigSync.instance.syncShareEverything)
+            {
+                if (emote.rarity == 3)
+                    unlockedEmotesTier3.Add(emote);
+                else if (emote.rarity == 2)
+                    unlockedEmotesTier2.Add(emote);
+                else if (emote.rarity == 1)
+                    unlockedEmotesTier1.Add(emote);
+                else
+                    unlockedEmotesTier0.Add(emote);
+
+                if (allFavoriteEmotes.Contains(emote.emoteName) && !unlockedFavoriteEmotes.Contains(emote))
+                    unlockedFavoriteEmotes.Add(emote);
+            }
         }
 
 
         public static void SortUnlockedEmotes()
         {
             unlockedEmotes = unlockedEmotes.OrderBy(item => item.rarity).ThenBy(item => item.emoteName).ToList();
+        }
+
+
+        public static bool TryGetPlayerByClientId(ulong clientId, out PlayerControllerB playerController) {
+            playerController = null;
+            foreach (var _playerController in StartOfRound.Instance.allPlayerScripts)
+            {
+                if (_playerController.actualClientId == clientId)
+                {
+                    playerController = _playerController;
+                    break;
+                }
+            }
+            return playerController != null;
+        }
+
+
+        public static bool TryGetPlayerByUsername(string username, out PlayerControllerB playerController) {
+            playerController = null;
+            foreach (var _playerController in StartOfRound.Instance.allPlayerScripts)
+            {
+                if (_playerController.playerUsername == username)
+                {
+                    playerController = _playerController;
+                    break;
+                }
+            }
+            return playerController != null;
         }
     }
 }

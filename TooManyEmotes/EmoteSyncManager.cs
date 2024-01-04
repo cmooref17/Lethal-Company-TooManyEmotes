@@ -187,10 +187,19 @@ namespace TooManyEmotes.Networking {
                     {
                         int emoteId;
                         reader.ReadValue(out emoteId);
-                        StartOfRoundPatcher.UnlockEmoteLocal(emoteId);
-                        writer.WriteValueSafe(emoteId);
+                        if (!ConfigSync.instance.syncShareEverything)
+                        {
+                            if (StartOfRoundPatcher.TryGetPlayerByClientId(clientId, out var playerController))
+                                StartOfRoundPatcher.UnlockEmoteLocal(emoteId, playerController);
+                        }
+                        else
+                        {
+                            StartOfRoundPatcher.UnlockEmoteLocal(emoteId);
+                            writer.WriteValueSafe(emoteId);
+                        }
                     }
-                    NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes-OnUnlockEmoteClientRpc", writer);
+                    if (ConfigSync.instance.syncShareEverything)
+                        NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes-OnUnlockEmoteClientRpc", writer);
                     return;
                 }
                 Plugin.LogError("Failed to receive unlocked emote updates from client. Expected updates: " + numEmotes);
@@ -254,5 +263,8 @@ namespace TooManyEmotes.Networking {
                 TerminalPatcher.RotateNewEmoteSelection();
             }
         }
+
+
+        
     }
 }

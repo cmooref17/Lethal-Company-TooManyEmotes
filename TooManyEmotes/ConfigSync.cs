@@ -3,6 +3,7 @@ using GameNetcodeStuff;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -24,6 +25,8 @@ namespace TooManyEmotes.Networking {
         public static ConfigSync instance;
 
         public bool syncUnlockEverything;
+        public bool syncShareEverything;
+        public bool syncSyncUnsharedEmotes;
         public bool syncDisableRaritySystem;
 
         public int syncStartingEmoteCredits;
@@ -48,6 +51,8 @@ namespace TooManyEmotes.Networking {
         public ConfigSync()
         {
             syncUnlockEverything = ConfigSettings.unlockEverything.Value;
+            syncShareEverything = ConfigSettings.shareEverything.Value;
+            syncSyncUnsharedEmotes = ConfigSettings.syncUnsharedEmotes.Value;
             syncDisableRaritySystem = ConfigSettings.disableRaritySystem.Value;
 
             syncStartingEmoteCredits = ConfigSettings.startingEmoteCredits.Value;

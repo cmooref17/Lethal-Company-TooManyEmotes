@@ -13,6 +13,8 @@ using static UnityEngine.EventSystems.EventTrigger;
 namespace TooManyEmotes.Config {
     public static class ConfigSettings {
         public static ConfigEntry<bool> unlockEverything;
+        public static ConfigEntry<bool> shareEverything;
+        public static ConfigEntry<bool> syncUnsharedEmotes;
         public static ConfigEntry<bool> disableRaritySystem;
         public static ConfigEntry<int> basePriceEmoteRaritySystemDisabled;
 
@@ -50,13 +52,15 @@ namespace TooManyEmotes.Config {
 
 
             unlockEverything = Plugin.instance.Config.Bind("Server settings", "I am a Party Pooper", false, "[Host only] If true, every emote will be unlocked in your emote wheel at the start of the game.");
+            shareEverything = Plugin.instance.Config.Bind("Server settings", "ShareEverything", true, "[Host only] If set to false, emotes in the store will be different for each player. Unlocking emotes will only unlock for the player that purchased the emote. Each player will have their own emote credits. The amount of emote credits that each player will receive will NOT be reduced.");
+            syncUnsharedEmotes = Plugin.instance.Config.Bind("Server settings", "CanSyncUnsharedEmotes", true, "[Host only] Only applies if ShareEverything is false. If set to true, players will be able to sync emotes with other players, even if they do not have the emote being performed unlocked.");
+
             disableRaritySystem = Plugin.instance.Config.Bind("Server settings", "DisableRaritySystem", false, "[Host only] If true, every emote will have the same likelyhood of appearing in the emote store.");
             basePriceEmoteRaritySystemDisabled = Plugin.instance.Config.Bind("Server settings", "BasePriceEmote - Rarity System Disabled", 100, "[Host only] Base price of emotes if the rarity system is disabled.");
 
             startingEmoteCredits = Plugin.instance.Config.Bind("Server settings", "StartingEmoteCredits", 100, "[Host only] The number of emote credits you start each game with.");
             addEmoteCreditsMultiplier = Plugin.instance.Config.Bind("Server settings", "AddEmoteCreditsMultiplier", 0.5f, "[Host only] You gain emote credits based off this multiplier of normal group credits earned. Example: If set to the default, 0.5, and you earn 200 group credits, you will also gain 100 emote credits.");
-            purchaseEmotesWithDefaultCurrency = Plugin.instance.Config.Bind("Server settings", "PurchaseEmotesWithDefaultCredits", false, "[Host only] Setting this to true will allow you to purchase emotes with normal group credits once you run out of emote credits.");
-            purchaseEmotesWithDefaultCurrency = Plugin.instance.Config.Bind("Server settings", "PurchaseEmotesWithDefaultCredits", false, "[Host only] Setting this to true will allow you to purchase emotes with normal group credits once you run out of emote credits.");
+            purchaseEmotesWithDefaultCurrency = Plugin.instance.Config.Bind("Server settings", "PurchaseEmotesWithDefaultCredits", true, "[Host only] Setting this to true will allow you to purchase emotes with normal group credits once you run out of emote credits. This setting will automatically be disabled if ShareEverything is false.");
 
             priceMultiplierEmotesStore = Plugin.instance.Config.Bind("Server settings", "PriceMultiplierEmotesStore", 1.0f, "[Host only] Price multiplier for emotes in the store. Only applies if UnlockEverythingAtStart is false.");
             basePriceEmoteTier0 = Plugin.instance.Config.Bind("Server settings", "PriceCommonEmote", 50, "[Host only] The base price of [common]emotes in the store.");
@@ -84,6 +88,9 @@ namespace TooManyEmotes.Config {
 
 
             currentConfigEntries.Add(unlockEverything.Definition.Key, unlockEverything);
+            currentConfigEntries.Add(shareEverything.Definition.Key, shareEverything);
+            currentConfigEntries.Add(syncUnsharedEmotes.Definition.Key, syncUnsharedEmotes);
+
             currentConfigEntries.Add(disableRaritySystem.Definition.Key, disableRaritySystem);
             currentConfigEntries.Add(basePriceEmoteRaritySystemDisabled.Definition.Key, basePriceEmoteRaritySystemDisabled);
 
