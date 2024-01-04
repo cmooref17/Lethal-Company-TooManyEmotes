@@ -21,13 +21,13 @@ using TooManyEmotes.Patches;
 using System.Reflection;
 using Unity.Netcode;
 using MoreCompany.Cosmetics;
+using BepInEx.Bootstrap;
 
 namespace TooManyEmotes.CompatibilityPatcher {
 
     [HarmonyPatch]
-    public class MoreEmotesPatcher
+    internal class MoreEmotesPatcher
     {
-
         public static bool loadedMoreEmotes = false;
 
         [HarmonyPatch(typeof(PreInitSceneScript), "Awake")]
@@ -68,7 +68,6 @@ namespace TooManyEmotes.CompatibilityPatcher {
 
     internal class BiggerLobbyPatcher
     {
-
         public static bool loadedBiggerLobby = false;
 
         [HarmonyPatch(typeof(NetworkSceneManager), "PopulateScenePlacedObjects")]
@@ -102,25 +101,24 @@ namespace TooManyEmotes.CompatibilityPatcher {
         [HarmonyPostfix]
         public static void ApplyPatch() {
 
-            if (Plugin.IsModLoaded("me.swipez.melonloader.morecompany"))
+            if (!Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany"))
             {
-                try
-                {
-                    CosmeticApplication cosmeticApplication = GameObject.FindObjectOfType<CosmeticApplication>();
-
-                    if (cosmeticApplication.spawnedCosmetics.Count > 0)
-                        return;
-                    foreach (string id in CosmeticRegistry.locallySelectedCosmetics)
-                        cosmeticApplication.ApplyCosmetic(id, true);
-                    foreach (var cosmetic in cosmeticApplication.spawnedCosmetics)
-                    {
-                        cosmetic.transform.localScale *= 0.38f;
-                        SetAllChildrenLayer(cosmetic.transform, 23);
-                    }
-                    loadedMoreCompany = true;
-                    Plugin.Log("Applied patch for MoreCompany Cosmetics");
-                }
-                catch { }
+                return;
+            }
+            CosmeticApplication val = UnityEngine.Object.FindObjectOfType<CosmeticApplication>();
+            if (CosmeticRegistry.locallySelectedCosmetics.Count <= 0 || val.spawnedCosmetics.Count > 0)
+            {
+                return;
+            }
+            foreach (string locallySelectedCosmetic in CosmeticRegistry.locallySelectedCosmetics)
+            {
+                val.ApplyCosmetic(locallySelectedCosmetic, true);
+            }
+            foreach (CosmeticInstance spawnedCosmetic in val.spawnedCosmetics)
+            {
+                Transform transform = ((Component)spawnedCosmetic).transform;
+                transform.localScale *= 0.38f;
+                SetAllChildrenLayer(((Component)spawnedCosmetic).transform, 23);
             }
         }
 

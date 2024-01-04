@@ -104,11 +104,6 @@ namespace TooManyEmotes.Patches
                     emote.emoteName = emote.emoteName.Replace("_pose", "");
                     emote.isPose = true;
                 }
-                if (emote.emoteName.Contains("_sync"))
-                {
-                    emote.emoteName = emote.emoteName.Replace("_syncable", "");
-                    emote.canSyncEmote = true;
-                }
                 if (emote.emoteName.Contains("_random"))
                 {
                     emote.randomEmotePoolName = emote.emoteName.Substring(0, emote.emoteName.IndexOf("_random"));
@@ -124,6 +119,9 @@ namespace TooManyEmotes.Patches
                     emote.emoteName = emote.emoteName.Replace("_random", "");
                     emote.displayName = emote.randomEmotePoolName;
                 }
+
+                if (emote.transitionsToClip != null || emote.animationClip.isLooping || emote.isPose)
+                    emote.canSyncEmote = true;
 
                 if (emote.displayName == "")
                     emote.displayName = emote.emoteName;
@@ -196,15 +194,23 @@ namespace TooManyEmotes.Patches
         public static void ResetEmotesOnShipReset(StartOfRound __instance)
         {
             if (!ConfigSync.instance.syncUnlockEverything)
-                ResetEmotesLocal();
+                ResetProgressLocal();
             if (NetworkManager.Singleton.IsServer)
                 EmoteSyncManager.RotateEmoteSelectionServerRpc();
         }
 
 
-        public static void ResetEmotesLocal()
+        public static void ResetProgressLocal()
         {
             Plugin.Log("Resetting progression.");
+            ResetEmotesLocal();
+            TerminalPatcher.currentEmoteCredits = ConfigSync.instance.syncStartingEmoteCredits;
+            TerminalPatcher.emoteStoreSeed = 0;
+        }
+
+
+        public static void ResetEmotesLocal()
+        {
             unlockedEmotes.Clear();
             unlockedEmotesTier0.Clear();
             unlockedEmotesTier1.Clear();
@@ -212,8 +218,6 @@ namespace TooManyEmotes.Patches
             unlockedEmotesTier3.Clear();
             UnlockEmotesLocal(ConfigSync.instance.syncUnlockEverything ? allUnlockableEmotes : complementaryEmotes);
             UpdateUnlockedFavoriteEmotes();
-            TerminalPatcher.currentEmoteCredits = ConfigSync.instance.syncStartingEmoteCredits;
-            TerminalPatcher.emoteStoreSeed = 0;
         }
 
 

@@ -192,7 +192,7 @@ namespace TooManyEmotes.Patches
 
                 else if (input.StartsWith("resetship"))
                 {
-                    StartOfRoundPatcher.ResetEmotesLocal();
+                    StartOfRoundPatcher.ResetProgressLocal();
                     __result = BuildCustomTerminalNode("Reset ship emotes.\n\n", clearPreviousText: true);
                 }
 
@@ -291,6 +291,7 @@ namespace TooManyEmotes.Patches
                 else
                 {
                     double itemRarity = random.NextDouble();
+                    Plugin.Log("Rotate new emote value: " + itemRarity);
                     float threshold = 1 - ConfigSync.instance.syncRotationChanceEmoteTier3;
                     if (itemRarity >= threshold)
                         emote = GetRandomEmoteNotUnlocked(StartOfRoundPatcher.allEmotesTier3, random);

@@ -10,6 +10,9 @@ using UnityEngine.Animations.Rigging;
 using UnityEngine.Rendering;
 using TooManyEmotes.CompatibilityPatcher;
 using MoreCompany.Cosmetics;
+using TMPro;
+using UnityEngine.InputSystem;
+using System.Collections;
 
 namespace TooManyEmotes.Patches {
 
@@ -22,11 +25,15 @@ namespace TooManyEmotes.Patches {
         public static Camera gameplayCamera;
         public static Camera emoteCamera;
         public static Transform emoteCameraPivot;
-        public static float thirdPersonCameraDistance = 3f;
         public static int cameraCollideLayerMask = (1 << LayerMask.NameToLayer("Room")) | 1 << LayerMask.NameToLayer("PlaceableShipObject") | 1 << LayerMask.NameToLayer("Terrain") | 1 << LayerMask.NameToLayer("MiscLevelGeometry");
+
+        public static Vector2 clampCameraDistance = new Vector2(1.5f, 5);
+        public static float targetCameraDistance = 3f;
 
         public static int localPlayerBodyLayer = 0;
         public static ShadowCastingMode defaultShadowCastingMode = ShadowCastingMode.ShadowsOnly;
+
+        public static string[] emoteControlTipLines = new string[] { "Hold [ALT] : Rotate" };
 
 
 
@@ -67,33 +74,75 @@ namespace TooManyEmotes.Patches {
             emoteCameraPivot.transform.parent = __instance.transform;
             emoteCameraPivot.SetLocalPositionAndRotation(Vector3.up * 1.8f, Quaternion.identity);
             emoteCamera.transform.parent = emoteCameraPivot;
-            emoteCamera.transform.SetLocalPositionAndRotation(Vector3.back * thirdPersonCameraDistance, Quaternion.identity);
+            emoteCamera.transform.SetLocalPositionAndRotation(Vector3.back * targetCameraDistance, Quaternion.identity);
         }
-
-
 
 
 
         [HarmonyPatch(typeof(PlayerControllerB), "PlayerLookInput")]
         [HarmonyPrefix]
         public static bool UseFreeCamWhileEmoting(PlayerControllerB __instance) {
-            if (__instance == localPlayerController && PlayerPatcher.performingCustomEmoteLocal != null  && !localPlayerController.quickMenuManager.isMenuOpen)
+            if (__instance == localPlayerController && PlayerPatcher.performingCustomEmoteLocal != null)
             {
-                Vector2 vector = localPlayerController.playerActions.Movement.Look.ReadValue<Vector2>() * 0.008f * IngamePlayerSettings.Instance.settings.lookSensitivity;
-                emoteCameraPivot.Rotate(new Vector3(0f, vector.x, 0f));
-                float cameraPitch = emoteCameraPivot.localEulerAngles.x - vector.y;
-                cameraPitch = (cameraPitch > 180) ? cameraPitch - 360 : cameraPitch;
-                cameraPitch = Mathf.Clamp(cameraPitch, -45, 45);
-                emoteCameraPivot.transform.eulerAngles = new Vector3(cameraPitch, emoteCameraPivot.eulerAngles.y, 0f);
+                Vector3 targetPosition = Vector3.back * Mathf.Clamp(targetCameraDistance, clampCameraDistance.x, clampCameraDistance.y);
+                emoteCamera.transform.localPosition = Vector3.Lerp(emoteCamera.transform.localPosition, targetPosition, 10 * Time.deltaTime);
 
-                if (Physics.Raycast(emoteCameraPivot.position, -emoteCameraPivot.forward * thirdPersonCameraDistance, out var hit, thirdPersonCameraDistance, cameraCollideLayerMask))
-                    emoteCamera.transform.localPosition = Vector3.back * Mathf.Clamp(hit.distance - 0.1f, 0, thirdPersonCameraDistance);
-                else
-                    emoteCamera.transform.localPosition = Vector3.back * thirdPersonCameraDistance;
+                if (!localPlayerController.quickMenuManager.isMenuOpen && !EmoteMenuManager.isMenuOpen)
+                {
+                    if (Keybinds.holdingRotatePlayerModifier)
+                    {
+                        if (emoteCameraPivot.localEulerAngles.y != 0)
+                        {
+                            localPlayerController.transform.localEulerAngles = new Vector3(localPlayerController.transform.localEulerAngles.x, emoteCameraPivot.transform.eulerAngles.y, localPlayerController.transform.localEulerAngles.z);
+                            emoteCameraPivot.transform.localEulerAngles = new Vector3(emoteCameraPivot.localEulerAngles.x, 0, emoteCameraPivot.localEulerAngles.z);
+                        }
+                    }
+                    else
+                    {
+                        Vector2 vector = localPlayerController.playerActions.Movement.Look.ReadValue<Vector2>() * 0.008f * IngamePlayerSettings.Instance.settings.lookSensitivity;
+                        emoteCameraPivot.Rotate(new Vector3(0f, vector.x, 0f));
+                        float cameraPitch = emoteCameraPivot.localEulerAngles.x - vector.y;
+                        cameraPitch = (cameraPitch > 180) ? cameraPitch - 360 : cameraPitch;
+                        cameraPitch = Mathf.Clamp(cameraPitch, -45, 45);
+                        emoteCameraPivot.transform.eulerAngles = new Vector3(cameraPitch, emoteCameraPivot.eulerAngles.y, 0f);
+                    }
 
-                return false;
+                    if (Physics.Raycast(emoteCameraPivot.position, -emoteCameraPivot.forward * targetCameraDistance, out var hit, targetCameraDistance, cameraCollideLayerMask))
+                        emoteCamera.transform.localPosition = Vector3.back * Mathf.Clamp(hit.distance - 0.2f, 0, targetCameraDistance);
+                    //else
+                        //emoteCamera.transform.localPosition = Vector3.back * targetCameraDistance;
+
+                    if (!Keybinds.holdingRotatePlayerModifier)
+                        return false;
+                }
             }
             return true;
+        }
+
+
+        [HarmonyPatch(typeof(PlayerControllerB), "ScrollMouse_performed")]
+        [HarmonyPrefix]
+        public static bool AdjustCameraDistance(InputAction.CallbackContext context, PlayerControllerB __instance)
+        {
+            if (!context.performed || __instance != localPlayerController || PlayerPatcher.performingCustomEmoteLocal == null)
+                return true;
+
+            if (!EmoteMenuManager.isMenuOpen)
+                __instance.StartCoroutine(AdjustCameraDistanceEndOfFrame());
+
+            return false;
+        }
+
+
+        static IEnumerator AdjustCameraDistanceEndOfFrame()
+        {
+            yield return new WaitForEndOfFrame();
+            float value = Keybinds.RawScrollAction.ReadValue<Vector2>().y;
+            if (value != 0)
+            {
+                float direction = value < 0 ? 1 : -1;
+                targetCameraDistance = Mathf.Clamp(targetCameraDistance + direction * 0.25f, clampCameraDistance.x, clampCameraDistance.y);
+            }
         }
 
 
@@ -105,6 +154,8 @@ namespace TooManyEmotes.Patches {
                 emoteCameraPivot.eulerAngles = gameplayCamera.transform.eulerAngles + new Vector3(0, 0, 0);
             }
             localPlayerController.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
+            HUDManager.Instance.ClearControlTips();
+            HUDManager.Instance.ChangeControlTipMultiple(emoteControlTipLines);
         }
 
 
@@ -112,6 +163,10 @@ namespace TooManyEmotes.Patches {
             emoteCamera.enabled = false;
             StartOfRound.Instance.SwitchCamera(gameplayCamera);
             localPlayerController.thisPlayerModel.shadowCastingMode = defaultShadowCastingMode;
+            if (localPlayerController.currentlyHeldObjectServer != null)
+                localPlayerController.currentlyHeldObjectServer.SetControlTipsForItem();
+            else
+                HUDManager.Instance.ClearControlTips();
         }   
     }
 }

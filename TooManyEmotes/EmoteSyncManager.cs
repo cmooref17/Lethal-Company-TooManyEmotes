@@ -105,11 +105,12 @@ namespace TooManyEmotes.Networking {
             isSynced = true;
             if (reader.TryBeginRead(sizeof(int) * 3))
             {
+                StartOfRoundPatcher.ResetProgressLocal();
+
                 reader.ReadValue(out TerminalPatcher.currentEmoteCredits);
                 reader.ReadValue(out TerminalPatcher.emoteStoreSeed);
                 reader.ReadValue(out int numEmotes);
 
-                StartOfRoundPatcher.ResetEmotesLocal();
                 TerminalPatcher.RotateNewEmoteSelection();
 
                 if (numEmotes <= 0)
@@ -231,27 +232,20 @@ namespace TooManyEmotes.Networking {
         }
 
 
-
         public static void RotateEmoteSelectionServerRpc(int overrideSeed = 0) {
             if (!NetworkManager.Singleton.IsServer && !NetworkManager.Singleton.IsHost)
                 return;
 
-            if (overrideSeed == 0)
-                TerminalPatcher.emoteStoreSeed = UnityEngine.Random.Range(0, 1000000000);
-            else
-                TerminalPatcher.emoteStoreSeed = overrideSeed;
-
+            TerminalPatcher.emoteStoreSeed = overrideSeed == 0 ? UnityEngine.Random.Range(0, 1000000000) : overrideSeed;
             TerminalPatcher.RotateNewEmoteSelection();
             var writer = new FastBufferWriter(sizeof(int), Allocator.Temp);
-            writer.WriteValueSafe(TerminalPatcher.emoteStoreSeed);
+            writer.WriteValue(TerminalPatcher.emoteStoreSeed);
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes-OnRotateEmotesClientRpc", writer);
         }
 
 
-
-
         static void RotateEmoteSelectionClientRpc(ulong clientId, FastBufferReader reader) {
-            if (!NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost)
+            if (!NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsServer)
                 return;
 
             if (reader.TryBeginRead(sizeof(int)))

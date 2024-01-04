@@ -160,7 +160,7 @@ namespace TooManyEmotes.Networking {
 
                     if (StartOfRoundPatcher.allUnlockableEmotes != null && StartOfRoundPatcher.unlockedEmotes != null)
                     {
-                        StartOfRoundPatcher.ResetEmotesLocal();
+                        StartOfRoundPatcher.ResetProgressLocal();
                         if (instance.syncUnlockEverything)
                             StartOfRoundPatcher.UnlockEmotesLocal(StartOfRoundPatcher.allUnlockableEmotes);
                         else

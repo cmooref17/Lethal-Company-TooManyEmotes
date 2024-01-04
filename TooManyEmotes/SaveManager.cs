@@ -112,7 +112,7 @@ namespace TooManyEmotes.Patches
             ES3.DeleteKey("TooManyEmotes.CurrentEmoteCredits", __instance.currentSaveFileName);
             ES3.DeleteKey("TooManyEmotes.EmoteStoreSeed", __instance.currentSaveFileName);
 
-            StartOfRoundPatcher.ResetEmotesLocal();
+            StartOfRoundPatcher.ResetProgressLocal();
         }
 
 

@@ -34,6 +34,7 @@ namespace TooManyEmotes.Config {
 
         //public static ConfigEntry<int> numMysteryEmotesStoreRotation;
         public static ConfigEntry<string> openEmoteMenuKeybind;
+        public static ConfigEntry<string> rotateCharacterInEmoteKeybind;
         public static ConfigEntry<bool> toggleEmoteMenu;
         public static ConfigEntry<bool> reverseEmoteWheelScrollDirection;
 
@@ -71,6 +72,7 @@ namespace TooManyEmotes.Config {
 
             //numMysteryEmotesStoreRotation = Plugin.instance.Config.Bind("Server settings", "NumMysteryEmotesInStoreRotation", 1, "[Host only] The number of \"mystery\" emotes that will be available at a time in the store. These emotes will be a mystery until unlocked. Only applies if UnlockEverythingAtStart is false.");
             openEmoteMenuKeybind = Plugin.instance.Config.Bind("Client", "OpenEmoteMenuKeybind", "<Keyboard>/backquote", "Keybind for opening the emote radial menu.");
+            rotateCharacterInEmoteKeybind = Plugin.instance.Config.Bind("Client", "RotateCharacterInEmoteKeybind", "<Keyboard>/leftAlt", "Keybind to hold to rotate character while performing a custom emote.");
             toggleEmoteMenu = Plugin.instance.Config.Bind("Client", "ToggleEmoteMenu", true, "If set to false, the emote menu will open upon pressing the related keybind, and close upon releasing, and will play the currently hovered emote.");
             reverseEmoteWheelScrollDirection = Plugin.instance.Config.Bind("Client", "ReverseEmoteWheelScrollDirection", false, "Reverses the page swapping direction in your emote when scrolling.");
 
@@ -103,6 +105,7 @@ namespace TooManyEmotes.Config {
 
             //currentConfigEntries.Add(numMysteryEmotesStoreRotation.Definition.Key, numMysteryEmotesStoreRotation);
             currentConfigEntries.Add(openEmoteMenuKeybind.Definition.Key, openEmoteMenuKeybind);
+            currentConfigEntries.Add(rotateCharacterInEmoteKeybind.Definition.Key, rotateCharacterInEmoteKeybind);
             currentConfigEntries.Add(toggleEmoteMenu.Definition.Key, toggleEmoteMenu);
             currentConfigEntries.Add(reverseEmoteWheelScrollDirection.Definition.Key, reverseEmoteWheelScrollDirection);
 

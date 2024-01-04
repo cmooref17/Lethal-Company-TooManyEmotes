@@ -26,6 +26,10 @@ namespace TooManyEmotes
         static InputAction NextEmotePageAction;
         static InputAction PrevEmotePageAction;
         static InputAction FavoriteEmoteAction;
+        static InputAction RotatePlayerEmoteAction;
+        public static InputAction RawScrollAction;
+
+        public static bool holdingRotatePlayerModifier = false;
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
@@ -38,6 +42,8 @@ namespace TooManyEmotes
             PrevEmotePageAction = new InputAction(binding: "<Keyboard>/q", interactions: "Press");
             NextEmotePageAction = new InputAction(binding: "<Keyboard>/e", interactions: "Press");
             FavoriteEmoteAction = new InputAction(binding: "<Mouse>/middleButton", interactions: "Press");
+            RotatePlayerEmoteAction = new InputAction(binding: ConfigSettings.rotateCharacterInEmoteKeybind.Value, interactions: "Press");
+            RawScrollAction = new InputAction("Scroll", binding: "<Mouse>/scroll");
 
             if (__instance.gameObject.activeSelf)
                 SubscribeToEvents();
@@ -54,12 +60,16 @@ namespace TooManyEmotes
             PrevEmotePageAction.performed += OnSwapPrevEmotePage;
             NextEmotePageAction.performed += OnSwapNextEmotePage;
             FavoriteEmoteAction.performed += OnFavoriteEmote;
+            RotatePlayerEmoteAction.performed += OnUpdateRotatePlayerEmoteModifier;
+            RotatePlayerEmoteAction.canceled += OnUpdateRotatePlayerEmoteModifier;
 
             OpenEmoteMenuAction.Enable();
             SelectEmoteUIAction.Enable();
             PrevEmotePageAction.Enable();
             NextEmotePageAction.Enable();
             FavoriteEmoteAction.Enable();
+            RotatePlayerEmoteAction.Enable();
+            RawScrollAction.Enable();
         }
 
 
@@ -85,12 +95,17 @@ namespace TooManyEmotes
             PrevEmotePageAction.performed -= OnSwapPrevEmotePage;
             NextEmotePageAction.performed -= OnSwapNextEmotePage;
             FavoriteEmoteAction.performed -= OnFavoriteEmote;
+            RotatePlayerEmoteAction.performed -= OnUpdateRotatePlayerEmoteModifier;
+            RotatePlayerEmoteAction.canceled -= OnUpdateRotatePlayerEmoteModifier;
+
 
             OpenEmoteMenuAction.Disable();
             SelectEmoteUIAction.Disable();
             PrevEmotePageAction.Disable();
             NextEmotePageAction.Disable();
             FavoriteEmoteAction.Disable();
+            RotatePlayerEmoteAction.Disable();
+            RawScrollAction.Disable();
         }
 
 
@@ -178,6 +193,18 @@ namespace TooManyEmotes
                 return;
 
             EmoteMenuManager.ToggleFavoriteHoveredEmote();
+        }
+
+
+        public static void OnUpdateRotatePlayerEmoteModifier(InputAction.CallbackContext context)
+        {
+            if (localPlayerController == null)
+                return;
+            
+            if (context.performed)
+                holdingRotatePlayerModifier = true;
+            else if (context.canceled)
+                holdingRotatePlayerModifier = false;
         }
     }
 }
