@@ -229,8 +229,12 @@ namespace TooManyEmotes.Patches
             unlockedEmotesTier1.Clear();
             unlockedEmotesTier2.Clear();
             unlockedEmotesTier3.Clear();
-            foreach (var playerController in unlockedEmotesByPlayer.Keys)
-                unlockedEmotesByPlayer[playerController]?.Clear();
+
+            unlockedEmotesByPlayer.Clear();
+            foreach (var playerController in StartOfRound.Instance.allPlayerScripts)
+                unlockedEmotesByPlayer.Add(playerController.playerUsername, playerController == StartOfRound.Instance.localPlayerController ? unlockedEmotes : new List<UnlockableEmote>());
+            //foreach (var playerController in unlockedEmotesByPlayer.Keys)
+                //unlockedEmotesByPlayer[playerController]?.Clear();
             UnlockEmotesLocal(ConfigSync.instance.syncUnlockEverything ? allUnlockableEmotes : complementaryEmotes);
             UpdateUnlockedFavoriteEmotes();
         }
