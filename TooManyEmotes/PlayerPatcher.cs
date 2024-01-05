@@ -70,7 +70,7 @@ namespace TooManyEmotes.Patches {
         [HarmonyPrefix]
         public static bool PerformCustomEmoteLocalPrefix(InputAction.CallbackContext context, int emoteID, PlayerControllerB __instance)
         {
-            if (__instance == localPlayerController && (context.performed || emoteID < 0) && CallCheckConditionsForEmote(localPlayerController))
+            if (__instance == localPlayerController && (context.performed || emoteID < 0) && CallCheckConditionsForEmote(localPlayerController) && localPlayerController.inAnimationWithEnemy == null)
             {
                 localPlayerController.performingEmote = true;
                 // Performing custom emote

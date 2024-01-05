@@ -29,6 +29,8 @@ namespace TooManyEmotes.Patches
         public static List<UnlockableEmote> emoteSelection;
         public static List<UnlockableEmote> mysteryEmoteSelection;
         public static int currentEmoteCredits;
+        public static Dictionary<string, int> currentEmoteCreditsByPlayer;
+
         static string confirmEmoteOpeningText = "You have requested to order a new emote.";
 
         public static UnlockableEmote purchasingEmote;
@@ -42,6 +44,7 @@ namespace TooManyEmotes.Patches
             terminalInstance = __instance;
             emoteSelection = new List<UnlockableEmote>();
             mysteryEmoteSelection = new List<UnlockableEmote>();
+            currentEmoteCreditsByPlayer = new Dictionary<string, int>();
             if (!initializedTerminalNodes)
                 EditExistingTerminalNodes();
         }
@@ -88,18 +91,24 @@ namespace TooManyEmotes.Patches
 
             if (modifiedDisplayText.Contains("[emoteUnlockablesSelectionList]"))
             {
-                string replacementText = "Remaining emote credit balance: $" + currentEmoteCredits + ".\n";
-                if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything)
-                    replacementText += "Remaining group credit balance: $" + terminalInstance.groupCredits + ".\n";
-                replacementText += "\n";
-
-                int longestNameSize = 0;
-                foreach (var emote in emoteSelection)
-                    longestNameSize = Mathf.Max(longestNameSize, emote.displayName.Length);
-                foreach (var emote in emoteSelection)
+                string replacementText = "";
+                if (ConfigSync.instance.syncUnlockEverything)
+                    replacementText += "Every emote is already unlocked!\n\n";
+                else
                 {
-                    string priceText = StartOfRoundPatcher.unlockedEmotes.Contains(emote) ? "[Purchased]" : "$" + emote.price;
-                    replacementText += string.Format("* {0}{1}   //   {2}\n", emote.displayNameColorCoded, new string(' ', longestNameSize - emote.displayName.Length), priceText);
+                    replacementText += "Remaining emote credit balance: $" + currentEmoteCredits + ".\n";
+                    if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything)
+                        replacementText += "Remaining group credit balance: $" + terminalInstance.groupCredits + ".\n";
+                    replacementText += "\n";
+
+                    int longestNameSize = 0;
+                    foreach (var emote in emoteSelection)
+                        longestNameSize = Mathf.Max(longestNameSize, emote.displayName.Length);
+                    foreach (var emote in emoteSelection)
+                    {
+                        string priceText = StartOfRoundPatcher.unlockedEmotes.Contains(emote) ? "[Purchased]" : "$" + emote.price;
+                        replacementText += string.Format("* {0}{1}   //   {2}\n", emote.displayNameColorCoded, new string(' ', longestNameSize - emote.displayName.Length), priceText);
+                    }
                 }
                 modifiedDisplayText = modifiedDisplayText.Replace("[emoteUnlockablesSelectionList]", replacementText);
             }
@@ -161,7 +170,9 @@ namespace TooManyEmotes.Patches
                         currentEmoteCredits += dEmoteCredits;
                         terminalInstance.groupCredits += dGroupCredits;
 
-                        EmoteSyncManager.SendOnUnlockEmoteUpdate(purchasingEmote.emoteId);
+                        if (!ConfigSync.instance.syncShareEverything)
+                            StartOfRoundPatcher.UnlockEmoteLocal(purchasingEmote);
+                        EmoteSyncManager.SendOnUnlockEmoteUpdate(purchasingEmote.emoteId, currentEmoteCredits);
                         if (dGroupCredits > 0)
                             terminalInstance.SyncGroupCreditsServerRpc(terminalInstance.groupCredits, terminalInstance.numberOfItemsInDropship);
                         Debug.Log("Purchasing emote: " + purchasingEmote.displayName + ". Price: " + purchasingEmote.price);
@@ -280,11 +291,19 @@ namespace TooManyEmotes.Patches
 
         public static void RotateNewEmoteSelection()
         {
-            Plugin.Log("Rotating emote selection in store. Seed: " + emoteStoreSeed);
 
-            System.Random random = new System.Random(emoteStoreSeed + (!ConfigSync.instance.syncShareEverything ? (int)StartOfRound.Instance.localPlayerController.playerClientId : 0));
+            int seed = emoteStoreSeed;
+            if (!ConfigSync.instance.syncShareEverything)
+            {
+                int localClientId = StartOfRound.Instance.localPlayerController != null ? (int)StartOfRound.Instance.localPlayerController.playerClientId : 0;
+                Plugin.Log("EmoteStoreSeed: " + emoteStoreSeed + " LocalPlayerNull: " + (StartOfRound.Instance.localPlayerController == null ? "NULL" : "NOT NULL - ClientId: " + StartOfRound.Instance.localPlayerController.playerClientId) + " GotClientId: " + localClientId);
+                seed += localClientId;
+            }
+
+            Plugin.Log("Rotating emote selection in store. Seed: " + seed);
+
+            System.Random random = new System.Random(seed);
             emoteSelection.Clear();
-
             for (int i = 0; i < ConfigSync.instance.syncNumEmotesStoreRotation; i++)
             {
                 UnlockableEmote emote = null;

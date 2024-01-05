@@ -17,6 +17,7 @@ using System.Collections;
 using Unity.Netcode;
 using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
+using Unity.Collections;
 //using static UnityEditor.Progress;
 
 namespace TooManyEmotes.Patches
@@ -174,12 +175,22 @@ namespace TooManyEmotes.Patches
         }
 
 
-        [HarmonyPatch(typeof(StartOfRound), "OnClientConnect")]
+        [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
-        public static void OnClientConnect(ulong clientId, StartOfRound __instance)
+        public static void OnHostConnected(PlayerControllerB __instance)
         {
-            if (TryGetPlayerByClientId(clientId, out var playerController) && !unlockedEmotesByPlayer.ContainsKey(playerController.playerUsername))
-                unlockedEmotesByPlayer.Add(playerController.playerUsername, playerController == StartOfRound.Instance.localPlayerController ? unlockedEmotes : new List<UnlockableEmote>());
+            if (!NetworkManager.Singleton.IsServer)
+                return;
+            if (!unlockedEmotesByPlayer.ContainsKey(StartOfRound.Instance.localPlayerController.playerUsername))
+            {
+                unlockedEmotesByPlayer.Add(StartOfRound.Instance.localPlayerController.playerUsername, unlockedEmotes);
+                TerminalPatcher.currentEmoteCreditsByPlayer.Add(StartOfRound.Instance.localPlayerController.playerUsername, TerminalPatcher.currentEmoteCredits);
+            }
+            else
+            {
+                unlockedEmotesByPlayer[StartOfRound.Instance.localPlayerController.playerUsername] = unlockedEmotes;
+                TerminalPatcher.currentEmoteCreditsByPlayer[StartOfRound.Instance.localPlayerController.playerUsername] = TerminalPatcher.currentEmoteCredits;
+            }
         }
 
 
@@ -218,12 +229,15 @@ namespace TooManyEmotes.Patches
             Plugin.Log("Resetting progression.");
             ResetEmotesLocal();
             TerminalPatcher.currentEmoteCredits = ConfigSync.instance.syncStartingEmoteCredits;
+            foreach (string username in TerminalPatcher.currentEmoteCreditsByPlayer.Keys)
+                TerminalPatcher.currentEmoteCreditsByPlayer[username] = ConfigSync.instance.syncStartingEmoteCredits;
             TerminalPatcher.emoteStoreSeed = 0;
         }
 
 
         public static void ResetEmotesLocal()
         {
+            Plugin.Log("Resetting unlocked emotes.");
             unlockedEmotes.Clear();
             unlockedEmotesTier0.Clear();
             unlockedEmotesTier1.Clear();
@@ -232,9 +246,10 @@ namespace TooManyEmotes.Patches
 
             unlockedEmotesByPlayer.Clear();
             foreach (var playerController in StartOfRound.Instance.allPlayerScripts)
-                unlockedEmotesByPlayer.Add(playerController.playerUsername, playerController == StartOfRound.Instance.localPlayerController ? unlockedEmotes : new List<UnlockableEmote>());
-            //foreach (var playerController in unlockedEmotesByPlayer.Keys)
-                //unlockedEmotesByPlayer[playerController]?.Clear();
+            {
+                if (playerController.playerSteamId != 0)
+                    unlockedEmotesByPlayer.Add(playerController.playerUsername, playerController == StartOfRound.Instance.localPlayerController ? unlockedEmotes : new List<UnlockableEmote>());
+            }
             UnlockEmotesLocal(ConfigSync.instance.syncUnlockEverything ? allUnlockableEmotes : complementaryEmotes);
             UpdateUnlockedFavoriteEmotes();
         }
@@ -259,23 +274,38 @@ namespace TooManyEmotes.Patches
         [HarmonyPatch(typeof(StartOfRound), "SyncShipUnlockablesServerRpc")]
         [HarmonyPostfix]
         public static void SyncUnlockedEmotesWithClients(StartOfRound __instance) {
-            if (!NetworkManager.Singleton.IsServer && !NetworkManager.Singleton.IsHost)
+            if (!NetworkManager.Singleton.IsServer)
                 return;
             if (ConfigSync.instance.syncUnlockEverything)
                 return;
-            Plugin.Log("Syncing unlocked emotes with clients.");
-            EmoteSyncManager.SendOnUnlockEmoteUpdateMulti(TerminalPatcher.currentEmoteCredits);
+
+            if (ConfigSync.instance.syncShareEverything)
+            {
+                Plugin.Log("Syncing unlocked emotes with clients.");
+                EmoteSyncManager.SendOnUnlockEmoteUpdateMulti(TerminalPatcher.currentEmoteCredits);
+            }
+            else
+            {
+                HashSet<ulong> syncWithClients = new HashSet<ulong>();
+                foreach (var playerController in StartOfRound.Instance.allPlayerScripts)
+                {
+                    if (playerController.actualClientId != 0 && playerController.playerSteamId != 0)
+                        syncWithClients.Add(playerController.actualClientId); // Prevent duplicates
+                }
+                foreach (var clientId in syncWithClients)
+                    EmoteSyncManager.ServerSendSyncToClient(clientId);
+            }
         }
 
 
-        public static void UnlockEmotesLocal(List<UnlockableEmote> emotes, string playerUsername = "")
+        public static void UnlockEmotesLocal(IEnumerable<UnlockableEmote> emotes, string playerUsername = "")
         {
             foreach (var emote in emotes)
                 UnlockEmoteLocal(emote, playerUsername);
         }
         public static void UnlockEmoteLocal(int emoteId, string playerUsername = "") => UnlockEmoteLocal(emoteId >= 0 && emoteId < allUnlockableEmotes.Count ? allUnlockableEmotes[emoteId] : null, playerUsername);
         public static void UnlockEmoteLocal(UnlockableEmote emote, string playerUsername = "") {
-            if (emote == null || unlockedEmotes.Contains(emote))
+            if (emote == null)
                 return;
 
             var _unlockedEmotes = unlockedEmotes;
@@ -290,17 +320,18 @@ namespace TooManyEmotes.Patches
                         return;
                 }
             }
-            _unlockedEmotes.Add(emote);
+            if (!_unlockedEmotes.Contains(emote))
+                _unlockedEmotes.Add(emote);
 
             if (playerUsername == "" || ConfigSync.instance.syncShareEverything)
             {
-                if (emote.rarity == 3)
+                if (emote.rarity == 3 && !unlockedEmotesTier3.Contains(emote))
                     unlockedEmotesTier3.Add(emote);
-                else if (emote.rarity == 2)
+                else if (emote.rarity == 2 && !unlockedEmotesTier2.Contains(emote))
                     unlockedEmotesTier2.Add(emote);
-                else if (emote.rarity == 1)
+                else if (emote.rarity == 1 && !unlockedEmotesTier1.Contains(emote))
                     unlockedEmotesTier1.Add(emote);
-                else
+                else if (!unlockedEmotesTier0.Contains(emote))
                     unlockedEmotesTier0.Add(emote);
 
                 if (allFavoriteEmotes.Contains(emote.emoteName) && !unlockedFavoriteEmotes.Contains(emote))

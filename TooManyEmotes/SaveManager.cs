@@ -32,33 +32,46 @@ namespace TooManyEmotes.Patches
             if (!StartOfRound.Instance.inShipPhase)
                 return;
 
+            Plugin.Log("[SaveManager] Saving game values.");
+
             try
             {
                 HashSet<string> usernames = new HashSet<string>(ES3.Load("TooManyEmotes.UnlockedEmotes.PlayersList", GameNetworkManager.Instance.currentSaveFileName, new string[0]));
                 foreach (string username in StartOfRoundPatcher.unlockedEmotesByPlayer.Keys)
                     usernames.Add(username);
                 ES3.Save("TooManyEmotes.UnlockedEmotes.PlayersList", usernames.ToArray(), GameNetworkManager.Instance.currentSaveFileName);
+
                 foreach (string username in usernames)
                 {
+                    // Only save new values
+                    if (!StartOfRoundPatcher.unlockedEmotesByPlayer.ContainsKey(username))
+                        continue;
+
                     if (StartOfRoundPatcher.unlockedEmotesByPlayer.TryGetValue(username, out var unlockedEmotes))
                     {
+                        Plugin.Log("Saving " + unlockedEmotes.Count + " emotes for player: " + username);
                         string[] playerUnlockedEmoteIds = new string[unlockedEmotes.Count];
                         for (int i = 0; i < unlockedEmotes.Count; i++)
                             playerUnlockedEmoteIds[i] = unlockedEmotes[i].emoteName;
-                        ES3.Save("TooManyEmotes.UnlockedEmotes.Player_" + username, playerUnlockedEmoteIds, GameNetworkManager.Instance.currentSaveFileName);
+                        if (unlockedEmotes == StartOfRoundPatcher.unlockedEmotes)
+                            ES3.Save("TooManyEmotes.UnlockedEmotes", playerUnlockedEmoteIds, GameNetworkManager.Instance.currentSaveFileName);
+                        else
+                            ES3.Save("TooManyEmotes.UnlockedEmotes.Player_" + username, playerUnlockedEmoteIds, GameNetworkManager.Instance.currentSaveFileName);
+                    }
+                    if (TerminalPatcher.currentEmoteCreditsByPlayer.ContainsKey(username))
+                    {
+                        Plugin.Log("Saving " + TerminalPatcher.currentEmoteCreditsByPlayer[username] + " emote credits for player: " + username);
+                        if (StartOfRound.Instance.localPlayerController != null && StartOfRound.Instance.localPlayerController.playerSteamId != 0 && username == StartOfRound.Instance.localPlayerController.playerUsername)
+                            ES3.Save("TooManyEmotes.CurrentEmoteCredits", TerminalPatcher.currentEmoteCredits, __instance.currentSaveFileName);
+                        else
+                            ES3.Save("TooManyEmotes.CurrentEmoteCredits.Player_" + username, TerminalPatcher.currentEmoteCreditsByPlayer[username], __instance.currentSaveFileName);
                     }
                 }
-                /*
-                string[] unlockedEmoteIds = new string[StartOfRoundPatcher.unlockedEmotes.Count];
-                for (int i = 0; i < StartOfRoundPatcher.unlockedEmotes.Count; i++)
-                    unlockedEmoteIds[i] = StartOfRoundPatcher.unlockedEmotes[i].emoteName;
-                ES3.Save("TooManyEmotes.UnlockedEmotes", unlockedEmoteIds, __instance.currentSaveFileName);
-                */
-                ES3.Save("TooManyEmotes.CurrentEmoteCredits", TerminalPatcher.currentEmoteCredits, __instance.currentSaveFileName);
+
                 ES3.Save("TooManyEmotes.EmoteStoreSeed", TerminalPatcher.emoteStoreSeed, __instance.currentSaveFileName);
 
-                Plugin.Log("Saved " + StartOfRoundPatcher.unlockedEmotes.Count + " unlockable emotes.");
-                Plugin.Log("Saved CurrentEmoteCredits: " + TerminalPatcher.currentEmoteCredits);
+                //Plugin.Log("Saved " + StartOfRoundPatcher.unlockedEmotes.Count + " unlockable emotes.");
+                //Plugin.Log("Saved CurrentEmoteCredits: " + TerminalPatcher.currentEmoteCredits);
                 Plugin.Log("Saved Seed: " + TerminalPatcher.emoteStoreSeed);
             }
 
@@ -75,46 +88,50 @@ namespace TooManyEmotes.Patches
             if (!GameNetworkManager.Instance.isHostingGame)
                 return;
 
+            Plugin.Log("[SaveManager] Loading game values.");
+
             StartOfRoundPatcher.ResetEmotesLocal();
             try
             {
-                if (ES3.KeyExists("TooManyEmotes.UnlockedEmotes.PlayersList", GameNetworkManager.Instance.currentSaveFileName))
+                string[] emoteNames = ES3.Load("TooManyEmotes.UnlockedEmotes", GameNetworkManager.Instance.currentSaveFileName, new string[0]);
+                foreach (string emoteName in emoteNames)
                 {
-                    string[] usernames = ES3.Load("TooManyEmotes.UnlockedEmotes.PlayersList", GameNetworkManager.Instance.currentSaveFileName, new string[0]);
-                    foreach (string username in usernames)
-                    {
-                        if (!StartOfRoundPatcher.unlockedEmotesByPlayer.ContainsKey(username))
-                            StartOfRoundPatcher.unlockedEmotesByPlayer.Add(username, new List<UnlockableEmote>());
-                        string key = "TooManyEmotes.UnlockedEmotes.Player_" + username;
-                        if (ES3.KeyExists(key, GameNetworkManager.Instance.currentSaveFileName))
-                        {
-                            string[] emoteIds = ES3.Load(key, GameNetworkManager.Instance.currentSaveFileName, new string[0]);
-                            foreach (var emoteId in emoteIds)
-                            {
-                                if (StartOfRoundPatcher.allUnlockableEmotesDict.TryGetValue(emoteId, out var emote))
-                                    StartOfRoundPatcher.UnlockEmoteLocal(emote, username);
-                            }
-                        }
-                    }
+                    if (StartOfRoundPatcher.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote))
+                        StartOfRoundPatcher.UnlockEmoteLocal(emote);
                 }
-                /*
-                if (ES3.KeyExists("TooManyEmotes.UnlockedEmotes", GameNetworkManager.Instance.currentSaveFileName))
-                {
-                    string[] emoteIds = ES3.Load<string[]>("TooManyEmotes.UnlockedEmotes", GameNetworkManager.Instance.currentSaveFileName);
-                    for (int i = 0; i < emoteIds.Length; i++)
-                    {
-                        if (StartOfRoundPatcher.allUnlockableEmotesDict.ContainsKey(emoteIds[i]))
-                        {
-                            var emote = StartOfRoundPatcher.allUnlockableEmotesDict[emoteIds[i]];
-                            if (!StartOfRoundPatcher.unlockedEmotes.Contains(emote))
-                                StartOfRoundPatcher.UnlockEmoteLocal(emote);
-                        }
-                        else
-                            Plugin.LogError("Tried to load emote that doesn't exist: " + emoteIds[i]);
-                    }
-                }
-                */
                 TerminalPatcher.currentEmoteCredits = ES3.Load("TooManyEmotes.CurrentEmoteCredits", GameNetworkManager.Instance.currentSaveFileName, ConfigSync.instance.syncStartingEmoteCredits);
+
+
+
+                string[] usernames = ES3.Load("TooManyEmotes.UnlockedEmotes.PlayersList", GameNetworkManager.Instance.currentSaveFileName, new string[0]);
+                foreach (string username in usernames)
+                {
+                    if (StartOfRound.Instance.localPlayerController != null && StartOfRound.Instance.localPlayerController.playerSteamId != 0 && username == StartOfRound.Instance.localPlayerController.playerUsername)
+                        continue;
+
+
+                    if (!StartOfRoundPatcher.unlockedEmotesByPlayer.ContainsKey(username))
+                        StartOfRoundPatcher.unlockedEmotesByPlayer.Add(username, new List<UnlockableEmote>());
+                    string key = "TooManyEmotes.UnlockedEmotes.Player_" + username;
+                        
+                    string[] emoteIds = ES3.Load(key, GameNetworkManager.Instance.currentSaveFileName, new string[0]);
+                    Plugin.Log("Loading " + emoteIds.Length + " emotes for player: " + username);
+                    foreach (var emoteId in emoteIds)
+                    {
+                        if (StartOfRoundPatcher.allUnlockableEmotesDict.TryGetValue(emoteId, out var emote))
+                            StartOfRoundPatcher.UnlockEmoteLocal(emote, username);
+                    }
+
+                    key = "TooManyEmotes.CurrentEmoteCredits.Player_" + username;
+                    int emoteCredits = ES3.Load(key, GameNetworkManager.Instance.currentSaveFileName, ConfigSync.instance.syncStartingEmoteCredits);
+
+                    Plugin.Log("Loading " + emoteCredits + " emote credits for player: " + username);
+                    if (!TerminalPatcher.currentEmoteCreditsByPlayer.ContainsKey(username))
+                        TerminalPatcher.currentEmoteCreditsByPlayer.Add(username, emoteCredits);
+                    else
+                        TerminalPatcher.currentEmoteCreditsByPlayer[username] = emoteCredits;
+                }
+                
                 TerminalPatcher.emoteStoreSeed = ES3.Load("TooManyEmotes.EmoteStoreSeed", GameNetworkManager.Instance.currentSaveFileName, 0);
 
                 Plugin.Log("Loaded " + StartOfRoundPatcher.unlockedEmotes.Count + " unlockable emotes.");
@@ -135,10 +152,10 @@ namespace TooManyEmotes.Patches
                 return;
             if (StartOfRound.Instance == null || StartOfRoundPatcher.unlockedEmotes == null)
                 return;
-            Plugin.Log("Resetting TooManyEmotes saved game values.");
 
-            if (ES3.KeyExists("TooManyEmotes.UnlockedEmotes", __instance.currentSaveFileName))
-                ES3.DeleteKey("TooManyEmotes.UnlockedEmotes", __instance.currentSaveFileName);
+            Plugin.Log("[SaveManager] Resetting game values.");
+
+            ES3.DeleteKey("TooManyEmotes.UnlockedEmotes", __instance.currentSaveFileName);
             ES3.DeleteKey("TooManyEmotes.CurrentEmoteCredits", __instance.currentSaveFileName);
             ES3.DeleteKey("TooManyEmotes.EmoteStoreSeed", __instance.currentSaveFileName);
 
@@ -147,8 +164,8 @@ namespace TooManyEmotes.Patches
                 usernames.Add(username);
             foreach (string username in usernames)
             {
-                if (ES3.KeyExists("TooManyEmotes.UnlockedEmotes.Player_" + username, __instance.currentSaveFileName))
-                    ES3.DeleteKey("TooManyEmotes.UnlockedEmotes.Player_" + username, __instance.currentSaveFileName);
+                ES3.DeleteKey("TooManyEmotes.UnlockedEmotes.Player_" + username, __instance.currentSaveFileName);
+                ES3.DeleteKey("TooManyEmotes.CurrentEmoteCredits.Player_" + username, __instance.currentSaveFileName);
             }
 
             StartOfRoundPatcher.ResetProgressLocal();

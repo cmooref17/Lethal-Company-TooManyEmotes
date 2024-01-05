@@ -356,7 +356,7 @@ namespace TooManyEmotes {
         {
             if ((quickMenuManager.isMenuOpen && !isMenuOpen) || previewPlayerObject == null)
                 return false;
-            if (localPlayerController.isPlayerDead || localPlayerController.inTerminalMenu || localPlayerController.isTypingChat || localPlayerController.isPlayerDead || localPlayerController.inSpecialInteractAnimation || localPlayerController.inShockingMinigame || localPlayerController.isClimbingLadder || localPlayerController.isSinking)
+            if (localPlayerController.isPlayerDead || localPlayerController.inTerminalMenu || localPlayerController.isTypingChat || localPlayerController.isPlayerDead || localPlayerController.inSpecialInteractAnimation || localPlayerController.isGrabbingObjectAnimation || localPlayerController.inShockingMinigame || localPlayerController.isClimbingLadder || localPlayerController.isSinking || localPlayerController.inAnimationWithEnemy != null)
                 return false;
             return true;
         }

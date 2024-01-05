@@ -47,6 +47,8 @@ namespace TooManyEmotes.Networking {
 
         //public static int syncNumMysteryEmotesStoreRotation;
 
+        public static HashSet<ulong> syncedClients;
+
 
         public ConfigSync()
         {
@@ -94,31 +96,40 @@ namespace TooManyEmotes.Networking {
 
 
 
+        [HarmonyPatch(typeof(StartOfRound), "Awake")]
+        [HarmonyPostfix]
+        public static void ResetValues()
+        {
+            isSynced = false;
+        }
+
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
-        public static void Init(PlayerControllerB __instance) {
-            if (GameNetworkManager.Instance.localPlayerController == __instance)
+        public static void Init(PlayerControllerB __instance)
+        {
+            if (isSynced)
+                return;
+            isSynced = NetworkManager.Singleton.IsServer;
+            EmoteSyncManager.isSynced = false;
+            EmoteSyncManager.requestedSync = false;
+            if (NetworkManager.Singleton.IsServer)
             {
-                isSynced = false;
-                if (NetworkManager.Singleton.IsServer)
+                syncedClients = new HashSet<ulong>();
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestConfigSyncServerRpc", OnRequestConfigSyncServerRpc);
+                if (instance.syncUnlockEverything)
                 {
-                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestConfigSyncServerRpc", OnRequestConfigSyncServerRpc);
-                    isSynced = true;
-                    if (instance.syncUnlockEverything)
-                    {
-                        foreach (var emote in StartOfRoundPatcher.allUnlockableEmotes)
-                            StartOfRoundPatcher.UnlockEmoteLocal(emote);
-                    }
-                }
-                else
-                {
-                    // Unlock all emotes until synced with host
                     foreach (var emote in StartOfRoundPatcher.allUnlockableEmotes)
                         StartOfRoundPatcher.UnlockEmoteLocal(emote);
-                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestConfigSyncClientRpc", OnRequestConfigSyncClientRpc);
-                    RequestConfigSync();
                 }
+            }
+            else
+            {
+                // Unlock all emotes until synced with host
+                foreach (var emote in StartOfRoundPatcher.allUnlockableEmotes)
+                    StartOfRoundPatcher.UnlockEmoteLocal(emote);
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestConfigSyncClientRpc", OnRequestConfigSyncClientRpc);
+                RequestConfigSync();
             }
         }
 
@@ -139,6 +150,8 @@ namespace TooManyEmotes.Networking {
             if (!NetworkManager.Singleton.IsServer)
                 return;
             Plugin.Log("Receiving config sync request from client: " + clientId);
+            syncedClients.Add(clientId);
+            EmoteSyncManager.syncedClients.Remove(clientId);
             byte[] bytes = SerializeConfigToByteArray(instance);
             var writer = new FastBufferWriter(sizeof(int) + bytes.Length, Allocator.Temp);
             writer.WriteValueSafe(bytes.Length);

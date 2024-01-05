@@ -19,6 +19,15 @@ namespace TooManyEmotes.Networking {
 
         public static bool requestedSync = false;
         public static bool isSynced = false;
+        public static HashSet<ulong> syncedClients;
+
+        [HarmonyPatch(typeof(StartOfRound), "Awake")]
+        [HarmonyPostfix]
+        public static void ResetValues()
+        {
+            isSynced = false;
+            requestedSync = false;
+        }
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
@@ -27,6 +36,7 @@ namespace TooManyEmotes.Networking {
             requestedSync = NetworkManager.Singleton.IsServer;
             if (NetworkManager.Singleton.IsServer)
             {
+                syncedClients = new HashSet<ulong>();
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestSyncServerRpc", OnRequestSyncServerRpc);
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnUnlockEmoteServerRpc", OnUnlockEmoteServerRpc);
             }
@@ -56,11 +66,9 @@ namespace TooManyEmotes.Networking {
             if (!NetworkManager.Singleton.IsClient)
                 return;
             Plugin.Log("Sending sync request to server.");
-            var writer = new FastBufferWriter(sizeof(ulong), Allocator.Temp);
-            writer.WriteValueSafe(StartOfRound.Instance.localPlayerController.actualClientId);
+            var writer = new FastBufferWriter(0, Allocator.Temp);
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnRequestSyncServerRpc", NetworkManager.ServerClientId, writer);
         }
-
 
 
         static void OnRequestSyncServerRpc(ulong clientId, FastBufferReader reader)
@@ -68,38 +76,72 @@ namespace TooManyEmotes.Networking {
             if (!NetworkManager.Singleton.IsServer)
                 return;
 
-            bool syncWithAll = true;
-            ulong syncWithClientId = 0;
-            if (reader.TryBeginRead(sizeof(ulong)))
+            Plugin.Log("Receiving sync request from client: " + clientId);
+            ServerSendSyncToClient(clientId);
+        }
+
+
+        public static void ServerSendSyncToClient(ulong clientId)
+        {
+            if (!NetworkManager.Singleton.IsServer)
+                return;
+            if (!ConfigSync.syncedClients.Contains(clientId))
+                return;
+
+            PlayerControllerB playerRequestingSync = null;
+            StartOfRoundPatcher.TryGetPlayerByClientId(clientId, out playerRequestingSync);
+            if (playerRequestingSync != null)
             {
-                reader.ReadValue(out syncWithClientId);
-                syncWithAll = false;
-                Plugin.Log("Receiving sync request from client: " + clientId);
+                //Plugin.Log("OnPlayerConnect: " + clientId + " Username: " + playerRequestingSync.playerUsername + " SteamId: " + playerRequestingSync.playerSteamId);
+                if (!StartOfRoundPatcher.unlockedEmotesByPlayer.ContainsKey(playerRequestingSync.playerUsername))
+                    StartOfRoundPatcher.unlockedEmotesByPlayer.Add(playerRequestingSync.playerUsername, new List<UnlockableEmote>());
+                if (!TerminalPatcher.currentEmoteCreditsByPlayer.ContainsKey(playerRequestingSync.playerUsername))
+                    TerminalPatcher.currentEmoteCreditsByPlayer.Add(playerRequestingSync.playerUsername, ConfigSync.instance.syncStartingEmoteCredits);
             }
-            else
-                Plugin.Log("Syncing with all clients.");
 
-            int numEmotes = 0;
+            List<UnlockableEmote> unlockedEmotes = StartOfRoundPatcher.unlockedEmotes;
+            int emoteCredits = TerminalPatcher.currentEmoteCredits;
             if (!ConfigSync.instance.syncUnlockEverything)
-                numEmotes = StartOfRoundPatcher.unlockedEmotes.Count;
+            {
+                if (!ConfigSync.instance.syncShareEverything)
+                {
+                    if (playerRequestingSync != null)
+                    {
+                        if (StartOfRoundPatcher.unlockedEmotesByPlayer.TryGetValue(playerRequestingSync.playerUsername, out var _unlockedEmotes))
+                        {
+                            Plugin.Log("Loading " + _unlockedEmotes.Count + " unlocked emotes for player: " + playerRequestingSync.playerUsername);
+                            unlockedEmotes = _unlockedEmotes;
+                        }
+                        if (TerminalPatcher.currentEmoteCreditsByPlayer.TryGetValue(playerRequestingSync.playerUsername, out var _emoteCredits))
+                        {
+                            Plugin.Log("Loading " + _emoteCredits + " emote credits for player: " + playerRequestingSync.playerUsername);
+                            emoteCredits = _emoteCredits;
+                        }
+                    }
+                    else
+                    {
+                        Plugin.LogError("Error loading custom emotes for player. Player with id: " + clientId + " does not exist?");
+                        unlockedEmotes = StartOfRoundPatcher.complementaryEmotes;
+                        emoteCredits = ConfigSync.instance.syncStartingEmoteCredits;
+                    }
+                }
+            }
 
-            var writer = new FastBufferWriter(sizeof(int) * 3 + sizeof(int) * Mathf.Max(numEmotes, 0), Allocator.Temp);
-            writer.WriteValueSafe(TerminalPatcher.currentEmoteCredits);
+            var writer = new FastBufferWriter(sizeof(int) * 3 + sizeof(int) * unlockedEmotes.Count, Allocator.Temp);
+            writer.WriteValueSafe(emoteCredits);
             writer.WriteValueSafe(TerminalPatcher.emoteStoreSeed);
-            writer.WriteValueSafe(numEmotes);
-            for (int i = 0; i < numEmotes; i++)
-                writer.WriteValueSafe(StartOfRoundPatcher.unlockedEmotes[i].emoteId);
-
-            if (syncWithAll)
-                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes-OnRequestSyncClientRpc", writer);
-            else
-                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnRequestSyncClientRpc", syncWithClientId, writer);
+            writer.WriteValueSafe(unlockedEmotes.Count);
+            for (int i = 0; i < unlockedEmotes.Count; i++)
+                writer.WriteValueSafe(unlockedEmotes[i].emoteId);
+            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnRequestSyncClientRpc", clientId, writer);
         }
 
 
         static void OnRequestSyncClientRpc(ulong clientId, FastBufferReader reader)
         {
             if (!NetworkManager.Singleton.IsClient)
+                return;
+            if (!ConfigSync.isSynced)
                 return;
 
             isSynced = true;
@@ -112,7 +154,7 @@ namespace TooManyEmotes.Networking {
                 reader.ReadValue(out int numEmotes);
 
                 TerminalPatcher.RotateNewEmoteSelection();
-
+                Plugin.Log("Receiving sync from server. CurrentEmoteCredits: " + TerminalPatcher.currentEmoteCredits + " EmoteStoreSeed: " + TerminalPatcher.emoteStoreSeed + " NumEmotes: " + numEmotes);
                 if (numEmotes <= 0)
                 {
                     if (numEmotes == -1)
@@ -142,20 +184,20 @@ namespace TooManyEmotes.Networking {
 
 
 
-        public static void SendOnUnlockEmoteUpdate(int emoteId, int emoteCreditsUsed = -1) {
+        public static void SendOnUnlockEmoteUpdate(int emoteId, int newEmoteCredits = -1) {
             var writer = new FastBufferWriter(sizeof(int) * 3, Allocator.Temp);
             Plugin.Log("Sending unlocked emote update to server. Emote id: " + emoteId);
-            writer.WriteValue(emoteCreditsUsed);
+            writer.WriteValue(newEmoteCredits);
             writer.WriteValue(1); // one emote unlocked
             writer.WriteValue(emoteId);
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnUnlockEmoteServerRpc", NetworkManager.ServerClientId, writer);
         }
 
 
-        public static void SendOnUnlockEmoteUpdateMulti(int emoteCreditsUsed = -1) {
+        public static void SendOnUnlockEmoteUpdateMulti(int newEmoteCredits = -1) {
             var writer = new FastBufferWriter(sizeof(int) * 2 + sizeof(int) * StartOfRoundPatcher.unlockedEmotes.Count, Allocator.Temp);
             Plugin.Log("Sending all unlocked emotes update to server.");
-            writer.WriteValue(emoteCreditsUsed);
+            writer.WriteValue(newEmoteCredits);
             writer.WriteValue(StartOfRoundPatcher.unlockedEmotes.Count);
             foreach (var emote in StartOfRoundPatcher.unlockedEmotes)
                 writer.WriteValue(emote.emoteId);
@@ -169,13 +211,24 @@ namespace TooManyEmotes.Networking {
 
             if (reader.TryBeginRead(sizeof(int) * 2))
             {
-                int currentEmoteCredits;
+                int newEmoteCredits;
                 int numEmotes;
-                reader.ReadValue(out currentEmoteCredits);
+                reader.ReadValue(out newEmoteCredits);
                 reader.ReadValue(out numEmotes);
 
-                if (currentEmoteCredits != -1)
-                    TerminalPatcher.currentEmoteCredits = currentEmoteCredits;
+                PlayerControllerB playerWhoUnlocked = null;
+                StartOfRoundPatcher.TryGetPlayerByClientId(clientId, out playerWhoUnlocked);
+
+                if (newEmoteCredits != -1)
+                {
+                    if (!ConfigSync.instance.syncShareEverything && clientId != 0)
+                    {
+                        if (playerWhoUnlocked != null)
+                            TerminalPatcher.currentEmoteCreditsByPlayer[playerWhoUnlocked.playerUsername] = newEmoteCredits;
+                    }
+                    else
+                        TerminalPatcher.currentEmoteCredits = newEmoteCredits;
+                }
 
                 Plugin.Log("Receiving unlocked emote update from client for " + numEmotes + " emotes.");
                 var writer = new FastBufferWriter(sizeof(int) * 2 + sizeof(int) * numEmotes, Allocator.Temp);
@@ -187,10 +240,10 @@ namespace TooManyEmotes.Networking {
                     {
                         int emoteId;
                         reader.ReadValue(out emoteId);
-                        if (!ConfigSync.instance.syncShareEverything)
+                        if (!ConfigSync.instance.syncShareEverything && clientId != 0)
                         {
-                            if (StartOfRoundPatcher.TryGetPlayerByClientId(clientId, out var playerController))
-                                StartOfRoundPatcher.UnlockEmoteLocal(emoteId, playerController);
+                            if (playerWhoUnlocked != null)
+                                StartOfRoundPatcher.UnlockEmoteLocal(emoteId, playerWhoUnlocked.playerUsername);
                         }
                         else
                         {
