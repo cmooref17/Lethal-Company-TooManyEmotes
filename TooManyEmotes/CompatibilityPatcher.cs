@@ -22,6 +22,7 @@ using System.Reflection;
 using Unity.Netcode;
 using MoreCompany.Cosmetics;
 using BepInEx.Bootstrap;
+using System.Runtime.CompilerServices;
 
 namespace TooManyEmotes.CompatibilityPatcher {
 
@@ -101,10 +102,16 @@ namespace TooManyEmotes.CompatibilityPatcher {
         [HarmonyPostfix]
         public static void ApplyPatch() {
 
-            if (!Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany"))
+            if (Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany"))
             {
-                return;
+                MoreCompanyPatch();
             }
+        }
+
+        // seperate method without inlining to avoid throwing errors on chat message
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void MoreCompanyPatch()
+        {
             CosmeticApplication val = UnityEngine.Object.FindObjectOfType<CosmeticApplication>();
             if (CosmeticRegistry.locallySelectedCosmetics.Count <= 0 || val.spawnedCosmetics.Count > 0)
             {
