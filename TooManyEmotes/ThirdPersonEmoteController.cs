@@ -13,6 +13,8 @@ using MoreCompany.Cosmetics;
 using TMPro;
 using UnityEngine.InputSystem;
 using System.Collections;
+using TooManyEmotes.Config;
+using TooManyEmotes.Input;
 
 namespace TooManyEmotes.Patches {
 
@@ -39,7 +41,11 @@ namespace TooManyEmotes.Patches {
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
-        public static void InitLocalPlayerController(PlayerControllerB __instance) {
+        public static void InitLocalPlayerController(PlayerControllerB __instance)
+        {
+            if (ConfigSettings.disableEmotesForSelf.Value)
+                return;
+
             gameplayCamera = __instance.gameplayCamera;
             if (emoteCamera == null)
             {
@@ -54,6 +60,9 @@ namespace TooManyEmotes.Patches {
         [HarmonyPostfix]
         public static void OnPlayerSpawn(PlayerControllerB __instance)
         {
+            if (ConfigSettings.disableEmotesForSelf.Value)
+                return;
+
             emoteCamera.enabled = false;
             StartOfRound.Instance.SwitchCamera(StartOfRound.Instance.activeCamera);
 
@@ -81,7 +90,11 @@ namespace TooManyEmotes.Patches {
 
         [HarmonyPatch(typeof(PlayerControllerB), "PlayerLookInput")]
         [HarmonyPrefix]
-        public static bool UseFreeCamWhileEmoting(PlayerControllerB __instance) {
+        public static bool UseFreeCamWhileEmoting(PlayerControllerB __instance)
+        {
+            if (ConfigSettings.disableEmotesForSelf.Value)
+                return true;
+
             if (__instance == localPlayerController && PlayerPatcher.performingCustomEmoteLocal != null)
             {
                 Vector3 targetPosition = Vector3.back * Mathf.Clamp(targetCameraDistance, clampCameraDistance.x, clampCameraDistance.y);
@@ -124,7 +137,7 @@ namespace TooManyEmotes.Patches {
         [HarmonyPrefix]
         public static bool AdjustCameraDistance(InputAction.CallbackContext context, PlayerControllerB __instance)
         {
-            if (!context.performed || __instance != localPlayerController || PlayerPatcher.performingCustomEmoteLocal == null)
+            if (ConfigSettings.disableEmotesForSelf.Value || !context.performed || __instance != localPlayerController || PlayerPatcher.performingCustomEmoteLocal == null)
                 return true;
 
             if (!EmoteMenuManager.isMenuOpen)

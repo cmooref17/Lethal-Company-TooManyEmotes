@@ -14,105 +14,95 @@ using System.Collections;
 using TooManyEmotes.Config;
 using TooManyEmotes.Patches;
 
-namespace TooManyEmotes
+namespace TooManyEmotes.Input
 {
     [HarmonyPatch]
     public static class Keybinds
     {
         public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
 
+        public static InputActionAsset Asset;
+        public static InputActionMap ActionMap;
         static InputAction OpenEmoteMenuAction;
+        static InputAction RotatePlayerEmoteAction;
+        static InputAction FavoriteEmoteAction;
+
         static InputAction SelectEmoteUIAction;
         static InputAction NextEmotePageAction;
         static InputAction PrevEmotePageAction;
-        static InputAction FavoriteEmoteAction;
-        static InputAction RotatePlayerEmoteAction;
         public static InputAction RawScrollAction;
 
         public static bool holdingRotatePlayerModifier = false;
 
-        [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
-        [HarmonyPostfix]
-        public static void InitializeHotkeys(PlayerControllerB __instance)
+        public static void InitKeybinds()
         {
             Plugin.Log("Initializing custom emote hotkeys.");
 
-            OpenEmoteMenuAction = new InputAction(binding: ConfigSettings.openEmoteMenuKeybind.Value, interactions: "Press");
-            SelectEmoteUIAction = new InputAction(binding: "<Mouse>/leftButton", interactions: "Press");
-            PrevEmotePageAction = new InputAction(binding: "<Keyboard>/q", interactions: "Press");
-            NextEmotePageAction = new InputAction(binding: "<Keyboard>/e", interactions: "Press");
-            FavoriteEmoteAction = new InputAction(binding: "<Mouse>/middleButton", interactions: "Press");
-            RotatePlayerEmoteAction = new InputAction(binding: ConfigSettings.rotateCharacterInEmoteKeybind.Value, interactions: "Press");
-            RawScrollAction = new InputAction("Scroll", binding: "<Mouse>/scroll");
+            bool inputUtilsLoaded = InputUtilsCompat.Enabled;
+            Plugin.Log("InputUtilsLoaded: " + inputUtilsLoaded);
+            if (InputUtilsCompat.Enabled)
+            {
+                Asset = InputUtilsCompat.Asset;
+                ActionMap = Asset.actionMaps[0];
 
-            if (__instance.gameObject.activeSelf)
-                SubscribeToEvents();
+                OpenEmoteMenuAction = InputUtilsCompat.OpenEmoteMenuHotkey;
+                RotatePlayerEmoteAction = InputUtilsCompat.RotateCharacterEmoteHotkey;
+                FavoriteEmoteAction = InputUtilsCompat.FavoriteEmoteHotkey;
+
+                SelectEmoteUIAction = new InputAction("TooManyEmotes.SelectEmote", binding: "<Mouse>/leftButton", interactions: "Press");
+                RawScrollAction = new InputAction("TooManyEmotes.ScrollEmoteMenu", binding: "<Mouse>/scroll");
+            }
+            else
+            {
+                Asset = new InputActionAsset();
+                ActionMap = new InputActionMap("TooManyEmotes");
+                Asset.AddActionMap(ActionMap);
+
+                OpenEmoteMenuAction = ActionMap.AddAction("TooManyEmotes.OpenEmoteMenu", binding: ConfigSettings.openEmoteMenuKeybind.Value, interactions: "Press");
+                RotatePlayerEmoteAction = ActionMap.AddAction("TooManyEmotes.RotatePlayerEmote", binding: ConfigSettings.rotateCharacterInEmoteKeybind.Value, interactions: "Press");
+                FavoriteEmoteAction = ActionMap.AddAction("TooManyEmotes.FavoriteEmote", binding: "<Mouse>/middleButton", interactions: "Press");
+                SelectEmoteUIAction = new InputAction("TooManyEmotes.SelectEmote", binding: "<Mouse>/leftButton", interactions: "Press");
+                RawScrollAction = new InputAction("TooManyEmotes.ScrollEmoteMenu", binding: "<Mouse>/scroll");
+            }
         }
 
 
-        static void SubscribeToEvents()
+        [HarmonyPatch(typeof(StartOfRound), "OnEnable")]
+        [HarmonyPostfix]
+        public static void OnEnable()
         {
-            Plugin.Log("Subscribing to OnPressCustomEmoteKey events");
-
+            Asset.Enable();
             OpenEmoteMenuAction.performed += OnPressOpenEmoteMenu;
             OpenEmoteMenuAction.canceled += OnPressOpenEmoteMenu;
-            SelectEmoteUIAction.performed += OnSelectEmoteUI;
-            PrevEmotePageAction.performed += OnSwapPrevEmotePage;
-            NextEmotePageAction.performed += OnSwapNextEmotePage;
             FavoriteEmoteAction.performed += OnFavoriteEmote;
             RotatePlayerEmoteAction.performed += OnUpdateRotatePlayerEmoteModifier;
             RotatePlayerEmoteAction.canceled += OnUpdateRotatePlayerEmoteModifier;
 
-            OpenEmoteMenuAction.Enable();
             SelectEmoteUIAction.Enable();
-            PrevEmotePageAction.Enable();
-            NextEmotePageAction.Enable();
-            FavoriteEmoteAction.Enable();
-            RotatePlayerEmoteAction.Enable();
-            RawScrollAction.Enable();
+            SelectEmoteUIAction.performed += OnSelectEmoteUI;
         }
 
 
-        [HarmonyPatch(typeof(PlayerControllerB), "OnEnable")]
+        [HarmonyPatch(typeof(StartOfRound), "OnDisable")]
         [HarmonyPostfix]
-        public static void OnEnable(PlayerControllerB __instance)
+        public static void OnDisable()
         {
-            if (__instance != localPlayerController) return;
-            SubscribeToEvents();
-        }
-
-
-        [HarmonyPatch(typeof(PlayerControllerB), "OnDisable")]
-        [HarmonyPostfix]
-        public static void OnDisable(PlayerControllerB __instance)
-        {
-            if (__instance != localPlayerController) return;
-            Plugin.Log("Unsubscribing from OnPressCustomEmoteKey events.");
-
+            Asset.Disable();
             OpenEmoteMenuAction.performed -= OnPressOpenEmoteMenu;
             OpenEmoteMenuAction.canceled -= OnPressOpenEmoteMenu;
-            SelectEmoteUIAction.performed -= OnSelectEmoteUI;
-            PrevEmotePageAction.performed -= OnSwapPrevEmotePage;
-            NextEmotePageAction.performed -= OnSwapNextEmotePage;
             FavoriteEmoteAction.performed -= OnFavoriteEmote;
             RotatePlayerEmoteAction.performed -= OnUpdateRotatePlayerEmoteModifier;
             RotatePlayerEmoteAction.canceled -= OnUpdateRotatePlayerEmoteModifier;
 
-
-            OpenEmoteMenuAction.Disable();
             SelectEmoteUIAction.Disable();
-            PrevEmotePageAction.Disable();
-            NextEmotePageAction.Disable();
-            FavoriteEmoteAction.Disable();
-            RotatePlayerEmoteAction.Disable();
-            RawScrollAction.Disable();
+            SelectEmoteUIAction.performed -= OnSelectEmoteUI;
         }
 
 
         static void OnPressOpenEmoteMenu(InputAction.CallbackContext context)
         {
             //Plugin.Log("Starting opening emote menu...");
-            if (localPlayerController == null)
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value)
                 return;
 
             if (!EmoteMenuManager.isMenuOpen)
@@ -177,7 +167,7 @@ namespace TooManyEmotes
 
 
         public static void PerformEmoteLocal(InputAction.CallbackContext context) {
-            if (EmoteMenuManager.hoveredEmoteIndex < 0 || EmoteMenuManager.hoveredEmoteIndex >= EmoteMenuManager.currentLoadoutEmotesList.Count)
+            if (EmoteMenuManager.hoveredEmoteIndex < 0 || EmoteMenuManager.hoveredEmoteIndex >= EmoteMenuManager.currentLoadoutEmotesList.Count || ConfigSettings.disableEmotesForSelf.Value)
                 return;
             UnlockableEmote emote = EmoteMenuManager.currentLoadoutEmotesList[EmoteMenuManager.hoveredEmoteIndex];
             if (emote != null)
@@ -198,7 +188,7 @@ namespace TooManyEmotes
 
         public static void OnUpdateRotatePlayerEmoteModifier(InputAction.CallbackContext context)
         {
-            if (localPlayerController == null)
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value)
                 return;
             
             if (context.performed)

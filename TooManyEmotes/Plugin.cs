@@ -6,13 +6,15 @@ using System.Threading.Tasks;
 
 using BepInEx;
 using HarmonyLib;
-using TooManyEmotes.Config;
 using System.IO;
 using UnityEngine;
+using TooManyEmotes.Config;
+using TooManyEmotes.Input;
 
 namespace TooManyEmotes
 {
-    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.6.5")]
+    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.7.6")]
+    [BepInDependency("com.rune580.LethalCompanyInputUtils", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         private Harmony _harmony;
@@ -27,6 +29,8 @@ namespace TooManyEmotes
         public static List<AnimationClip> animationClipsTier2;
         public static List<AnimationClip> animationClipsTier3;
 
+        public static AnimationClip idleClip;
+
         public static GameObject radialMenuPrefab;
         public static RuntimeAnimatorController previewAnimatorController;
 
@@ -37,8 +41,7 @@ namespace TooManyEmotes
         {
             instance = this;
             ConfigSettings.BindConfigSettings();
-
-            //Path.Combine(Path.GetDirectoryName(Info.Location), "Assets", "")
+            Keybinds.InitKeybinds();
 
             customAnimationClips = new List<AnimationClip>();
             customAnimationClipsLoopDict = new Dictionary<string, AnimationClip>();
@@ -48,6 +51,15 @@ namespace TooManyEmotes
             animationClipsTier1 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_1"));
             animationClipsTier2 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_2"));
             animationClipsTier3 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_3"));
+            var miscClips = LoadEmoteAssetBundle("Assets/emotes_misc");
+            if (miscClips != null && miscClips.Length >= 1)
+            {
+                foreach (var clip in miscClips)
+                {
+                    if (clip.name.Contains("idle"))
+                        idleClip = clip;
+                }
+            }
 
             /*
             musicClips = new Dictionary<string, AudioClip>();
@@ -82,10 +94,7 @@ namespace TooManyEmotes
         }
 
 
-        public static bool IsModLoaded(string guid)
-        {
-            return BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey(guid);
-        }
+        public static bool IsModLoaded(string guid) => BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey(guid);
 
 
         static AnimationClip[] LoadEmoteAssetBundle(string assetBundleName) {

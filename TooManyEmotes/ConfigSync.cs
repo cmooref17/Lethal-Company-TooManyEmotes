@@ -13,6 +13,7 @@ using TooManyEmotes.Config;
 using TooManyEmotes.Patches;
 using Unity.Collections;
 using Unity.Netcode;
+using UnityEngine;
 
 namespace TooManyEmotes.Networking {
 
@@ -45,6 +46,18 @@ namespace TooManyEmotes.Networking {
         public float syncRotationChanceEmoteTier2;
         public float syncRotationChanceEmoteTier3;
 
+        public bool syncEnableMaskedEnemiesEmoting;
+        public float syncMaskedEnemiesEmoteChanceOnEncounter;
+        public bool syncMaskedEnemiesAlwaysEmoteOnFirstEncounter;
+        public bool syncOverrideStopAndStareDuration;
+        public float syncMaskedEnemyEmoteRandomDelayMin;
+        public float syncMaskedEnemyEmoteRandomDelayMax;
+        public float syncMaskedEnemyEmoteRandomDurationMin;
+        public float syncMaskedEnemyEmoteRandomDurationMax;
+
+        public static Vector2 syncMaskedEnemyEmoteRandomDelay;
+        public static Vector2 syncMaskedEnemyEmoteRandomDuration;
+
         //public static int syncNumMysteryEmotesStoreRotation;
 
         public static HashSet<ulong> syncedClients;
@@ -69,6 +82,19 @@ namespace TooManyEmotes.Networking {
             syncRotationChanceEmoteTier2 = ConfigSettings.rotationChanceEmoteTier2.Value;
             syncRotationChanceEmoteTier3 = ConfigSettings.rotationChanceEmoteTier3.Value;
 
+            syncEnableMaskedEnemiesEmoting = ConfigSettings.enableMaskedEnemiesEmoting.Value;
+            syncMaskedEnemiesEmoteChanceOnEncounter = ConfigSettings.maskedEnemiesEmoteChanceOnEncounter.Value;
+            syncMaskedEnemiesAlwaysEmoteOnFirstEncounter = ConfigSettings.maskedEnemiesAlwaysEmoteOnFirstEncounter.Value;
+            syncOverrideStopAndStareDuration = ConfigSettings.overrideStopAndStareDuration.Value;
+
+            syncMaskedEnemyEmoteRandomDelay = ParseVector2FromString(ConfigSettings.maskedEnemyEmoteRandomDelay.Value);
+            syncMaskedEnemyEmoteRandomDelayMin = syncMaskedEnemyEmoteRandomDelay.x;
+            syncMaskedEnemyEmoteRandomDelayMax = syncMaskedEnemyEmoteRandomDelay.y;
+
+            syncMaskedEnemyEmoteRandomDuration = ParseVector2FromString(ConfigSettings.maskedEnemyEmoteRandomDuration.Value);
+            syncMaskedEnemyEmoteRandomDurationMin = syncMaskedEnemyEmoteRandomDuration.x;
+            syncMaskedEnemyEmoteRandomDurationMax = syncMaskedEnemyEmoteRandomDuration.y;
+
             //syncNumMysteryEmotesStoreRotation = ConfigSettings.numMysteryEmotesStoreRotation.Value;
 
             if (ConfigSettings.disableRaritySystem.Value)
@@ -85,6 +111,20 @@ namespace TooManyEmotes.Networking {
                 syncBasePriceEmoteTier2 = ConfigSettings.basePriceEmoteTier2.Value;
                 syncBasePriceEmoteTier3 = ConfigSettings.basePriceEmoteTier3.Value;
             }
+        }
+
+
+        public Vector2 ParseVector2FromString(string str)
+        {
+            Vector2 vector = Vector2.zero;
+            try
+            {
+                string[] values = str.Split(',');
+                if (float.TryParse(values[0].Trim(' '), out float x) && float.TryParse(values[1].Trim(' '), out float y))
+                    vector = new Vector2(Mathf.Min(Mathf.Abs(x), Mathf.Abs(y)), Mathf.Max(Mathf.Abs(x), Mathf.Abs(y)));
+                return vector;
+            } catch { }
+            return Vector2.zero;
         }
 
 
@@ -174,6 +214,8 @@ namespace TooManyEmotes.Networking {
                     byte[] bytes = new byte[dataLength];
                     reader.ReadBytesSafe(ref bytes, dataLength);
                     instance = DeserializeFromByteArray(bytes);
+                    syncMaskedEnemyEmoteRandomDelay = new Vector2(instance.syncMaskedEnemyEmoteRandomDelayMin, instance.syncMaskedEnemyEmoteRandomDelayMax);
+                    syncMaskedEnemyEmoteRandomDuration = new Vector2(instance.syncMaskedEnemyEmoteRandomDurationMin, instance.syncMaskedEnemyEmoteRandomDurationMax);
                     isSynced = true;
 
                     if (StartOfRoundPatcher.allUnlockableEmotes != null && StartOfRoundPatcher.unlockedEmotes != null)

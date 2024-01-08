@@ -54,10 +54,10 @@ namespace TooManyEmotes {
         public static int hoveredEmoteUIIndex = -1;
         public static int hoveredEmoteIndex { get { return hoveredEmoteUIIndex >= 0 ? hoveredEmoteUIIndex + 8 * currentPage : -1; } }
         public static int currentPage = 0;
-        public static int numPages { get { return Mathf.Max((currentLoadoutEmotesList.Count - 1) / emoteUIElementsList.Count, 0) + 1; } }
-        public static UnlockableEmote previewingEmote { get { return hoveredEmoteIndex >= 0 && hoveredEmoteIndex < currentLoadoutEmotesList.Count ? currentLoadoutEmotesList[hoveredEmoteIndex] : null; } }
+        public static int numPages { get { return currentLoadoutEmotesList != null ? Mathf.Max((currentLoadoutEmotesList.Count - 1) / emoteUIElementsList.Count, 0) + 1 : 0; } }
+        public static UnlockableEmote previewingEmote { get { return currentLoadoutEmotesList != null && hoveredEmoteIndex >= 0 && hoveredEmoteIndex < currentLoadoutEmotesList.Count ? currentLoadoutEmotesList[hoveredEmoteIndex] : null; } }
 
-        public static List<UnlockableEmote> currentLoadoutEmotesList { get { return emoteLoadouts[currentLoadoutIndex]; } }
+        public static List<UnlockableEmote> currentLoadoutEmotesList { get { return emoteLoadouts != null && currentLoadoutIndex >= 0 && currentLoadoutIndex < emoteLoadouts.Count ? emoteLoadouts[currentLoadoutIndex] : null; } }
 
         public static List<EmoteLoadoutUIElement> emoteLoadoutUIElementsList;
         public static List<List<UnlockableEmote>> emoteLoadouts; // = new List<List<string>>();
@@ -73,7 +73,7 @@ namespace TooManyEmotes {
         [HarmonyPatch(typeof(HUDManager), "Start")]
         [HarmonyPostfix]
         public static void InitializeUI(HUDManager __instance) {
-            if (Plugin.radialMenuPrefab == null)
+            if (ConfigSettings.disableEmotesForSelf.Value || Plugin.radialMenuPrefab == null)
                 return;
 
             menuGameObject = GameObject.Instantiate(Plugin.radialMenuPrefab, __instance.HUDContainer.transform.parent);
@@ -151,7 +151,7 @@ namespace TooManyEmotes {
         [HarmonyPostfix]
         public static void GetInput()
         {
-            if (previewPlayerAnimatorController == null || !isMenuOpen)
+            if (ConfigSettings.disableEmotesForSelf.Value || previewPlayerAnimatorController == null || !isMenuOpen)
                 return;
 
             if (EmoteLoadoutUIContainer.hovered || hoveredLoadoutUIIndex != -1)
@@ -227,6 +227,17 @@ namespace TooManyEmotes {
             {
                 var uiElement = emoteLoadoutUIElementsList[i];
                 uiElement.OnHover(hoveredLoadoutUIIndex == uiElement.id);
+            }
+
+            for (int i = 0; i < emoteLoadouts.Count; i++)
+            {
+                var emoteList = emoteLoadouts[i];
+                var textComponent = emoteLoadoutUIElementsList[i];
+                string text = textComponent.textContainer.text;
+                int indexOfSpace = text.IndexOf(" ");
+                indexOfSpace = indexOfSpace == -1 ? text.Length : indexOfSpace;
+                text = text.Substring(0, indexOfSpace) + " [" + emoteList.Count + "]";
+                textComponent.textContainer.text = text;
             }
 
             for (int i = 0; i < emoteUIElementsList.Count; i++)
@@ -319,7 +330,7 @@ namespace TooManyEmotes {
         }
 
 
-        public static bool isMenuOpen { get { return menuGameObject.activeSelf; } }
+        public static bool isMenuOpen { get { return menuGameObject != null && menuGameObject.activeSelf; } }
 
 
         public static void ToggleEmoteMenu()
@@ -398,7 +409,10 @@ namespace TooManyEmotes {
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
-        public static void InitializePlayerCloneRenderObject(PlayerControllerB __instance) {
+        public static void InitializePlayerCloneRenderObject(PlayerControllerB __instance)
+        {
+            if (ConfigSettings.disableEmotesForSelf.Value)
+                return;
 
             IEnumerator InitPlayerCloneAfterSpawnAnimation() {
                 yield return new WaitForSeconds(2);
@@ -462,13 +476,13 @@ namespace TooManyEmotes {
         [HarmonyPrefix]
         public static bool OnScrollMouse(InputAction.CallbackContext context, PlayerControllerB __instance)
         {
-            if (!isMenuOpen || __instance != localPlayerController || !context.performed)
+            if (ConfigSettings.disableEmotesForSelf.Value || !isMenuOpen || __instance != localPlayerController || !context.performed)
                 return true;
 
             if (context.ReadValue<float>() < 0 && !ConfigSettings.reverseEmoteWheelScrollDirection.Value)
-                SwapNextPage();
-            else
                 SwapPrevPage();
+            else
+                SwapNextPage();
 
             return false;
         }
@@ -476,27 +490,40 @@ namespace TooManyEmotes {
 
         [HarmonyPatch(typeof(PlayerControllerB), "ItemSecondaryUse_performed")]
         [HarmonyPrefix]
-        public static bool PreventItemSecondaryUseInMenu(InputAction.CallbackContext context) => !isMenuOpen;
+        public static bool PreventItemSecondaryUseInMenu(InputAction.CallbackContext context)
+        {
+            if (ConfigSettings.disableEmotesForSelf.Value)
+                return true;
+            return !isMenuOpen;
+        }
 
         [HarmonyPatch(typeof(PlayerControllerB), "ItemTertiaryUse_performed")]
         [HarmonyPrefix]
-        public static bool PreventItemTertiaryUseInMenu(InputAction.CallbackContext context) => !isMenuOpen;
+        public static bool PreventItemTertiaryUseInMenu(InputAction.CallbackContext context)
+        {
+            if (ConfigSettings.disableEmotesForSelf.Value)
+                return true;
+            return !isMenuOpen;
+        }
 
         [HarmonyPatch(typeof(PlayerControllerB), "Interact_performed")]
         [HarmonyPrefix]
-        public static bool PreventInteractInMenu(InputAction.CallbackContext context) => !isMenuOpen;
+        public static bool PreventInteractInMenu(InputAction.CallbackContext context)
+        {
+            if (ConfigSettings.disableEmotesForSelf.Value)
+                return true;
+            return !isMenuOpen;
+        }
 
 
         [HarmonyPatch(typeof(QuickMenuManager), "OpenQuickMenu")]
         [HarmonyPrefix]
         public static bool OnOpenQuickMenu()
         {
-            if (isMenuOpen)
-            {
-                CloseEmoteMenu();
-                return false;
-            }
-            return true;
+            if (!isMenuOpen)
+                return true;
+            CloseEmoteMenu();
+            return false;
         }
 
 
@@ -513,7 +540,7 @@ namespace TooManyEmotes {
         [HarmonyPostfix]
         public static void OnLocalPlayerDeath(Vector3 bodyVelocity, PlayerControllerB __instance)
         {
-            if (__instance == localPlayerController && isMenuOpen && __instance.isPlayerDead)
+            if (isMenuOpen && __instance == localPlayerController && __instance.isPlayerDead)
                 CloseEmoteMenu();
         }
     }

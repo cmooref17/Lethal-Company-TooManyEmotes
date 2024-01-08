@@ -215,6 +215,11 @@ namespace TooManyEmotes.Patches
                     __result = BuildCustomTerminalNode("New emote credit balance: " + currentEmoteCredits + "\n\n", clearPreviousText: true);
                 }
 
+                else if (StartOfRoundPatcher.allUnlockableEmotesDict.TryGetValue(input, out emote) && !StartOfRoundPatcher.unlockedEmotes.Contains(emote))
+                {
+                    EmoteSyncManager.SendOnUnlockEmoteUpdate(emote.emoteId);
+                }
+
                 return false;
             }
 

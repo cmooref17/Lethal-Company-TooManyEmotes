@@ -36,7 +36,7 @@ namespace TooManyEmotes.CompatibilityPatcher {
         {
             if (Plugin.IsModLoaded("MoreEmotes"))
             {
-                if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("MoreEmotes", out var pluginInfo))
+                if (Chainloader.PluginInfos.TryGetValue("MoreEmotes", out var pluginInfo))
                 {
                     Assembly assembly = pluginInfo.Instance.GetType().Assembly;
                     if (assembly != null)
@@ -44,6 +44,47 @@ namespace TooManyEmotes.CompatibilityPatcher {
                         Plugin.Log("Applying compatibility patch for More_Emotes");
 
                         Type internalClassType = assembly.GetType("MoreEmotes.Patch.EmotePatch");
+                        FieldInfo animatorControllerFieldLocal = internalClassType.GetField("local", BindingFlags.Public | BindingFlags.Static);
+                        RuntimeAnimatorController animatorControllerLocal = (RuntimeAnimatorController)animatorControllerFieldLocal.GetValue(null);
+                        if (animatorControllerLocal != null)
+                        {
+                            if (!(animatorControllerLocal is AnimatorOverrideController))
+                                animatorControllerFieldLocal.SetValue(null, new AnimatorOverrideController(animatorControllerLocal));
+                        }
+
+                        FieldInfo animatorControllerFieldOther = internalClassType.GetField("others", BindingFlags.Public | BindingFlags.Static);
+                        RuntimeAnimatorController animatorControllerOther = (RuntimeAnimatorController)animatorControllerFieldOther.GetValue(null);
+                        if (animatorControllerOther != null)
+                        {
+                            if (!(animatorControllerOther is AnimatorOverrideController))
+                                animatorControllerFieldOther.SetValue(null, new AnimatorOverrideController(animatorControllerOther));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    [HarmonyPatch]
+    internal class BetterEmotesPatcher
+    {
+        public static bool loadedBetterEmotes = false;
+
+        [HarmonyPatch(typeof(PreInitSceneScript), "Awake")]
+        [HarmonyPostfix]
+        public static void ApplyPatch()
+        {
+            if (Plugin.IsModLoaded("BetterEmotes"))
+            {
+                if (Chainloader.PluginInfos.TryGetValue("BetterEmotes", out var pluginInfo))
+                {
+                    Assembly assembly = pluginInfo.Instance.GetType().Assembly;
+                    if (assembly != null)
+                    {
+                        Plugin.Log("Applying compatibility patch for BetterEmotes");
+
+                        Type internalClassType = assembly.GetType("BetterEmote.EmotePatch");
                         FieldInfo animatorControllerFieldLocal = internalClassType.GetField("local", BindingFlags.Public | BindingFlags.Static);
                         RuntimeAnimatorController animatorControllerLocal = (RuntimeAnimatorController)animatorControllerFieldLocal.GetValue(null);
                         if (animatorControllerLocal != null)

@@ -33,8 +33,17 @@ namespace TooManyEmotes.Config {
         public static ConfigEntry<float> rotationChanceEmoteTier1;
         public static ConfigEntry<float> rotationChanceEmoteTier2;
         public static ConfigEntry<float> rotationChanceEmoteTier3;
+        
+        public static ConfigEntry<bool> enableMaskedEnemiesEmoting;
+        public static ConfigEntry<float> maskedEnemiesEmoteChanceOnEncounter;
+        public static ConfigEntry<bool> maskedEnemiesAlwaysEmoteOnFirstEncounter;
+        public static ConfigEntry<bool> enableSyncingEmotesWithMaskedEnemies;
+        public static ConfigEntry<bool> overrideStopAndStareDuration;
+        public static ConfigEntry<string> maskedEnemyEmoteRandomDelay;
+        public static ConfigEntry<string> maskedEnemyEmoteRandomDuration;
 
         //public static ConfigEntry<int> numMysteryEmotesStoreRotation;
+        public static ConfigEntry<bool> disableEmotesForSelf;
         public static ConfigEntry<string> openEmoteMenuKeybind;
         public static ConfigEntry<string> rotateCharacterInEmoteKeybind;
         public static ConfigEntry<bool> toggleEmoteMenu;
@@ -50,35 +59,43 @@ namespace TooManyEmotes.Config {
         public static void BindConfigSettings() {
             Plugin.Log("BindingConfigs");
 
+            unlockEverything = Plugin.instance.Config.Bind("Emote Settings", "I am a Party Pooper", false, "[Host only] If true, every emote will be unlocked in your emote wheel at the start of the game. Also, you're not really a party pooper.");
+            shareEverything = Plugin.instance.Config.Bind("Emote Settings", "ShareEverything", true, "[Host only] If set to false, emotes in the store will be different for each player. Unlocking emotes will only unlock for the player that purchased the emote. Each player will have their own emote credits. The amount of emote credits that each player will receive will NOT be reduced.");
+            syncUnsharedEmotes = Plugin.instance.Config.Bind("Emote Settings", "CanSyncUnsharedEmotes", true, "[Host only] Only applies if ShareEverything is false. If set to true, players will be able to sync emotes with other players, even if they do not have the emote being performed unlocked.");
 
-            unlockEverything = Plugin.instance.Config.Bind("Server settings", "I am a Party Pooper", false, "[Host only] If true, every emote will be unlocked in your emote wheel at the start of the game.");
-            shareEverything = Plugin.instance.Config.Bind("Server settings", "ShareEverything", true, "[Host only] If set to false, emotes in the store will be different for each player. Unlocking emotes will only unlock for the player that purchased the emote. Each player will have their own emote credits. The amount of emote credits that each player will receive will NOT be reduced.");
-            syncUnsharedEmotes = Plugin.instance.Config.Bind("Server settings", "CanSyncUnsharedEmotes", true, "[Host only] Only applies if ShareEverything is false. If set to true, players will be able to sync emotes with other players, even if they do not have the emote being performed unlocked.");
+            disableRaritySystem = Plugin.instance.Config.Bind("Emote Settings", "DisableRaritySystem", false, "[Host only] If true, every emote will have the same likelyhood of appearing in the emote store.");
+            basePriceEmoteRaritySystemDisabled = Plugin.instance.Config.Bind("Emote Settings", "BasePriceEmote - Rarity System Disabled", 100, "[Host only] Base price of emotes if the rarity system is disabled.");
 
-            disableRaritySystem = Plugin.instance.Config.Bind("Server settings", "DisableRaritySystem", false, "[Host only] If true, every emote will have the same likelyhood of appearing in the emote store.");
-            basePriceEmoteRaritySystemDisabled = Plugin.instance.Config.Bind("Server settings", "BasePriceEmote - Rarity System Disabled", 100, "[Host only] Base price of emotes if the rarity system is disabled.");
+            startingEmoteCredits = Plugin.instance.Config.Bind("Emote Settings", "StartingEmoteCredits", 100, "[Host only] The number of emote credits you start each game with.");
+            addEmoteCreditsMultiplier = Plugin.instance.Config.Bind("Emote Settings", "AddEmoteCreditsMultiplier", 0.5f, "[Host only] You gain emote credits based off this multiplier of normal group credits earned. Example: If set to the default, 0.5, and you earn 200 group credits, you will also gain 100 emote credits.");
+            purchaseEmotesWithDefaultCurrency = Plugin.instance.Config.Bind("Emote Settings", "PurchaseEmotesWithDefaultCredits", true, "[Host only] Setting this to true will allow you to purchase emotes with normal group credits once you run out of emote credits. This setting will automatically be disabled if ShareEverything is false.");
 
-            startingEmoteCredits = Plugin.instance.Config.Bind("Server settings", "StartingEmoteCredits", 100, "[Host only] The number of emote credits you start each game with.");
-            addEmoteCreditsMultiplier = Plugin.instance.Config.Bind("Server settings", "AddEmoteCreditsMultiplier", 0.5f, "[Host only] You gain emote credits based off this multiplier of normal group credits earned. Example: If set to the default, 0.5, and you earn 200 group credits, you will also gain 100 emote credits.");
-            purchaseEmotesWithDefaultCurrency = Plugin.instance.Config.Bind("Server settings", "PurchaseEmotesWithDefaultCredits", true, "[Host only] Setting this to true will allow you to purchase emotes with normal group credits once you run out of emote credits. This setting will automatically be disabled if ShareEverything is false.");
+            priceMultiplierEmotesStore = Plugin.instance.Config.Bind("Emote Settings", "PriceMultiplierEmotesStore", 1.0f, "[Host only] Price multiplier for emotes in the store. Only applies if UnlockEverythingAtStart is false.");
+            basePriceEmoteTier0 = Plugin.instance.Config.Bind("Emote Settings", "PriceCommonEmote", 50, "[Host only] The base price of [common]emotes in the store.");
+            basePriceEmoteTier1 = Plugin.instance.Config.Bind("Emote Settings", "PriceUncommonEmote", 100, "[Host only] The base price of [uncommon] emotes in the store.");
+            basePriceEmoteTier2 = Plugin.instance.Config.Bind("Emote Settings", "PriceRareEmote", 200, "[Host only] The base price of [rare] emotes in the store.");
+            basePriceEmoteTier3 = Plugin.instance.Config.Bind("Emote Settings", "PriceLegendaryEmote", 300, "[Host only] The base price of [legendary] emotes in the store.");
 
-            priceMultiplierEmotesStore = Plugin.instance.Config.Bind("Server settings", "PriceMultiplierEmotesStore", 1.0f, "[Host only] Price multiplier for emotes in the store. Only applies if UnlockEverythingAtStart is false.");
-            basePriceEmoteTier0 = Plugin.instance.Config.Bind("Server settings", "PriceCommonEmote", 50, "[Host only] The base price of [common]emotes in the store.");
-            basePriceEmoteTier1 = Plugin.instance.Config.Bind("Server settings", "PriceUncommonEmote", 100, "[Host only] The base price of [uncommon] emotes in the store.");
-            basePriceEmoteTier2 = Plugin.instance.Config.Bind("Server settings", "PriceRareEmote", 200, "[Host only] The base price of [rare] emotes in the store.");
-            basePriceEmoteTier3 = Plugin.instance.Config.Bind("Server settings", "PriceLegendaryEmote", 300, "[Host only] The base price of [legendary] emotes in the store.");
+            numEmotesStoreRotation = Plugin.instance.Config.Bind("Emote Settings", "EmotesInStoreRotation", 6, "[Host only] The number of emotes that will be available at a time in the store. Only applies if UnlockEverythingAtStart is false.");
+            rotationChanceEmoteTier0 = Plugin.instance.Config.Bind("Emote Settings", "RotationWeightCommonEmote", 0.55f, "[Host only] The likelyhood of [common] emotes appearing (per slot) in the store rotation.");
+            rotationChanceEmoteTier1 = Plugin.instance.Config.Bind("Emote Settings", "RotationWeightUncommonEmote", 0.35f, "[Host only] The likelyhood of [uncommon] emotes appearing (per slot) in the store rotation.");
+            rotationChanceEmoteTier2 = Plugin.instance.Config.Bind("Emote Settings", "RotationWeightRareEmote", 0.08f, "[Host only] The likelyhood of [rare] emotes appearing (per slot) in the store rotation.");
+            rotationChanceEmoteTier3 = Plugin.instance.Config.Bind("Emote Settings", "RotationWeightLegendaryEmote", 0.02f, "[Host only] The likelyhood of [legendary] emotes appearing (per slot) in the store rotation.");
 
-            numEmotesStoreRotation = Plugin.instance.Config.Bind("Server settings", "EmotesInStoreRotation", 6, "[Host only] The number of emotes that will be available at a time in the store. Only applies if UnlockEverythingAtStart is false.");
-            rotationChanceEmoteTier0 = Plugin.instance.Config.Bind("Server settings", "RotationWeightCommonEmote", 0.55f, "[Host only] The likelyhood of [common] emotes appearing (per slot) in the store rotation.");
-            rotationChanceEmoteTier1 = Plugin.instance.Config.Bind("Server settings", "RotationWeightUncommonEmote", 0.35f, "[Host only] The likelyhood of [uncommon] emotes appearing (per slot) in the store rotation.");
-            rotationChanceEmoteTier2 = Plugin.instance.Config.Bind("Server settings", "RotationWeightRareEmote", 0.08f, "[Host only] The likelyhood of [rare] emotes appearing (per slot) in the store rotation.");
-            rotationChanceEmoteTier3 = Plugin.instance.Config.Bind("Server settings", "RotationWeightLegendaryEmote", 0.02f, "[Host only] The likelyhood of [legendary] emotes appearing (per slot) in the store rotation.");
+            enableMaskedEnemiesEmoting = Plugin.instance.Config.Bind("MaskedEnemyEmotes - Beta", "EnableMaskedEnemiesEmoting", true, "[Host only] Enabling this alone does not change the behaviour of the Masked Enemies, and shouldn't conflict with other mods.");
+            maskedEnemiesEmoteChanceOnEncounter = Plugin.instance.Config.Bind("MaskedEnemyEmotes - Beta", "EmoteChanceOnEncounter", 0.25f, "[Host only] Chance per encounter with a Masked Enemy, for them to perform an emote. Use values between 0 and 1.");
+            maskedEnemiesAlwaysEmoteOnFirstEncounter = Plugin.instance.Config.Bind("MaskedEnemyEmotes - Beta", "AlwaysEmoteOnFirstEncounter", true, "[Host only] This will force the first encounter (for each player) with a Masked Enemy to trigger an emote, regardless of EmoteChanceOnEncounter.");
+            enableSyncingEmotesWithMaskedEnemies = Plugin.instance.Config.Bind("MaskedEnemyEmotes - Beta", "EnableSyncingEmotesWithMaskedEnemies", true, "[Client-side] Enabling this will allow you to sync emotes with Masked Enemies. This config is mainly here to disable in case of strange issues.");
+            maskedEnemyEmoteRandomDelay = Plugin.instance.Config.Bind("MaskedEnemyEmotes - Beta", "RandomEmoteDelay", "1.5,2.0", "[Host only] Random range at which Masked Enemies will delay before performing an emote. These values could be raised a bit if OverrideStopAndStareDuration is enabled, otherwise, you may run into emotes ending quickly.");
+            overrideStopAndStareDuration = Plugin.instance.Config.Bind("MaskedEnemyEmotes - Beta", "OverrideStopAndStareDuration", true, "[Host only] Enabling this will allow this mod to extend the stop and stare duration for longer emotes. If disabled, emotes may end very quickly. Disable this setting if you run into mod conflicts.");
+            maskedEnemyEmoteRandomDuration = Plugin.instance.Config.Bind("MaskedEnemyEmotes - Beta", "RandomEmoteDuration", "2.0,4.0", "[Host only] Random range on how long Masked Enemies will emote for. This will extend the Masked Enemies' stop and stare duration by this amount. Only applies if OverrideStopAndStareDuration is true.");
 
             //numMysteryEmotesStoreRotation = Plugin.instance.Config.Bind("Server settings", "NumMysteryEmotesInStoreRotation", 1, "[Host only] The number of \"mystery\" emotes that will be available at a time in the store. These emotes will be a mystery until unlocked. Only applies if UnlockEverythingAtStart is false.");
-            openEmoteMenuKeybind = Plugin.instance.Config.Bind("Client", "OpenEmoteMenuKeybind", "<Keyboard>/backquote", "Keybind for opening the emote radial menu.");
-            rotateCharacterInEmoteKeybind = Plugin.instance.Config.Bind("Client", "RotateCharacterInEmoteKeybind", "<Keyboard>/leftAlt", "Keybind to hold to rotate character while performing a custom emote.");
-            toggleEmoteMenu = Plugin.instance.Config.Bind("Client", "ToggleEmoteMenu", true, "If set to false, the emote menu will open upon pressing the related keybind, and close upon releasing, and will play the currently hovered emote.");
-            reverseEmoteWheelScrollDirection = Plugin.instance.Config.Bind("Client", "ReverseEmoteWheelScrollDirection", false, "Reverses the page swapping direction in your emote when scrolling.");
+            disableEmotesForSelf = Plugin.instance.Config.Bind("Emote Radial Menu", "DisableEmotingForSelf", false, "Disabling this will not convert your player's animator controller to an AnimatorOverrideController, and you will not be able to perform custom emotes. Disable this in case of specific mod conflicts. You will still be able to see other players emoting.");
+            openEmoteMenuKeybind = Plugin.instance.Config.Bind("Emote Radial Menu", "OpenEmoteMenuKeybind", "<Keyboard>/backquote", "This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
+            rotateCharacterInEmoteKeybind = Plugin.instance.Config.Bind("Emote Radial Menu", "RotateCharacterInEmoteKeybind", "<Keyboard>/leftAlt", "Keybind to hold to rotate character while performing a custom emote. This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
+            toggleEmoteMenu = Plugin.instance.Config.Bind("Emote Radial Menu", "ToggleEmoteMenu", true, "If set to false, the emote menu will open upon pressing the related keybind, and close upon releasing, and will play the currently hovered emote.");
+            reverseEmoteWheelScrollDirection = Plugin.instance.Config.Bind("Emote Radial Menu", "ReverseEmoteWheelScrollDirection", false, "Reverses the page swapping direction in your emote when scrolling.");
 
             emoteNameColorTier0 = Plugin.instance.Config.Bind("Accessibility", "CommonEmoteNameColor", "#00FF00", "The color of the [common] emote name in the terminal.");
             emoteNameColorTier1 = Plugin.instance.Config.Bind("Accessibility", "UncommonEmoteNameColor", "#2828FF", "The color of the [uncommon] emote name in the terminal.");
@@ -110,7 +127,16 @@ namespace TooManyEmotes.Config {
             currentConfigEntries.Add(rotationChanceEmoteTier2.Definition.Key, rotationChanceEmoteTier2);
             currentConfigEntries.Add(rotationChanceEmoteTier3.Definition.Key, rotationChanceEmoteTier3);
 
+            currentConfigEntries.Add(enableMaskedEnemiesEmoting.Definition.Key, enableMaskedEnemiesEmoting);
+            currentConfigEntries.Add(maskedEnemiesEmoteChanceOnEncounter.Definition.Key, maskedEnemiesEmoteChanceOnEncounter);
+            currentConfigEntries.Add(maskedEnemiesAlwaysEmoteOnFirstEncounter.Definition.Key, maskedEnemiesAlwaysEmoteOnFirstEncounter);
+            currentConfigEntries.Add(enableSyncingEmotesWithMaskedEnemies.Definition.Key, enableSyncingEmotesWithMaskedEnemies);
+            currentConfigEntries.Add(overrideStopAndStareDuration.Definition.Key, overrideStopAndStareDuration);
+            currentConfigEntries.Add(maskedEnemyEmoteRandomDelay.Definition.Key, maskedEnemyEmoteRandomDelay);
+            currentConfigEntries.Add(maskedEnemyEmoteRandomDuration.Definition.Key, maskedEnemyEmoteRandomDuration);
+
             //currentConfigEntries.Add(numMysteryEmotesStoreRotation.Definition.Key, numMysteryEmotesStoreRotation);
+            currentConfigEntries.Add(disableEmotesForSelf.Definition.Key, disableEmotesForSelf);
             currentConfigEntries.Add(openEmoteMenuKeybind.Definition.Key, openEmoteMenuKeybind);
             currentConfigEntries.Add(rotateCharacterInEmoteKeybind.Definition.Key, rotateCharacterInEmoteKeybind);
             currentConfigEntries.Add(toggleEmoteMenu.Definition.Key, toggleEmoteMenu);
@@ -141,6 +167,28 @@ namespace TooManyEmotes.Config {
             ConfigSync.BuildDefaultConfigSync();
         }
 
+
+        public static string GetDisplayName(string key)
+        {
+            key = key.Replace("<Keyboard>/", "");
+            key = key.Replace("<Mouse>/", "");
+            string displayName = key.ToLower();
+            displayName = displayName.Replace("leftalt", "Alt");
+            displayName = displayName.Replace("rightalt", "Alt");
+            displayName = displayName.Replace("leftctrl", "Ctrl");
+            displayName = displayName.Replace("rightctrl", "Ctrl");
+            displayName = displayName.Replace("leftshift", "Shift");
+            displayName = displayName.Replace("rightshift", "Shift");
+            displayName = displayName.Replace("leftbutton", "LMB");
+            displayName = displayName.Replace("rightbutton", "RMB");
+            displayName = displayName.Replace("middlebutton", "MMB");
+            displayName = displayName.Replace("backquote", "`");
+            try
+            {
+                displayName = char.ToUpper(displayName[0]) + displayName.Substring(1);
+            } catch { }
+            return displayName;
+        }
 
 
         public static void TryRemoveOldConfigSettings()

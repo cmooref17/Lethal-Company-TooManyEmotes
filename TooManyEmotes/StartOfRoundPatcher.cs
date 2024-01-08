@@ -57,7 +57,8 @@ namespace TooManyEmotes.Patches
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
         [HarmonyPostfix]
         public static void InitializeEmotes(StartOfRound __instance) {
-            __instance.localClientAnimatorController = new AnimatorOverrideController(__instance.localClientAnimatorController);
+            if (!ConfigSettings.disableEmotesForSelf.Value)
+                __instance.localClientAnimatorController = new AnimatorOverrideController(__instance.localClientAnimatorController);
             __instance.otherClientsAnimatorController = new AnimatorOverrideController(__instance.otherClientsAnimatorController);
 
             allUnlockableEmotes = new List<UnlockableEmote>();
@@ -229,7 +230,8 @@ namespace TooManyEmotes.Patches
             Plugin.Log("Resetting progression.");
             ResetEmotesLocal();
             TerminalPatcher.currentEmoteCredits = ConfigSync.instance.syncStartingEmoteCredits;
-            foreach (string username in TerminalPatcher.currentEmoteCreditsByPlayer.Keys)
+            var usernames = new List<string>(TerminalPatcher.currentEmoteCreditsByPlayer.Keys);
+            foreach (string username in usernames)
                 TerminalPatcher.currentEmoteCreditsByPlayer[username] = ConfigSync.instance.syncStartingEmoteCredits;
             TerminalPatcher.emoteStoreSeed = 0;
         }
@@ -248,7 +250,7 @@ namespace TooManyEmotes.Patches
             foreach (var playerController in StartOfRound.Instance.allPlayerScripts)
             {
                 if (playerController.playerSteamId != 0)
-                    unlockedEmotesByPlayer.Add(playerController.playerUsername, playerController == StartOfRound.Instance.localPlayerController ? unlockedEmotes : new List<UnlockableEmote>());
+                    unlockedEmotesByPlayer.Add(playerController.playerUsername, (playerController == StartOfRound.Instance.localPlayerController || ConfigSync.instance.syncShareEverything) ? unlockedEmotes : new List<UnlockableEmote>());
             }
             UnlockEmotesLocal(ConfigSync.instance.syncUnlockEverything ? allUnlockableEmotes : complementaryEmotes);
             UpdateUnlockedFavoriteEmotes();
@@ -309,7 +311,7 @@ namespace TooManyEmotes.Patches
                 return;
 
             var _unlockedEmotes = unlockedEmotes;
-            if (playerUsername != "" && !ConfigSync.instance.syncShareEverything && !unlockedEmotesByPlayer.TryGetValue(playerUsername, out _unlockedEmotes))
+            if (playerUsername != "" && playerUsername != StartOfRound.Instance.localPlayerController.playerUsername && !ConfigSync.instance.syncShareEverything && !unlockedEmotesByPlayer.TryGetValue(playerUsername, out _unlockedEmotes))
                 return;
 
             if (emote.randomEmotePool != null)
@@ -323,7 +325,7 @@ namespace TooManyEmotes.Patches
             if (!_unlockedEmotes.Contains(emote))
                 _unlockedEmotes.Add(emote);
 
-            if (playerUsername == "" || ConfigSync.instance.syncShareEverything)
+            if (_unlockedEmotes == unlockedEmotes)
             {
                 if (emote.rarity == 3 && !unlockedEmotesTier3.Contains(emote))
                     unlockedEmotesTier3.Add(emote);
