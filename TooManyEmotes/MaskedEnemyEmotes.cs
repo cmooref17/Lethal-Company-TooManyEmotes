@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TooManyEmotes.Networking;
+using Unity.Netcode;
 using UnityEditor.Animations;
 using UnityEngine;
 using UnityEngine.AI;
@@ -22,7 +23,6 @@ namespace TooManyEmotes.Patches
         public static int currentLevelSeed { get { return StartOfRound.Instance.randomMapSeed; } }
         public static AnimationClip defaultIdleClip;
         public static HashSet<PlayerControllerB> playersEmotedWithThisRound = new HashSet<PlayerControllerB>();
-
 
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
         [HarmonyPostfix]
@@ -72,7 +72,7 @@ namespace TooManyEmotes.Patches
         [HarmonyPostfix]
         public static void OnUpdate(MaskedPlayerEnemy __instance)
         {
-            if (!ConfigSync.instance.syncEnableMaskedEnemiesEmoting || __instance.isEnemyDead || !spawnedMaskedEnemyData.TryGetValue(__instance, out var maskedEnemyData))
+            if (!NetworkManager.Singleton.IsServer || !ConfigSync.instance.syncEnableMaskedEnemiesEmoting || __instance.isEnemyDead || !spawnedMaskedEnemyData.TryGetValue(__instance, out var maskedEnemyData))
                 return;
 
             if (maskedEnemyData.lookingAtPlayer != null && maskedEnemyData.stopAndStareTimer >= 2 && !maskedEnemyData.stoppedAndStaring && !maskedEnemyData.inKillAnimation)
@@ -248,14 +248,19 @@ namespace TooManyEmotes.Patches
         public UnlockableEmote performingEmote = null;
         public UnlockableEmote pendingEmote = null;
         public bool stoppedAndStaring = false;
+        public bool behaviour1 = false;
 
         public Animator animator { get { return maskedEnemy.creatureAnimator; } }
         public AnimatorOverrideController animatorController { get { return animator.runtimeAnimatorController as AnimatorOverrideController; } }
         public float stopAndStareTimer { get { return (float)Traverse.Create(maskedEnemy).Field("stopAndStareTimer").GetValue(); } set { Traverse.Create(maskedEnemy).Field("stopAndStareTimer").SetValue(value); } }
+        public bool movingTowardsPlayer { get { return (bool)Traverse.Create(maskedEnemy).Field("movingTowardsTargetPlayer").GetValue(); } set { Traverse.Create(maskedEnemy).Field("movingTowardsTargetPlayer").SetValue(value); } }
         public NavMeshAgent agent { get { return maskedEnemy.agent; } }
         public RigBuilder rigBuilder { get { return maskedEnemy.GetComponentInChildren<RigBuilder>(); } }
         public PlayerControllerB lookingAtPlayer { get { return maskedEnemy.stareAtTransform?.GetComponentInParent<PlayerControllerB>(); } }
         public bool inKillAnimation { get { return (bool)Traverse.Create(maskedEnemy).Field("inKillAnimation").GetValue(); } }
+        public bool handsOut { get { return (bool)Traverse.Create(maskedEnemy).Field("handsOut").GetValue(); } }
+        public float localSpeed { get { return ((Vector3)Traverse.Create(maskedEnemy).Field("agentLocalVelocity").GetValue()).magnitude; } }
+        public bool isMoving { get { return animator.GetBool("IsMoving"); } }
 
         public MaskedEnemyData(MaskedPlayerEnemy maskedEnemy)
         {

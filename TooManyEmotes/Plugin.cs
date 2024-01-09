@@ -13,7 +13,7 @@ using TooManyEmotes.Input;
 
 namespace TooManyEmotes
 {
-    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.7.6")]
+    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.7.7")]
     [BepInDependency("com.rune580.LethalCompanyInputUtils", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
