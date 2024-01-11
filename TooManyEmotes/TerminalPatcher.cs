@@ -152,7 +152,7 @@ namespace TooManyEmotes.Patches
                         Debug.Log("Attempted to confirm purchase on emote that was already unlocked. Emote: " + purchasingEmote.displayName);
                         __result = BuildTerminalNodeAlreadyUnlocked(purchasingEmote);
                     }
-                    else if (currentEmoteCredits + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? terminalInstance.groupCredits : 0) < purchasingEmote.price)
+                    else if (Mathf.Max(currentEmoteCredits, 0) + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? Mathf.Max(terminalInstance.groupCredits, 0) : 0) < purchasingEmote.price)
                     {
                         Debug.Log("Attempted to confirm purchase with insufficient emote credits. Current credits: " + currentEmoteCredits + ". " + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? ("Group credits: " + terminalInstance.groupCredits + ". ") : "") + "Emote price: " + purchasingEmote.price);
                         __result = BuildTerminalNodeInsufficientFunds(purchasingEmote);
@@ -164,8 +164,8 @@ namespace TooManyEmotes.Patches
                         int oldEmoteCredits = currentEmoteCredits;
                         int oldGroupCredits = terminalInstance.groupCredits;
 
-                        int dEmoteCredits = -Mathf.Min(currentEmoteCredits, purchasingEmote.price);
-                        int dGroupCredits = ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? -Mathf.Min(terminalInstance.groupCredits, purchasingEmote.price + dEmoteCredits) : 0;
+                        int dEmoteCredits = -Mathf.Min(Mathf.Max(currentEmoteCredits, 0), purchasingEmote.price);
+                        int dGroupCredits = ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? -Mathf.Min(Mathf.Max(terminalInstance.groupCredits, 0), purchasingEmote.price + dEmoteCredits) : 0;
 
                         currentEmoteCredits += dEmoteCredits;
                         terminalInstance.groupCredits += dGroupCredits;
@@ -249,7 +249,7 @@ namespace TooManyEmotes.Patches
                     Plugin.Log("Attempted to start purchase on emote that was already unlocked. Emote: " + emote.displayName);
                     __result = BuildTerminalNodeAlreadyUnlocked(emote);
                 }
-                else if (currentEmoteCredits + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? terminalInstance.groupCredits : 0) < emote.price)
+                else if (Mathf.Max(currentEmoteCredits, 0) + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? Mathf.Max(terminalInstance.groupCredits, 0) : 0) < emote.price)
                 {
                     Plugin.Log("Attempted to start purchase with insufficient emote credits. Current credits: " + currentEmoteCredits + ". " + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? ("Group credits: " + terminalInstance.groupCredits + ". ") : "") + "Emote price: " + emote.price);
                     __result = BuildTerminalNodeInsufficientFunds(emote);

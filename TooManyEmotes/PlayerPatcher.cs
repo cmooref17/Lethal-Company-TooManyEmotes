@@ -69,7 +69,8 @@ namespace TooManyEmotes.Patches {
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
-        public static void OnLocalClientReady(PlayerControllerB __instance) {
+        public static void OnLocalClientReady(PlayerControllerB __instance)
+        {
             if (!ConfigSettings.disableEmotesForSelf.Value)
             {
                 localPlayerAnimatorOverrideController = (AnimatorOverrideController)StartOfRound.Instance.localClientAnimatorController;
@@ -103,15 +104,26 @@ namespace TooManyEmotes.Patches {
         }
 
 
+        [HarmonyPatch(typeof(PlayerControllerB), "KillPlayer")]
+        [HarmonyPrefix]
+        public static void OnPlayerDeath(Vector3 bodyVelocity, PlayerControllerB __instance)
+        {
+            Plugin.LogWarning("Player died while emoting. Hopefully this handles smoothly.");
+            if (performingEmotes.TryGetValue(__instance, out var emote) && emote != null)
+                OnUpdateCustomEmote(-1, __instance);
+        }
+
+
         [HarmonyPatch(typeof(PlayerControllerB), "PerformEmote")]
         [HarmonyPrefix]
         public static bool PerformCustomEmoteLocalPrefix(InputAction.CallbackContext context, int emoteID, PlayerControllerB __instance)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value)
+            if (ConfigSettings.disableEmotesForSelf.Value || __instance != localPlayerController)
                 return true;
 
-            if (__instance == localPlayerController && (context.performed || emoteID < 0) && CallCheckConditionsForEmote(localPlayerController) && localPlayerController.inAnimationWithEnemy == null)
+            if (emoteID < 0 && CallCheckConditionsForEmote(localPlayerController) && localPlayerController.playerBodyAnimator.GetInteger("emoteNumber") <= 2)
             {
+                // Perform the emote
                 localPlayerController.performingEmote = true;
                 // Performing custom emote
                 if (emoteID < 0)
@@ -163,9 +175,11 @@ namespace TooManyEmotes.Patches {
 
 
 
-        public static bool CallCheckConditionsForEmote(PlayerControllerB playerController) {
+        public static bool CallCheckConditionsForEmote(PlayerControllerB playerController)
+        {
+            bool otherConditions = playerController.inAnimationWithEnemy == null;
             MethodInfo method = playerController.GetType().GetMethod("CheckConditionsForEmote", BindingFlags.NonPublic | BindingFlags.Instance);
-            return (bool)method.Invoke(localPlayerController, new object[] { });
+            return (bool)method.Invoke(localPlayerController, new object[] { }) && otherConditions;
         }
 
 
@@ -344,12 +358,14 @@ namespace TooManyEmotes.Patches {
         }
 
 
-        public static void EnablePlayerRigBuilder(PlayerControllerB playerController, bool enabled = true)
+        public static void EnablePlayerRigBuilder(PlayerControllerB playerController, bool enabled)
         {
             IEnumerator EnableRigBuilder()
             {
                 var currentAnimationClip = GetCurrentAnimationClip(playerController);
                 var currentEmoteNumber = playerController.playerBodyAnimator.GetInteger("emoteNumber");
+                int prevState = playerController.playerBodyAnimator.GetCurrentAnimatorStateInfo(1).shortNameHash;
+                float normalizedTime = playerController.playerBodyAnimator.GetCurrentAnimatorStateInfo(1).normalizedTime;
 
                 SetCurrentAnimationClip(Plugin.idleClip, playerController);
                 playerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
@@ -358,10 +374,11 @@ namespace TooManyEmotes.Patches {
 
                 SetCurrentAnimationClip(currentAnimationClip, playerController);
                 playerController.playerBodyAnimator.SetInteger("emoteNumber", currentEmoteNumber);
-                if (currentEmoteNumber <= 0)
-                    playerController.playerBodyAnimator.Play("Dance1", 0, 0);
+                var currentState = playerController.playerBodyAnimator.GetCurrentAnimatorStateInfo(1).shortNameHash;
+                if (currentState != prevState)
+                    playerController.playerBodyAnimator.CrossFadeInFixedTime(prevState, 0.1f, 1);
                 else
-                    playerController.playerBodyAnimator.Play("Dance1", 0, 0);
+                    playerController.playerBodyAnimator.Play(prevState, 1, normalizedTime);
 
                 playerController.GetComponentInChildren<RigBuilder>().enabled = enabled;
             }
@@ -444,20 +461,23 @@ namespace TooManyEmotes.Patches {
         }
 
 
-        public static void SetCurrentAnimationClip(AnimationClip clip, PlayerControllerB playerController) {
+        public static void SetCurrentAnimationClip(AnimationClip clip, PlayerControllerB playerController, string stateName = "Dance1")
+        {
             if (!(playerController.playerBodyAnimator.runtimeAnimatorController is AnimatorOverrideController))
                 playerController.playerBodyAnimator.runtimeAnimatorController = new AnimatorOverrideController(playerController.playerBodyAnimator.runtimeAnimatorController);
-            ((AnimatorOverrideController)playerController.playerBodyAnimator.runtimeAnimatorController)["Dance1"] = clip;
+            ((AnimatorOverrideController)playerController.playerBodyAnimator.runtimeAnimatorController)[stateName] = clip;
         }
 
 
-        public static AnimationClip GetCurrentAnimationClip(PlayerControllerB playerController) {
+        public static AnimationClip GetCurrentAnimationClip(PlayerControllerB playerController, string stateName = "Dance1")
+        {
             if (!(playerController.playerBodyAnimator.runtimeAnimatorController is AnimatorOverrideController))
                 playerController.playerBodyAnimator.runtimeAnimatorController = new AnimatorOverrideController(playerController.playerBodyAnimator.runtimeAnimatorController);
-            return ((AnimatorOverrideController)playerController.playerBodyAnimator.runtimeAnimatorController)["Dance1"];
+            return ((AnimatorOverrideController)playerController.playerBodyAnimator.runtimeAnimatorController)[stateName];
         }
 
-        public static UnlockableEmote GetCurrentlyPlayingEmote(PlayerControllerB playerController) {
+        public static UnlockableEmote GetCurrentlyPlayingEmote(PlayerControllerB playerController)
+        {
             AnimationClip animationClip = GetCurrentAnimationClip(playerController);
             if (animationClip != null)
             {
@@ -472,7 +492,8 @@ namespace TooManyEmotes.Patches {
         }
 
 
-        public static bool IsCurrentlyPlayingCustomEmote(PlayerControllerB playerController) {
+        public static bool IsCurrentlyPlayingCustomEmote(PlayerControllerB playerController)
+        {
             if (playerController.performingEmote)
             {
                 int emoteNumber = playerController.playerBodyAnimator.GetInteger("emoteNumber");
