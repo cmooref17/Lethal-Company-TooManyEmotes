@@ -151,6 +151,7 @@
     <Compile Include="EmoteMenu.cs" />
     <Compile Include="IngameKeybinds.cs" />
     <Compile Include="MaskedEnemyEmotes.cs" />
+    <Compile Include="PlayerData.cs" />
     <Compile Include="StartOfRoundPatcher.cs" />
     <Compile Include="EmoteSyncManager.cs" />
     <Compile Include="ThirdPersonEmoteController.cs" />
