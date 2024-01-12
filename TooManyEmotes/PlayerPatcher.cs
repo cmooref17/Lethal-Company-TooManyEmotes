@@ -108,7 +108,7 @@ namespace TooManyEmotes.Patches {
         [HarmonyPrefix]
         public static void OnPlayerDeath(Vector3 bodyVelocity, PlayerControllerB __instance)
         {
-            Plugin.LogWarning("Player died while emoting. Hopefully this handles smoothly.");
+            Plugin.LogWarning("Player died while emoting. What a loser... I mean, I hope this handles smoothly.");
             if (performingEmotes.TryGetValue(__instance, out var emote) && emote != null)
                 OnUpdateCustomEmote(-1, __instance);
         }
@@ -121,17 +121,26 @@ namespace TooManyEmotes.Patches {
             if (ConfigSettings.disableEmotesForSelf.Value || __instance != localPlayerController)
                 return true;
 
-            if (emoteID < 0 && CallCheckConditionsForEmote(localPlayerController) && localPlayerController.playerBodyAnimator.GetInteger("emoteNumber") <= 2)
+            if (emoteID > 2)
             {
-                // Perform the emote
-                localPlayerController.performingEmote = true;
-                // Performing custom emote
-                if (emoteID < 0)
+                if (performingCustomEmoteLocal != null)
+                    return false;
+                return true;
+            }
+            
+            if (emoteID < 0)
+            {
+                // Prevent the emote if performing an emote from another mod, such as MoreEmotes
+                if (localPlayerController.playerBodyAnimator.GetInteger("emoteNumber") > 2)
+                    return false;
+
+                if (CallCheckConditionsForEmote(localPlayerController))
                 {
+                    localPlayerController.performingEmote = true;
                     localPlayerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
                     emoteID = Mathf.Abs(emoteID) - 1;
                     var emote = StartOfRoundPatcher.allUnlockableEmotes[emoteID];
-                    if (emote != null /* && StartOfRoundPatcher.unlockedEmotes.Contains(emote) */)
+                    if (emote != null)
                     {
                         if (emote.randomEmotePool != null && emote.randomEmotePool.Count >= 1)
                         {
@@ -152,15 +161,15 @@ namespace TooManyEmotes.Patches {
                     }
                     return false;
                 }
-                // Normal emote
-                else if (performingCustomEmoteLocal != null)
-                {
-                    OnUpdateCustomEmote(-1, localPlayerController);
-                    ThirdPersonEmoteController.OnStopCustomEmoteLocal();
-                    ForceSendAnimationUpdateLocal(-1);
-                    return false;
-                }
             }
+            if (performingCustomEmoteLocal != null)
+            {
+                OnUpdateCustomEmote(-1, localPlayerController);
+                ThirdPersonEmoteController.OnStopCustomEmoteLocal();
+                ForceSendAnimationUpdateLocal(-1);
+                return false;
+            }
+
             return true;
         }
 
@@ -170,6 +179,8 @@ namespace TooManyEmotes.Patches {
         public static void PerformCustomEmoteLocalPostfix(InputAction.CallbackContext context, int emoteID, PlayerControllerB __instance)
         {
             syncingEmoteWithPlayer = false;
+            lookingAtPlayerSyncableEmote = null;
+            lookingAtMaskedEnemySyncableEmote = null;
         }
 
 
@@ -211,7 +222,8 @@ namespace TooManyEmotes.Patches {
 
         [HarmonyPatch(typeof(PlayerControllerB), "StartPerformingEmoteClientRpc")]
         [HarmonyPostfix]
-        public static void OnStartPerformingEmoteClientRpc(PlayerControllerB __instance) {
+        public static void OnStartPerformingEmoteClientRpc(PlayerControllerB __instance)
+        {
             if (__instance != localPlayerController && IsCurrentlyPlayingCustomEmote(__instance))
             {
                 UnlockableEmote emote = GetCurrentlyPlayingEmote(__instance);
@@ -222,7 +234,8 @@ namespace TooManyEmotes.Patches {
 
         [HarmonyPatch(typeof(PlayerControllerB), "StopPerformingEmoteClientRpc")]
         [HarmonyPostfix]
-        public static void OnStopPerformingEmoteClientRpc(PlayerControllerB __instance) {
+        public static void OnStopPerformingEmoteClientRpc(PlayerControllerB __instance)
+        {
             if (__instance != localPlayerController && !__instance.performingEmote && performingEmotes[__instance] != null)
                 OnUpdateCustomEmote(-1, __instance);
         }

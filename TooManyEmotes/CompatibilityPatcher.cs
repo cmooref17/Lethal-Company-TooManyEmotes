@@ -23,8 +23,8 @@ using Unity.Netcode;
 using MoreCompany.Cosmetics;
 using BepInEx.Bootstrap;
 
-namespace TooManyEmotes.CompatibilityPatcher {
-
+namespace TooManyEmotes.CompatibilityPatcher
+{
     [HarmonyPatch]
     internal class MoreEmotesPatcher
     {

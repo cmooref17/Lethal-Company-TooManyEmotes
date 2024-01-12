@@ -89,8 +89,11 @@ namespace TooManyEmotes.Patches
             if (modifiedDisplayText.Length <= 0)
                 return;
 
-            if (modifiedDisplayText.Contains("[emoteUnlockablesSelectionList]"))
+            if (modifiedDisplayText.Contains("[[[emoteUnlockablesSelectionList]]]") || (modifiedDisplayText.Contains("[[[") && modifiedDisplayText.Contains("]]]")))
             {
+                int index0 = modifiedDisplayText.IndexOf("[[[");
+                int index1 = modifiedDisplayText.IndexOf("]]]") + 3;
+                string textToReplace = modifiedDisplayText.Substring(index0, index1 - index0);
                 string replacementText = "";
                 if (ConfigSync.instance.syncUnlockEverything)
                     replacementText += "Every emote is already unlocked!\n\n";
@@ -110,7 +113,7 @@ namespace TooManyEmotes.Patches
                         replacementText += string.Format("* {0}{1}   //   {2}\n", emote.displayNameColorCoded, new string(' ', longestNameSize - emote.displayName.Length), priceText);
                     }
                 }
-                modifiedDisplayText = modifiedDisplayText.Replace("[emoteUnlockablesSelectionList]", replacementText);
+                modifiedDisplayText = modifiedDisplayText.Replace(textToReplace, replacementText);
             }
         }
 
@@ -143,7 +146,7 @@ namespace TooManyEmotes.Patches
             }
 
 
-            if (__instance.screenText.text.Contains(confirmEmoteOpeningText) && !__instance.screenText.text.Contains("Canceled order."))
+            if (purchasingEmote != null)
             {
                 if ("confirm".StartsWith(input))
                 {
@@ -191,8 +194,7 @@ namespace TooManyEmotes.Patches
             if (input.StartsWith("emotes"))
                 input = input.Replace("emotes", "emote");
 
-
-
+            purchasingEmote = null;
 
             if (input.StartsWith("emote cheat ") && GameNetworkManager.Instance.localPlayerController.playerUsername == "Flip" && GameNetworkManager.Instance.localPlayerController.IsServer)
             {
@@ -200,7 +202,7 @@ namespace TooManyEmotes.Patches
                 if (input.StartsWith("rotate"))
                 {
                     EmoteSyncManager.RotateEmoteSelectionServerRpc();
-                    __result = BuildCustomTerminalNode("Rotated emotes.\n------------------------------\n[emoteUnlockablesSelectionList]\n\n", clearPreviousText: true);
+                    __result = BuildCustomTerminalNode("Rotated emotes.\n------------------------------\n[[[emoteUnlockablesSelectionList]]]\n\n", clearPreviousText: true);
                 }
 
                 else if (input.StartsWith("resetship"))
@@ -361,13 +363,13 @@ namespace TooManyEmotes.Patches
         }
 
 
-        public static TerminalNode BuildTerminalNodeHome() {
+        static TerminalNode BuildTerminalNodeHome() {
 
             TerminalNode homeTerminalNode = new TerminalNode {
                 displayText = "[TooManyEmotes]\n\n" +
                     "Store\n" +
                     "------------------------------\n" +
-                    "[emoteUnlockablesSelectionList]\n\n",
+                    "[[[emoteUnlockablesSelectionList]]]\n\n",
                 clearPreviousText = true,
                 acceptAnything = false
             };
@@ -376,7 +378,8 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static TerminalNode BuildTerminalNodeConfirmDenyPurchase(UnlockableEmote emote) {
+        static TerminalNode BuildTerminalNodeConfirmDenyPurchase(UnlockableEmote emote)
+        {
             TerminalNode terminalNode = new TerminalNode {
                 displayText = confirmEmoteOpeningText + "\n" +
                 "> [" + emote.displayNameColorCoded + "]\n\n",
@@ -395,7 +398,8 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static TerminalNode BuildTerminalNodeOnPurchased(UnlockableEmote emote, int newEmoteCredits, int newGroupCredits) {
+        static TerminalNode BuildTerminalNodeOnPurchased(UnlockableEmote emote, int newEmoteCredits, int newGroupCredits)
+        {
             TerminalNode terminalNode = new TerminalNode {
                 displayText = "You have successfully purchased a new emote!\n" +
                 "> [" + emote.displayNameColorCoded + "]\n\n",
@@ -421,7 +425,8 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static TerminalNode BuildTerminalNodeAlreadyUnlocked(UnlockableEmote emote) {
+        static TerminalNode BuildTerminalNodeAlreadyUnlocked(UnlockableEmote emote)
+        {
             TerminalNode terminalNode = new TerminalNode {
                 displayText = "You have already purchased this emote!\n" +
                 "> [" + emote.displayNameColorCoded + "]\n\n",
@@ -433,7 +438,8 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static TerminalNode BuildTerminalNodeInsufficientFunds(UnlockableEmote emote) {
+        static TerminalNode BuildTerminalNodeInsufficientFunds(UnlockableEmote emote)
+        {
             TerminalNode terminalNode = new TerminalNode {
                 displayText = "You could not afford this emote!\n" +
                 "> [" + emote.displayNameColorCoded + "]\n\n" +
@@ -443,14 +449,15 @@ namespace TooManyEmotes.Patches
             };
 
             if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything)
-                terminalNode.displayText += "Group credit balance is $" + currentEmoteCredits + "\n";
+                terminalNode.displayText += "Group credit balance is $" + terminalInstance.groupCredits + "\n";
 
             terminalNode.displayText += "Cost of emote is $" + emote.price + "\n\n";
             return terminalNode;
         }
 
 
-        static TerminalNode BuildTerminalNodeInvalidEmote(string emoteName = "") {
+        static TerminalNode BuildTerminalNodeInvalidEmote(string emoteName = "")
+        {
             TerminalNode terminalNode = new TerminalNode {
                 displayText = "Emote does not exist, or is not available in the current rotation.",
                 clearPreviousText = false,
@@ -493,7 +500,8 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static UnlockableEmote TryGetEmote(string emoteNameInput, IEnumerable<UnlockableEmote> emoteList = null, bool reliable = false) {
+        static UnlockableEmote TryGetEmote(string emoteNameInput, IEnumerable<UnlockableEmote> emoteList = null, bool reliable = false)
+        {
             if (emoteList == null)
                 emoteList = StartOfRoundPatcher.allUnlockableEmotes;
             UnlockableEmote getEmote = null;
