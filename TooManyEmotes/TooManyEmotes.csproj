@@ -142,6 +142,14 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Program Files\Unity\Hub\Editor\2021.3.33f1\Editor\Data\Managed\UnityEngine\UnityEngine.UIModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.UnityAnalyticsCommonModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\UnityEngine.UnityAnalyticsCommonModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UnityAnalyticsModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\UnityEngine.UnityAnalyticsModule.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BoomboxMusicPlayer.cs" />
@@ -149,6 +157,8 @@
     <Compile Include="ConfigSync.cs" />
     <Compile Include="EmoteGifts.cs" />
     <Compile Include="EmoteMenu.cs" />
+    <Compile Include="DressGirlVisibilityPatcher.cs" />
+    <Compile Include="InputUtilsCompat.cs" />
     <Compile Include="IngameKeybinds.cs" />
     <Compile Include="MaskedEnemyEmotes.cs" />
     <Compile Include="PlayerData.cs" />

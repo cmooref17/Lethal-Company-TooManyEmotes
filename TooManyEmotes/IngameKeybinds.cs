@@ -20,16 +20,15 @@ namespace TooManyEmotes.Input
         public InputAction RotateCharacterEmoteHotkey { get; set; }
         [InputAction("<Mouse>/middleButton", Name = "[TooManyEmotes]\nFavorite Emote")]
         public InputAction FavoriteEmoteHotkey { get; set; }
-    }
-
-    
-    internal class InputUtilsCompat
-    {
-        internal static InputActionAsset Asset { get { return IngameKeybinds.GetAsset(); } }
-        internal static bool Enabled => Plugin.IsModLoaded("com.rune580.LethalCompanyInputUtils");
-
-        public static InputAction OpenEmoteMenuHotkey => IngameKeybinds.Instance.OpenEmoteMenuHotkey;
-        public static InputAction RotateCharacterEmoteHotkey => IngameKeybinds.Instance.RotateCharacterEmoteHotkey;
-        public static InputAction FavoriteEmoteHotkey => IngameKeybinds.Instance.FavoriteEmoteHotkey;
+        /*
+        public InputAction QuickEmoteFavorite1 { get; set; }
+        public InputAction QuickEmoteFavorite2 { get; set; }
+        public InputAction QuickEmoteFavorite3 { get; set; }
+        public InputAction QuickEmoteFavorite4 { get; set; }
+        public InputAction QuickEmoteFavorite5 { get; set; }
+        public InputAction QuickEmoteFavorite6 { get; set; }
+        public InputAction QuickEmoteFavorite7 { get; set; }
+        public InputAction QuickEmoteFavorite8 { get; set; }
+        */
     }
 }

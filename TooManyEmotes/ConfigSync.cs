@@ -28,6 +28,7 @@ namespace TooManyEmotes.Networking {
         public bool syncUnlockEverything;
         public bool syncShareEverything;
         public bool syncSyncUnsharedEmotes;
+        public bool syncEnableMovingWhileEmoting;
         public bool syncDisableRaritySystem;
 
         public int syncStartingEmoteCredits;
@@ -68,6 +69,7 @@ namespace TooManyEmotes.Networking {
             syncUnlockEverything = ConfigSettings.unlockEverything.Value;
             syncShareEverything = ConfigSettings.shareEverything.Value;
             syncSyncUnsharedEmotes = ConfigSettings.syncUnsharedEmotes.Value;
+            syncEnableMovingWhileEmoting = ConfigSettings.enableMovingWhileEmoting.Value;
             syncDisableRaritySystem = ConfigSettings.disableRaritySystem.Value;
 
             syncStartingEmoteCredits = ConfigSettings.startingEmoteCredits.Value;
@@ -95,6 +97,8 @@ namespace TooManyEmotes.Networking {
             syncMaskedEnemyEmoteRandomDurationMin = syncMaskedEnemyEmoteRandomDuration.x;
             syncMaskedEnemyEmoteRandomDurationMax = syncMaskedEnemyEmoteRandomDuration.y;
 
+            if (syncUnlockEverything)
+                syncShareEverything = true;
             //syncNumMysteryEmotesStoreRotation = ConfigSettings.numMysteryEmotesStoreRotation.Value;
 
             if (ConfigSettings.disableRaritySystem.Value)
@@ -174,7 +178,8 @@ namespace TooManyEmotes.Networking {
         }
 
 
-        public static void RequestConfigSync() {
+        public static void RequestConfigSync()
+        {
             if (NetworkManager.Singleton.IsClient)
             {
                 Plugin.Log("Requesting config sync from server");
@@ -200,39 +205,37 @@ namespace TooManyEmotes.Networking {
         }
 
 
-        private static void OnRequestConfigSyncClientRpc(ulong clientId, FastBufferReader reader) {
+        private static void OnRequestConfigSyncClientRpc(ulong clientId, FastBufferReader reader)
+        {
             if (!NetworkManager.Singleton.IsClient)
                 return;
 
             int dataLength;
-            if (reader.TryBeginRead(sizeof(int)))
+            reader.ReadValueSafe(out dataLength);
+            if (reader.TryBeginRead(dataLength))
             {
-                reader.ReadValueSafe(out dataLength);
-                if (reader.TryBeginRead(dataLength))
-                {
-                    Plugin.Log("Receiving config sync from server.");
-                    byte[] bytes = new byte[dataLength];
-                    reader.ReadBytesSafe(ref bytes, dataLength);
-                    instance = DeserializeFromByteArray(bytes);
-                    syncMaskedEnemyEmoteRandomDelay = new Vector2(instance.syncMaskedEnemyEmoteRandomDelayMin, instance.syncMaskedEnemyEmoteRandomDelayMax);
-                    syncMaskedEnemyEmoteRandomDuration = new Vector2(instance.syncMaskedEnemyEmoteRandomDurationMin, instance.syncMaskedEnemyEmoteRandomDurationMax);
-                    isSynced = true;
+                Plugin.Log("Receiving config sync from server.");
+                byte[] bytes = new byte[dataLength];
+                reader.ReadBytesSafe(ref bytes, dataLength);
+                instance = DeserializeFromByteArray(bytes);
+                if (instance.syncUnlockEverything)
+                    instance.syncShareEverything = true;
+                syncMaskedEnemyEmoteRandomDelay = new Vector2(instance.syncMaskedEnemyEmoteRandomDelayMin, instance.syncMaskedEnemyEmoteRandomDelayMax);
+                syncMaskedEnemyEmoteRandomDuration = new Vector2(instance.syncMaskedEnemyEmoteRandomDurationMin, instance.syncMaskedEnemyEmoteRandomDurationMax);
+                isSynced = true;
 
-                    if (StartOfRoundPatcher.allUnlockableEmotes != null && StartOfRoundPatcher.unlockedEmotes != null)
-                    {
-                        StartOfRoundPatcher.ResetProgressLocal();
-                        if (instance.syncUnlockEverything)
-                            StartOfRoundPatcher.UnlockEmotesLocal(StartOfRoundPatcher.allUnlockableEmotes);
-                        else
-                            StartOfRoundPatcher.UnlockEmotesLocal(StartOfRoundPatcher.complementaryEmotes);
-                        StartOfRoundPatcher.UpdateUnlockedFavoriteEmotes();
-                    }
-                    return;
+                if (StartOfRoundPatcher.allUnlockableEmotes != null && StartOfRoundPatcher.unlockedEmotes != null)
+                {
+                    StartOfRoundPatcher.ResetProgressLocal();
+                    if (instance.syncUnlockEverything)
+                        StartOfRoundPatcher.UnlockEmotesLocal(StartOfRoundPatcher.allUnlockableEmotes);
+                    else
+                        StartOfRoundPatcher.UnlockEmotesLocal(StartOfRoundPatcher.complementaryEmotes);
+                    StartOfRoundPatcher.UpdateUnlockedFavoriteEmotes();
                 }
-                Plugin.LogError("Error receiving sync from server.");
                 return;
             }
-            Plugin.LogError("Error receiving bytes length.");
+            Plugin.LogError("Error receiving sync from server.");
         }
 
 

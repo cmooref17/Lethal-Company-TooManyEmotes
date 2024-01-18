@@ -50,7 +50,8 @@ namespace TooManyEmotes.Patches
         }
 
 
-        public static void EditExistingTerminalNodes() {
+        public static void EditExistingTerminalNodes()
+        {
             initializedTerminalNodes = true;
             foreach (TerminalNode node in terminalInstance.terminalNodes.specialNodes)
             {
@@ -85,7 +86,8 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(Terminal), "TextPostProcess")]
         [HarmonyPrefix]
-        public static void TextPostProcess(ref string modifiedDisplayText, TerminalNode node) {
+        public static void TextPostProcess(ref string modifiedDisplayText, TerminalNode node)
+        {
             if (modifiedDisplayText.Length <= 0)
                 return;
 
@@ -118,16 +120,16 @@ namespace TooManyEmotes.Patches
         }
 
 
+
+
         [HarmonyPatch(typeof(Terminal), "ParsePlayerSentence")]
         [HarmonyPrefix]
-        public static bool ParsePlayerSentence(ref TerminalNode __result, Terminal __instance) {
-
-            if (__instance.screenText.text.Length == 0)
+        public static bool ParsePlayerSentence(ref TerminalNode __result, Terminal __instance)
+        {
+            if (__instance.screenText.text.Length <= 0)
                 return true;
 
-            string screenText = __instance.screenText.text;
-            string[] lines = screenText.Split('\n');
-            string input = lines.Last().ToLower().Trim(' ');
+            string input = __instance.screenText.text.Substring(__instance.screenText.text.Length - __instance.textAdded);
             string[] args = input.Split(' ');
             UnlockableEmote emote = null;
 

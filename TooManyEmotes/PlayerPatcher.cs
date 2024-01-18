@@ -23,36 +23,42 @@ using Unity.Netcode;
 using MoreCompany.Cosmetics;
 using UnityEditor.Animations;
 using TMPro;
+using UnityEngine.Scripting;
+using UnityEditor.PackageManager;
 
-namespace TooManyEmotes.Patches {
-
+namespace TooManyEmotes.Patches
+{
     [HarmonyPatch]
     public class PlayerPatcher
     {
         public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
 
-        public static AnimatorOverrideController localPlayerAnimatorOverrideController;
+        //public static AnimatorOverrideController localPlayerAnimatorOverrideController;
         public static AnimationClip defaultDance1Clip;
-        public static int emoteStateHash { get { return localPlayerController != null ? Animator.StringToHash(string.Format("{0}.Dance1", localPlayerController.playerBodyAnimator.GetLayerName(1))) : -1; } }
+        public static int emoteStateHash { get { return localPlayerController != null ? Animator.StringToHash(localPlayerController.playerBodyAnimator.GetLayerName(1) + ".Dance1") : -1; } }
 
-        public static Dictionary<PlayerControllerB, UnlockableEmote> performingEmotes = new Dictionary<PlayerControllerB, UnlockableEmote>();
-        public static UnlockableEmote performingCustomEmoteLocal { get { return localPlayerController != null ? performingEmotes[localPlayerController] : null; } set { if (localPlayerController == null) return; performingEmotes[localPlayerController] = value; } }
+        //public static Dictionary<PlayerControllerB, UnlockableEmote> performingEmotes = new Dictionary<PlayerControllerB, UnlockableEmote>();
+        //public static UnlockableEmote performingCustomEmoteLocal { get { return localPlayerController != null ? performingEmotes[localPlayerController] : null; } set { if (localPlayerController == null) return; performingEmotes[localPlayerController] = value; } }
 
         public static int syncableEmoteLayerMask = (1 << LayerMask.NameToLayer("Player")) | (1 << LayerMask.NameToLayer("Enemies"));
+
+        public static Dictionary<PlayerControllerB, PlayerData> allPlayerData = new Dictionary<PlayerControllerB, PlayerData>();
+        public static PlayerData playerDataLocal { get { return localPlayerController != null ? allPlayerData[localPlayerController] : null; } }
+
+        public static AnimatorOverrideController localAnimatorController { get { return playerDataLocal.animatorController; } }
+        public static AnimatorOverrideController otherAnimatorController { get { return StartOfRound.Instance?.otherClientsAnimatorController as AnimatorOverrideController; } }
+
         public static PlayerControllerB lookingAtPlayerSyncableEmote = null;
         public static MaskedPlayerEnemy lookingAtMaskedEnemySyncableEmote = null;
         public static bool syncingEmoteWithPlayer = false;
 
-        public static Transform localItemHolder;
-        public static Transform serverItemHolder;
-
-
 
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
         [HarmonyPostfix]
-        public static void ResetValues(StartOfRound __instance)
+        public static void ResetValues()
         {
-            performingEmotes.Clear();
+            //performingEmotes.Clear();
+            allPlayerData.Clear();
         }
 
 
@@ -60,10 +66,7 @@ namespace TooManyEmotes.Patches {
         [HarmonyPostfix]
         public static void OnPlayerStart(PlayerControllerB __instance)
         {
-            if (!performingEmotes.ContainsKey(__instance))
-                performingEmotes.Add(__instance, null);
-            else
-                performingEmotes[__instance] = null;
+            allPlayerData[__instance] = new PlayerData(__instance);
         }
 
 
@@ -71,16 +74,17 @@ namespace TooManyEmotes.Patches {
         [HarmonyPostfix]
         public static void OnLocalClientReady(PlayerControllerB __instance)
         {
+            Plugin.Log("Initializing local player.");
+            var playerData = allPlayerData[__instance];
+            if (!playerData.animatorControllerIsOverride)
+                playerData.ConvertAnimatorControllerToOverride();
             if (!ConfigSettings.disableEmotesForSelf.Value)
             {
-                localPlayerAnimatorOverrideController = (AnimatorOverrideController)StartOfRound.Instance.localClientAnimatorController;
-                defaultDance1Clip = localPlayerAnimatorOverrideController["Dance1"];
+                playerData.ConvertAnimatorControllerToOverride();
+                defaultDance1Clip = playerData.animatorController["Dance1"];
             }
             else
-                defaultDance1Clip = ((AnimatorOverrideController)StartOfRound.Instance.otherClientsAnimatorController)["Dance1"];
-
-            localItemHolder = __instance.localItemHolder;
-            serverItemHolder =  __instance.serverItemHolder;
+                defaultDance1Clip = otherAnimatorController["Dance1"];
 
             for (int i = 0; i < HUDManager.Instance.controlTipLines.Length; i++)
             {
@@ -96,10 +100,11 @@ namespace TooManyEmotes.Patches {
 
         [HarmonyPatch(typeof(StartOfRound), "OnPlayerDC")]
         [HarmonyPrefix]
-        public static void OnLocalClientReady(int playerObjectNumber, ulong clientId, StartOfRound __instance)
+        public static void OnPlayerDC(int playerObjectNumber, ulong clientId, StartOfRound __instance)
         {
             PlayerControllerB playerController = __instance.allPlayerObjects[playerObjectNumber].GetComponent<PlayerControllerB>();
-            if (playerController != null && performingEmotes.TryGetValue(playerController, out var emote) && emote != null)
+            //if (playerController != null && performingEmotes.TryGetValue(playerController, out var emote) && emote != null)
+            if (playerController != null && allPlayerData[playerController].isPerformingEmote)
                 OnUpdateCustomEmote(-1, playerController);
         }
 
@@ -109,7 +114,8 @@ namespace TooManyEmotes.Patches {
         public static void OnPlayerDeath(Vector3 bodyVelocity, PlayerControllerB __instance)
         {
             Plugin.LogWarning("Player died while emoting. What a loser... I mean, I hope this handles smoothly.");
-            if (performingEmotes.TryGetValue(__instance, out var emote) && emote != null)
+            //if (performingEmotes.TryGetValue(__instance, out var emote) && emote != null)
+            if (allPlayerData[__instance].isPerformingEmote)
                 OnUpdateCustomEmote(-1, __instance);
         }
 
@@ -121,11 +127,12 @@ namespace TooManyEmotes.Patches {
             if (ConfigSettings.disableEmotesForSelf.Value || __instance != localPlayerController)
                 return true;
 
+            var syncWithPlayerData = lookingAtPlayerSyncableEmote != null ? allPlayerData[lookingAtPlayerSyncableEmote] : null;
+
             if (emoteID > 2)
             {
-                if (performingCustomEmoteLocal != null)
-                    return false;
-                return true;
+                //if (performingCustomEmoteLocal != null)
+                return !playerDataLocal.isPerformingEmote;
             }
             
             if (emoteID < 0)
@@ -150,9 +157,10 @@ namespace TooManyEmotes.Patches {
                                 emote = randomEmote;
                         }
                         PlayerControllerB syncWithPlayer = null;
-                        if (syncingEmoteWithPlayer && lookingAtPlayerSyncableEmote != null && performingEmotes.TryGetValue(lookingAtPlayerSyncableEmote, out var syncEmote) && syncEmote.canSyncEmote)
+                        //if (syncingEmoteWithPlayer && lookingAtPlayerSyncableEmote != null && performingEmotes.TryGetValue(lookingAtPlayerSyncableEmote, out var syncEmote) && syncEmote.canSyncEmote)
+                        if (syncingEmoteWithPlayer && syncWithPlayerData?.performingEmote != null && syncWithPlayerData.performingEmote.canSyncEmote)
                         {
-                            emote = syncEmote;
+                            emote = syncWithPlayerData.performingEmote;
                             syncWithPlayer = lookingAtPlayerSyncableEmote;
                         }
                         OnUpdateCustomEmote(emote.emoteId, localPlayerController, syncWithPlayer);
@@ -162,7 +170,7 @@ namespace TooManyEmotes.Patches {
                     return false;
                 }
             }
-            if (performingCustomEmoteLocal != null)
+            if (playerDataLocal.isPerformingEmote)
             {
                 OnUpdateCustomEmote(-1, localPlayerController);
                 ThirdPersonEmoteController.OnStopCustomEmoteLocal();
@@ -184,13 +192,11 @@ namespace TooManyEmotes.Patches {
         }
 
 
-
-
         public static bool CallCheckConditionsForEmote(PlayerControllerB playerController)
         {
             bool otherConditions = playerController.inAnimationWithEnemy == null;
             MethodInfo method = playerController.GetType().GetMethod("CheckConditionsForEmote", BindingFlags.NonPublic | BindingFlags.Instance);
-            return (bool)method.Invoke(localPlayerController, new object[] { }) && otherConditions;
+            return (bool)method.Invoke(playerController, new object[] { }) && otherConditions;
         }
 
 
@@ -224,11 +230,8 @@ namespace TooManyEmotes.Patches {
         [HarmonyPostfix]
         public static void OnStartPerformingEmoteClientRpc(PlayerControllerB __instance)
         {
-            if (__instance != localPlayerController && IsCurrentlyPlayingCustomEmote(__instance))
-            {
-                UnlockableEmote emote = GetCurrentlyPlayingEmote(__instance);
+            if (__instance != localPlayerController && allPlayerData.TryGetValue(__instance, out var playerData) && playerData.TryGetLoadedEmote(out var emote))
                 OnUpdateCustomEmote(emote.emoteId, __instance);
-            }
         }
 
 
@@ -236,7 +239,7 @@ namespace TooManyEmotes.Patches {
         [HarmonyPostfix]
         public static void OnStopPerformingEmoteClientRpc(PlayerControllerB __instance)
         {
-            if (__instance != localPlayerController && !__instance.performingEmote && performingEmotes[__instance] != null)
+            if (__instance != localPlayerController && !__instance.performingEmote && allPlayerData[__instance].isPerformingEmote)
                 OnUpdateCustomEmote(-1, __instance);
         }
 
@@ -256,16 +259,11 @@ namespace TooManyEmotes.Patches {
 
             // Let's do some fun logic
             int clientId = Mathf.RoundToInt(animationSpeed * 10000 % 1 * 100) - 1;
-            if (clientId >= 0)
+            if (clientId >= 0 && StartOfRoundPatcher.TryGetPlayerByClientId((ulong)clientId, out var syncWithPlayer))
             {
-                foreach (var playerController in StartOfRound.Instance.allPlayerScripts)
-                {
-                    if ((ulong)clientId == playerController.playerClientId)
-                    {
-                        OnUpdateCustomEmote(0, __instance, playerController);
-                        return;
-                    }
-                }
+                Plugin.Log("Player syncing emote with another player. Player id syncing emote: " + __instance.actualClientId + " Syncing with player id: " + clientId);
+                OnUpdateCustomEmote(0, __instance, syncWithPlayer);
+                return;
             }
 
             int emoteId = Mathf.RoundToInt(animationSpeed * 10 % 1 * 1000) - 1;
@@ -277,129 +275,69 @@ namespace TooManyEmotes.Patches {
         }
 
 
-        public static void OnUpdateCustomEmote(int emoteId, PlayerControllerB playerController, PlayerControllerB syncWithPlayer = null)
+        public static void OnUpdateCustomEmote(int emoteId, PlayerControllerB playerController, PlayerControllerB syncWithPlayer = null) => OnUpdateCustomEmote(emoteId, allPlayerData[playerController], syncWithPlayer != null ? allPlayerData[syncWithPlayer] : null);
+        public static void OnUpdateCustomEmote(int emoteId, PlayerData playerData, PlayerData syncWithPlayerData = null)
         {
-            if (playerController == localPlayerController && ConfigSettings.disableEmotesForSelf.Value)
+            if (playerData == null || (playerData.playerController == localPlayerController && ConfigSettings.disableEmotesForSelf.Value))
                 return;
 
-            Plugin.Log("OnUpdateCustomEmote for player: " + playerController.name + ". Emote id: " + emoteId);
+            Plugin.Log("OnUpdateCustomEmote for player: " + playerData.name + " " + (syncWithPlayerData != null && syncWithPlayerData.isPerformingEmote ? ("Syncing with player: " + syncWithPlayerData.playerController.name + " Emote: " + syncWithPlayerData.performingEmote.emoteName + " EmoteId: " + syncWithPlayerData.performingEmote.emoteId) : ("Emote id: " + emoteId)));
             if (emoteId != -1)
             {
-                EnablePlayerRigBuilder(playerController, false);
+                playerData.EnableRigBuilder(false);
                 UnlockableEmote emote = StartOfRoundPatcher.allUnlockableEmotes[emoteId];
                 var animationClip = emote.animationClip;
                 float normalizedTime = 0;
-                if (syncWithPlayer != null && performingEmotes.ContainsKey(syncWithPlayer))
+                if (syncWithPlayerData != null && syncWithPlayerData.isPerformingEmote)
                 {
-                    var syncEmote = performingEmotes[syncWithPlayer];
-                    if (syncEmote != null && syncEmote.canSyncEmote)
-                    {
-                        emote = syncEmote;
-                        var currentAnimationClip = GetCurrentAnimationClip(syncWithPlayer);
-                        if (currentAnimationClip != null && (currentAnimationClip == emote.animationClip || currentAnimationClip == emote.transitionsToClip))
-                        {
-                            animationClip = currentAnimationClip;
-                            normalizedTime = !emote.isPose ? syncWithPlayer.playerBodyAnimator.GetCurrentAnimatorStateInfo(1).normalizedTime % 1 : 0;
-                            Plugin.Log("Syncing player emote. PlayerId: " + playerController.actualClientId + " SyncWithPlayerId: " + syncWithPlayer.actualClientId + " Emote: " + emote.emoteName + " OverrideAnimClip: " + animationClip.name + " EmoteTime: " + normalizedTime);
-                        }
+                    if (syncWithPlayerData.TryGetCurrentAnimationClip(out var currentAnimationClip) && syncWithPlayerData.performingEmote.ClipIsInEmote(currentAnimationClip))
+                    {                        
+                        emote = syncWithPlayerData.performingEmote;
+                        animationClip = currentAnimationClip;
+                        normalizedTime = emote.loopable ? syncWithPlayerData.normalizedTimeAnimation : 0;
+                        Plugin.Log("Syncing player emote. Emote: " + emote.emoteName + " OverrideAnimationClip: " + animationClip.name + " EmoteTime: " + normalizedTime);
                     }
+                    else
+                        Plugin.LogError("Failed to get current animation clip from player: " + syncWithPlayerData.name + "." + (animationClip == null ? " Got null clip!" : "") + ((currentAnimationClip != null && currentAnimationClip != emote.animationClip && currentAnimationClip != emote.transitionsToClip ? " Clip does not match starting or loop clip! Playing clip: " + currentAnimationClip.name + " EmoteStartClip: " + emote.animationClip.name + " LoopClip: " + (emote.transitionsToClip != null ? emote.transitionsToClip.name : "NULL. This is probably okay?") : "")));
                 }
 
-                performingEmotes[playerController] = emote;
-                playerController.performingEmote = true;
-                playerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
-                SetCurrentAnimationClip(animationClip != null ? animationClip : emote.animationClip, playerController);
-                if (normalizedTime != 0 || emote.isPose)
-                    playerController.StartCoroutine(PlayEmoteAtTimeDelayed(emote, playerController, overrideClip : animationClip != emote.animationClip ? animationClip : null, normalizedTime: normalizedTime));
-                else
-                    PlayEmoteAtTime(emote, playerController, overrideClip: animationClip != emote.animationClip ? animationClip : null, normalizedTime: normalizedTime);
+                playerData.performingEmote = emote;
+                playerData.currentEmoteNumber = 1;
+                Plugin.Log("Setting animation clip for player with id: " + playerData.clientId + " Clip: " + (animationClip != null ? animationClip.name : emote.animationClip.name));
+                playerData.SetCurrentAnimationClip(animationClip != null ? animationClip : emote.animationClip);
+                playerData.PlayEmoteAtTime(emote, overrideClip: animationClip != emote.animationClip ? animationClip : null, normalizedTime: normalizedTime, playEmoteEndOfFrame : normalizedTime != 0 || emote.isPose);
             }
             else
             {
-                SetCurrentAnimationClip(defaultDance1Clip, playerController);
-                performingEmotes[playerController] = null;
+                playerData.SetCurrentAnimationClip(defaultDance1Clip);
+                playerData.performingEmote = null;
 
-                //playerController.playerBodyAnimator.Play("Dance1", 1, 0);
-                playerController.playerBodyAnimator.CrossFadeInFixedTime("Dance1", 0.1f);
-                EnablePlayerRigBuilder(playerController, true);
+                playerData.animator.CrossFadeInFixedTime("Dance1", 0.1f);
+                playerData.EnableRigBuilder(true);
 
-                if (playerController == localPlayerController)
+                if (playerData.playerController == localPlayerController)
                 {
                     ThirdPersonEmoteController.OnStopCustomEmoteLocal();
-                    if (playerController.serverItemHolder == playerController.currentlyHeldObjectServer?.parentObject)
-                        playerController.currentlyHeldObjectServer.parentObject = playerController.localItemHolder;
+                    if (localPlayerController.serverItemHolder == localPlayerController.currentlyHeldObjectServer?.parentObject)
+                        localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.localItemHolder;
                 }
             }
         }
 
 
-        static IEnumerator PlayEmoteAtTimeDelayed(UnlockableEmote emote, PlayerControllerB playerController, AnimationClip overrideClip = null, float normalizedTime = 0)
+        [HarmonyPatch(typeof(PlayerControllerB), "CheckConditionsForEmote")]
+        [HarmonyPostfix]
+        public static void AllowMovingInEmoteConditions(ref bool __result, PlayerControllerB __instance)
         {
-            yield return new WaitForEndOfFrame();
-            PlayEmoteAtTime(emote, playerController, overrideClip, normalizedTime);
-        }
+            if (!ConfigSync.instance.syncEnableMovingWhileEmoting || __result)
+                return;
+            if (!allPlayerData.TryGetValue(__instance, out var playerData) || !playerData.isPerformingEmote)
+                return;
 
-
-        public static void PlayEmoteAtTime(UnlockableEmote emote, PlayerControllerB playerController, AnimationClip overrideClip = null, float normalizedTime = 0)
-        {
-            AnimationClip clip = emote.animationClip;
-            if (overrideClip != null)
-                clip = overrideClip;
-
-            SetCurrentAnimationClip(clip, playerController);
-            if (normalizedTime == 0)
-            {
-                playerController.playerBodyAnimator.Play("Dance1", 1, 0);
-                //playerController.playerBodyAnimator.CrossFadeInFixedTime("Dance1", 0.1f, 1);
-            }
-            else
-                playerController.playerBodyAnimator.Play("Dance1", 1, normalizedTime);
-            //BoomboxMusicPlayer.OnPlayEmoteWithMusic(emote, playerController);
-
-            playerController.playerBodyAnimator.SetLayerWeight(1, 1);
-            if (clip == emote.animationClip && emote.transitionsToClip != null && normalizedTime == 0)
-                playerController.StartCoroutine(TransitionToLoopEmote(playerController, emote));
-            else if (!clip.isLooping && !emote.isPose)
-                playerController.StartCoroutine(StopEmoteAfterFinished(playerController, emote));
-
-            if (playerController == localPlayerController)
-            {
-                ThirdPersonEmoteController.OnStartCustomEmoteLocal();
-                if (playerController.localItemHolder == playerController.currentlyHeldObjectServer?.parentObject)
-                    playerController.currentlyHeldObjectServer.parentObject = playerController.serverItemHolder;
-            }
-        }
-
-
-        public static void EnablePlayerRigBuilder(PlayerControllerB playerController, bool enabled)
-        {
-            IEnumerator EnableRigBuilder()
-            {
-                var currentAnimationClip = GetCurrentAnimationClip(playerController);
-                var currentEmoteNumber = playerController.playerBodyAnimator.GetInteger("emoteNumber");
-                int prevState = playerController.playerBodyAnimator.GetCurrentAnimatorStateInfo(1).shortNameHash;
-                float normalizedTime = playerController.playerBodyAnimator.GetCurrentAnimatorStateInfo(1).normalizedTime;
-
-                SetCurrentAnimationClip(Plugin.idleClip, playerController);
-                playerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
-                playerController.playerBodyAnimator.Play("Dance1", 1, 0);
-                yield return new WaitForEndOfFrame();
-
-                SetCurrentAnimationClip(currentAnimationClip, playerController);
-                playerController.playerBodyAnimator.SetInteger("emoteNumber", currentEmoteNumber);
-                var currentState = playerController.playerBodyAnimator.GetCurrentAnimatorStateInfo(1).shortNameHash;
-                if (currentState != prevState)
-                    playerController.playerBodyAnimator.CrossFadeInFixedTime(prevState, 0.1f, 1);
-                else
-                    playerController.playerBodyAnimator.Play(prevState, 1, normalizedTime);
-
-                playerController.GetComponentInChildren<RigBuilder>().enabled = enabled;
-            }
-
-            if (enabled)
-                playerController.StartCoroutine(EnableRigBuilder());
-            else
-                playerController.GetComponentInChildren<RigBuilder>().enabled = enabled;
+            bool isJumping = (bool)Traverse.Create(__instance).Field("isJumping").GetValue();
+            bool result = !(__instance.inSpecialInteractAnimation || __instance.isPlayerDead || isJumping || __instance.isCrouching || __instance.isClimbingLadder || __instance.isGrabbingObjectAnimation || __instance.inTerminalMenu || __instance.isTypingChat);
+            if (result)
+                __result = true;
         }
 
 
@@ -407,11 +345,8 @@ namespace TooManyEmotes.Patches {
         [HarmonyPostfix]
         public static void CheckIfStopPerformingEmoteDirty(PlayerControllerB __instance)
         {
-            if (performingEmotes[__instance] != null)
-            {
-                if (!IsCurrentlyPlayingCustomEmote(__instance) && !__instance.performingEmote)
-                    OnUpdateCustomEmote(-1, __instance);
-            }
+            if (allPlayerData.TryGetValue(__instance, out var playerData) && playerData.isPerformingEmote && !__instance.performingEmote)
+                OnUpdateCustomEmote(-1, __instance);
         }
 
 
@@ -419,32 +354,41 @@ namespace TooManyEmotes.Patches {
         [HarmonyPostfix]
         public static void CheckIfLookingAtPlayerSyncableEmote(PlayerControllerB __instance)
         {
-            if (__instance == localPlayerController && !ConfigSettings.disableEmotesForSelf.Value)
+            if (__instance != localPlayerController || ConfigSettings.disableEmotesForSelf.Value)
+                return;
+
+            lookingAtPlayerSyncableEmote = null;
+            lookingAtMaskedEnemySyncableEmote = null;
+            if (localPlayerController.cursorTip.text.Contains("Sync emote"))
+                localPlayerController.cursorTip.text = "";
+
+            if (Physics.Raycast(localPlayerController.gameplayCamera.transform.position + localPlayerController.gameplayCamera.transform.forward * 0.5f, localPlayerController.gameplayCamera.transform.forward * 4.5f, out var hit, 4.5f, syncableEmoteLayerMask) && !playerDataLocal.isPerformingEmote && !__instance.isPlayerDead)
             {
-                lookingAtPlayerSyncableEmote = null;
-                lookingAtMaskedEnemySyncableEmote = null;
-                if (localPlayerController.cursorTip.text.Contains("Sync emote"))
-                    localPlayerController.cursorTip.text = "";
-                if (Physics.Raycast(localPlayerController.gameplayCamera.transform.position + localPlayerController.gameplayCamera.transform.forward * 0.5f, localPlayerController.gameplayCamera.transform.forward * 4.5f, out var hit, 4.5f, syncableEmoteLayerMask) && performingCustomEmoteLocal == null && !__instance.isPlayerDead)
+                MaskedPlayerEnemy maskedEnemy = hit.collider.gameObject.GetComponentInParent<MaskedPlayerEnemy>();
+                if (ConfigSettings.enableSyncingEmotesWithMaskedEnemies.Value && maskedEnemy != null && MaskedEnemyEmotes.spawnedMaskedEnemyData.TryGetValue(maskedEnemy, out var maskedEnemyData) && maskedEnemyData.performingEmote != null && maskedEnemyData.performingEmote.canSyncEmote)
                 {
-                    MaskedPlayerEnemy maskedEnemy = hit.collider.gameObject.GetComponentInParent<MaskedPlayerEnemy>();
-                    if (ConfigSettings.enableSyncingEmotesWithMaskedEnemies.Value && maskedEnemy != null && MaskedEnemyEmotes.spawnedMaskedEnemyData.TryGetValue(maskedEnemy, out var maskedEnemyData) && maskedEnemyData.performingEmote != null && maskedEnemyData.performingEmote.canSyncEmote)
+                    lookingAtMaskedEnemySyncableEmote = maskedEnemy;
+                    localPlayerController.cursorTip.text = "[E] Sync emote";
+                    return;
+                }
+                PlayerControllerB hitPlayer = hit.collider.gameObject.GetComponentInParent<PlayerControllerB>();
+                if (hitPlayer != null && hitPlayer != localPlayerController)
+                {
+                    if (allPlayerData.TryGetValue(hitPlayer, out var playerData) && playerData.isPerformingEmote && playerData.performingEmote.canSyncEmote && (StartOfRoundPatcher.unlockedEmotes.Contains(playerData.performingEmote) || ConfigSync.instance.syncSyncUnsharedEmotes))
                     {
-                        lookingAtMaskedEnemySyncableEmote = maskedEnemy;
+                        lookingAtPlayerSyncableEmote = hitPlayer;
                         localPlayerController.cursorTip.text = "[E] Sync emote";
-                        return;
-                    }
-                    PlayerControllerB hitPlayer = hit.collider.gameObject.GetComponentInParent<PlayerControllerB>();
-                    if (hitPlayer != null && hitPlayer != localPlayerController)
-                    {
-                        if (performingEmotes.TryGetValue(hitPlayer, out var performingEmote) && performingEmote != null && performingEmote.canSyncEmote && (StartOfRoundPatcher.unlockedEmotes.Contains(performingEmote) || ConfigSync.instance.syncSyncUnsharedEmotes))
-                        {
-                            lookingAtPlayerSyncableEmote = hitPlayer;
-                            localPlayerController.cursorTip.text = "[E] Sync emote";
-                        }
                     }
                 }
             }
+        }
+
+
+        public static UnlockableEmote GetCurrentlyPlayingEmote(PlayerControllerB playerController)
+        {
+            if (allPlayerData.TryGetValue(playerController, out var playerData) && playerData.TryGetLoadedEmote(out var emote))
+                return emote;
+            return null;
         }
 
 
@@ -452,11 +396,12 @@ namespace TooManyEmotes.Patches {
         [HarmonyPrefix]
         public static bool OnSyncEmoteWithPlayer(InputAction.CallbackContext context, PlayerControllerB __instance)
         {
-            if (__instance == localPlayerController && !ConfigSettings.disableEmotesForSelf.Value && context.performed && !__instance.isPlayerDead && (lookingAtPlayerSyncableEmote != null || lookingAtMaskedEnemySyncableEmote != null) && __instance.cursorTip.text.Contains("Sync emote"))
+            if (allPlayerData.TryGetValue(__instance, out var playerData) && playerData == playerDataLocal && !ConfigSettings.disableEmotesForSelf.Value && context.performed && !__instance.isPlayerDead && (lookingAtPlayerSyncableEmote != null || lookingAtMaskedEnemySyncableEmote != null) && __instance.cursorTip.text.Contains("Sync emote"))
             {
                 UnlockableEmote emote = null;
-                if (lookingAtPlayerSyncableEmote != null && performingEmotes.TryGetValue(lookingAtPlayerSyncableEmote, out emote))
+                if (lookingAtPlayerSyncableEmote != null && allPlayerData.TryGetValue(lookingAtPlayerSyncableEmote, out var syncWithPlayerData) && syncWithPlayerData.isPerformingEmote)
                 {
+                    emote = syncWithPlayerData.performingEmote;
                     // Hello darkness my old friend
                 }
                 else if (lookingAtMaskedEnemySyncableEmote != null && MaskedEnemyEmotes.spawnedMaskedEnemyData.TryGetValue(lookingAtMaskedEnemySyncableEmote, out var maskedEnemyData))
@@ -471,81 +416,6 @@ namespace TooManyEmotes.Patches {
                 return false;
             }
             return true;
-        }
-
-
-        public static void SetCurrentAnimationClip(AnimationClip clip, PlayerControllerB playerController, string stateName = "Dance1")
-        {
-            if (!(playerController.playerBodyAnimator.runtimeAnimatorController is AnimatorOverrideController))
-                playerController.playerBodyAnimator.runtimeAnimatorController = new AnimatorOverrideController(playerController.playerBodyAnimator.runtimeAnimatorController);
-            ((AnimatorOverrideController)playerController.playerBodyAnimator.runtimeAnimatorController)[stateName] = clip;
-        }
-
-
-        public static AnimationClip GetCurrentAnimationClip(PlayerControllerB playerController, string stateName = "Dance1")
-        {
-            if (!(playerController.playerBodyAnimator.runtimeAnimatorController is AnimatorOverrideController))
-                playerController.playerBodyAnimator.runtimeAnimatorController = new AnimatorOverrideController(playerController.playerBodyAnimator.runtimeAnimatorController);
-            return ((AnimatorOverrideController)playerController.playerBodyAnimator.runtimeAnimatorController)[stateName];
-        }
-
-        public static UnlockableEmote GetCurrentlyPlayingEmote(PlayerControllerB playerController)
-        {
-            AnimationClip animationClip = GetCurrentAnimationClip(playerController);
-            if (animationClip != null)
-            {
-                string clipName = animationClip.name.Replace("_loop", "");
-                if (StartOfRoundPatcher.allUnlockableEmotesDict.ContainsKey(clipName))
-                {
-                    UnlockableEmote emote = StartOfRoundPatcher.allUnlockableEmotesDict[clipName];
-                    return emote;
-                }
-            }
-            return null;
-        }
-
-
-        public static bool IsCurrentlyPlayingCustomEmote(PlayerControllerB playerController)
-        {
-            if (playerController.performingEmote)
-            {
-                int emoteNumber = playerController.playerBodyAnimator.GetInteger("emoteNumber");
-                if (emoteNumber > 0)
-                {
-                    AnimationClip currentClip = GetCurrentAnimationClip(playerController);
-                    if (Plugin.customAnimationClips.Contains(currentClip) || Plugin.customAnimationClipsLoopDict.ContainsValue(currentClip))
-                        return true;
-                }
-            }
-            return false;
-        }
-
-
-        static IEnumerator TransitionToLoopEmote(PlayerControllerB playerController, UnlockableEmote startEmote)
-        {
-            AnimationClip loopEmote = startEmote.transitionsToClip;
-            yield return new WaitForSeconds(startEmote.animationClip.length);
-            AnimationClip currentClip = GetCurrentAnimationClip(playerController);
-            int emoteNumber = playerController.playerBodyAnimator.GetInteger("emoteNumber");
-            if (currentClip == startEmote.animationClip && (playerController.playerBodyAnimator.GetCurrentAnimatorStateInfo(1).normalizedTime >= 0.9f || playerController != localPlayerController))
-            {
-                SetCurrentAnimationClip(loopEmote, playerController);
-                playerController.playerBodyAnimator.Play("Dance1", 1, 0);
-            }
-        }
-
-
-        static IEnumerator StopEmoteAfterFinished(PlayerControllerB playerController, UnlockableEmote emote)
-        {
-            yield return new WaitForSeconds(emote.animationClip.length);
-            AnimationClip currentClip = GetCurrentAnimationClip(playerController);
-            int emoteNumber = playerController.playerBodyAnimator.GetInteger("emoteNumber");
-            if (currentClip == emote.animationClip && (playerController.playerBodyAnimator.GetCurrentAnimatorStateInfo(1).normalizedTime >= 0.9f || playerController != localPlayerController))
-            {
-                playerController.performingEmote = false;
-                if (playerController.IsOwner)
-                    playerController.StopPerformingEmoteServerRpc();
-            }
         }
     }
 }

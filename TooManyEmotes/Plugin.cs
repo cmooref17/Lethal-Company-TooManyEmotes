@@ -13,14 +13,16 @@ using TooManyEmotes.Input;
 
 namespace TooManyEmotes
 {
-    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.7.9")]
+    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.7.19")]
     [BepInDependency("com.rune580.LethalCompanyInputUtils", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("me.swipez.melonloader.morecompany", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         private Harmony _harmony;
         public static Plugin instance;
 
         public static List<AnimationClip> customAnimationClips;
+        public static HashSet<AnimationClip> customAnimationClipsHash;
         public static Dictionary<string, AnimationClip> customAnimationClipsLoopDict = new Dictionary<string, AnimationClip>();
 
         public static List<AnimationClip> complementaryAnimationClips;
@@ -61,16 +63,6 @@ namespace TooManyEmotes
                 }
             }
 
-            /*
-            musicClips = new Dictionary<string, AudioClip>();
-            string assetsPath = Path.Combine(Path.GetDirectoryName(instance.Info.Location), "Assets/misc_assets");
-            AssetBundle musicAssetBundle = AssetBundle.LoadFromFile(assetsPath);
-            var audioClips = musicAssetBundle.LoadAllAssets<AudioClip>();
-
-            foreach (var clip in audioClips)
-                musicClips.Add(clip.name, clip);
-            */
-
             customAnimationClips.AddRange(complementaryAnimationClips);
             customAnimationClips.AddRange(animationClipsTier0);
             customAnimationClips.AddRange(animationClipsTier1);
@@ -85,6 +77,9 @@ namespace TooManyEmotes
 
             foreach (var animationClipLoop in customAnimationClipsLoopDict.Values)
                 customAnimationClips.Remove(animationClipLoop);
+
+            customAnimationClipsHash = new HashSet<AnimationClip>(customAnimationClips);
+            customAnimationClipsHash.UnionWith(customAnimationClipsLoopDict.Values);
 
             LoadRadialMenuAsset();
 

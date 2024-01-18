@@ -26,6 +26,9 @@ namespace TooManyEmotes.Patches
     [HarmonyPatch]
     public static class StartOfRoundPatcher
     {
+        public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
+        public static string localPlayerUsername { get { return GameNetworkManager.Instance.username; } }
+
         public static List<UnlockableEmote> allUnlockableEmotes;
         public static Dictionary<string, UnlockableEmote> allUnlockableEmotesDict;
         public static List<UnlockableEmote> complementaryEmotes;
@@ -46,20 +49,13 @@ namespace TooManyEmotes.Patches
         public static Dictionary<string, List<UnlockableEmote>> unlockedEmotesByPlayer;
 
 
-        [HarmonyPatch(typeof(PreInitSceneScript), "Awake")]
-        [HarmonyPostfix]
-        public static void CreateEmoteLists()
-        {
-
-        }
-
-
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
         [HarmonyPostfix]
-        public static void InitializeEmotes(StartOfRound __instance) {
-            if (!ConfigSettings.disableEmotesForSelf.Value)
-                __instance.localClientAnimatorController = new AnimatorOverrideController(__instance.localClientAnimatorController);
-            __instance.otherClientsAnimatorController = new AnimatorOverrideController(__instance.otherClientsAnimatorController);
+        public static void InitializeEmotes(StartOfRound __instance)
+        {
+            //if (!ConfigSettings.disableEmotesForSelf.Value)
+                //__instance.localClientAnimatorController = new AnimatorOverrideController(__instance.localClientAnimatorController);
+            //__instance.otherClientsAnimatorController = new AnimatorOverrideController(__instance.otherClientsAnimatorController);
 
             allUnlockableEmotes = new List<UnlockableEmote>();
             allUnlockableEmotesDict = new Dictionary<string, UnlockableEmote>();
@@ -189,6 +185,11 @@ namespace TooManyEmotes.Patches
             }
             else
             {
+                foreach (var emote in unlockedEmotesByPlayer[StartOfRound.Instance.localPlayerController.playerUsername])
+                {
+                    if (!unlockedEmotes.Contains(emote))
+                        unlockedEmotes.Add(emote);
+                }
                 unlockedEmotesByPlayer[StartOfRound.Instance.localPlayerController.playerUsername] = unlockedEmotes;
                 TerminalPatcher.currentEmoteCreditsByPlayer[StartOfRound.Instance.localPlayerController.playerUsername] = TerminalPatcher.currentEmoteCredits;
             }
@@ -275,7 +276,8 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(StartOfRound), "SyncShipUnlockablesServerRpc")]
         [HarmonyPostfix]
-        public static void SyncUnlockedEmotesWithClients(StartOfRound __instance) {
+        public static void SyncUnlockedEmotesWithClients(StartOfRound __instance)
+        {
             if (!NetworkManager.Singleton.IsServer)
                 return;
             if (ConfigSync.instance.syncUnlockEverything)
@@ -306,12 +308,13 @@ namespace TooManyEmotes.Patches
                 UnlockEmoteLocal(emote, playerUsername);
         }
         public static void UnlockEmoteLocal(int emoteId, string playerUsername = "") => UnlockEmoteLocal(emoteId >= 0 && emoteId < allUnlockableEmotes.Count ? allUnlockableEmotes[emoteId] : null, playerUsername);
-        public static void UnlockEmoteLocal(UnlockableEmote emote, string playerUsername = "") {
+        public static void UnlockEmoteLocal(UnlockableEmote emote, string playerUsername = "")
+        {
             if (emote == null)
                 return;
 
             var _unlockedEmotes = unlockedEmotes;
-            if (playerUsername != "" && playerUsername != StartOfRound.Instance.localPlayerController.playerUsername && !ConfigSync.instance.syncShareEverything && !unlockedEmotesByPlayer.TryGetValue(playerUsername, out _unlockedEmotes))
+            if (playerUsername != "" && !ConfigSync.instance.syncShareEverything && playerUsername != localPlayerUsername && !unlockedEmotesByPlayer.TryGetValue(playerUsername, out _unlockedEmotes))
                 return;
 
             if (emote.randomEmotePool != null)

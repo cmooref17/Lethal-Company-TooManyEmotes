@@ -140,7 +140,7 @@ namespace TooManyEmotes.Patches
             }
             catch (Exception arg)
             {
-                Plugin.LogError(string.Format("Error while trying to load TooManyEmotes values when disconnecting as host: {0}", arg));
+                Plugin.LogError("Error while trying to load TooManyEmotes values: " + arg);
             }
         }
 

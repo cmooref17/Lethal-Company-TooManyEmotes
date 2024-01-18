@@ -137,10 +137,12 @@ namespace TooManyEmotes.CompatibilityPatcher
     internal class MoreCompanyPatcher {
 
         public static bool loadedMoreCompany = false;
+        public static bool appliedPatch = false;
         public static List<GameObject> cosmeticInstances = new List<GameObject>();
+        public static bool appliedCosmetics = false;
 
         [HarmonyPatch(typeof(HUDManager), "AddPlayerChatMessageClientRpc")]
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         public static void ApplyPatch() {
 
             if (Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany"))
@@ -158,6 +160,8 @@ namespace TooManyEmotes.CompatibilityPatcher
             {
                 return;
             }
+            Plugin.Log("Applying MoreCompany Cosmetics patch.");
+            appliedCosmetics = true;
             foreach (string locallySelectedCosmetic in CosmeticRegistry.locallySelectedCosmetics)
             {
                 val.ApplyCosmetic(locallySelectedCosmetic, true);

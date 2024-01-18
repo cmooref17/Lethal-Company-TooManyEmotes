@@ -24,6 +24,7 @@ namespace TooManyEmotes
         public List<UnlockableEmote> randomEmotePool;
         public bool complementary = false;
         public bool isPose = false;
+        public bool loopable { get { return animationClip.isLooping || (transitionsToClip != null && transitionsToClip.isLooping); } }
         public bool canSyncEmote = false;
         public bool favorite = false;
         public int rarity = 0;
@@ -53,5 +54,6 @@ namespace TooManyEmotes
         }
         public string nameColor { get { return rarityColorCodes[rarity]; } }
         public static string[] rarityColorCodes = new string[] { ConfigSettings.emoteNameColorTier0.Value, ConfigSettings.emoteNameColorTier1.Value, ConfigSettings.emoteNameColorTier2.Value, ConfigSettings.emoteNameColorTier3.Value };
+        public bool ClipIsInEmote(AnimationClip clip) => clip != null && (clip == animationClip || clip == transitionsToClip);
     }
 }

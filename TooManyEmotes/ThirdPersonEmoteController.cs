@@ -15,6 +15,8 @@ using UnityEngine.InputSystem;
 using System.Collections;
 using TooManyEmotes.Config;
 using TooManyEmotes.Input;
+using System.Reflection;
+using TooManyEmotes.Networking;
 
 namespace TooManyEmotes.Patches {
 
@@ -33,7 +35,8 @@ namespace TooManyEmotes.Patches {
         public static float targetCameraDistance = 3f;
 
         public static int localPlayerBodyLayer = 0;
-        public static ShadowCastingMode defaultShadowCastingMode = ShadowCastingMode.ShadowsOnly;
+        public static ShadowCastingMode defaultShadowCastingMode = ShadowCastingMode.On;
+        static bool setDefaultShadowCastingMode = false;
 
         public static string[] emoteControlTipLines = new string[] { "Hold [ALT] : Rotate" };
 
@@ -46,6 +49,7 @@ namespace TooManyEmotes.Patches {
             if (ConfigSettings.disableEmotesForSelf.Value)
                 return;
 
+            setDefaultShadowCastingMode = false;
             gameplayCamera = __instance.gameplayCamera;
             if (emoteCamera == null)
             {
@@ -95,14 +99,14 @@ namespace TooManyEmotes.Patches {
             if (ConfigSettings.disableEmotesForSelf.Value)
                 return true;
 
-            if (__instance == localPlayerController && PlayerPatcher.performingCustomEmoteLocal != null)
+            if (__instance == localPlayerController && PlayerPatcher.playerDataLocal.isPerformingEmote)
             {
                 Vector3 targetPosition = Vector3.back * Mathf.Clamp(targetCameraDistance, clampCameraDistance.x, clampCameraDistance.y);
                 emoteCamera.transform.localPosition = Vector3.Lerp(emoteCamera.transform.localPosition, targetPosition, 10 * Time.deltaTime);
 
                 if (!localPlayerController.quickMenuManager.isMenuOpen && !EmoteMenuManager.isMenuOpen)
                 {
-                    if (Keybinds.holdingRotatePlayerModifier)
+                    if (Keybinds.holdingRotatePlayerModifier || Keybinds.toggledRotating)
                     {
                         if (emoteCameraPivot.localEulerAngles.y != 0)
                         {
@@ -125,7 +129,7 @@ namespace TooManyEmotes.Patches {
                     //else
                         //emoteCamera.transform.localPosition = Vector3.back * targetCameraDistance;
 
-                    if (!Keybinds.holdingRotatePlayerModifier)
+                    if (!Keybinds.holdingRotatePlayerModifier && !Keybinds.toggledRotating)
                         return false;
                 }
             }
@@ -137,13 +141,28 @@ namespace TooManyEmotes.Patches {
         [HarmonyPrefix]
         public static bool AdjustCameraDistance(InputAction.CallbackContext context, PlayerControllerB __instance)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || !context.performed || __instance != localPlayerController || PlayerPatcher.performingCustomEmoteLocal == null)
+            if (ConfigSettings.disableEmotesForSelf.Value || !context.performed || __instance != localPlayerController || !PlayerPatcher.playerDataLocal.isPerformingEmote)
                 return true;
 
             if (!EmoteMenuManager.isMenuOpen)
                 __instance.StartCoroutine(AdjustCameraDistanceEndOfFrame());
 
             return false;
+        }
+
+
+        [HarmonyPatch(typeof(QuickMenuManager), "OpenQuickMenu")]
+        [HarmonyPrefix]
+        public static bool CancelMovingEmote()
+        {
+            if (PlayerPatcher.playerDataLocal.isPerformingEmote && ConfigSync.instance.syncEnableMovingWhileEmoting)
+            {
+                localPlayerController.performingEmote = false;
+                PlayerPatcher.OnUpdateCustomEmote(-1, localPlayerController);
+                localPlayerController.StopPerformingEmoteServerRpc();
+                return false;
+            }
+            return true;
         }
 
 
@@ -159,27 +178,44 @@ namespace TooManyEmotes.Patches {
         }
 
 
-        public static void OnStartCustomEmoteLocal() {
+        public static void OnStartCustomEmoteLocal()
+        {
+            Keybinds.toggledRotating = ConfigSync.instance.syncEnableMovingWhileEmoting;
             if (!emoteCamera.enabled)
             {
                 StartOfRound.Instance.SwitchCamera(emoteCamera);
+                CallChangeAudioListenerToObject(emoteCamera.gameObject);
                 localPlayerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
                 emoteCameraPivot.eulerAngles = gameplayCamera.transform.eulerAngles + new Vector3(0, 0, 0);
             }
+            if (!setDefaultShadowCastingMode)
+                defaultShadowCastingMode = localPlayerController.thisPlayerModel.shadowCastingMode;
             localPlayerController.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
             HUDManager.Instance.ClearControlTips();
-            HUDManager.Instance.ChangeControlTipMultiple(emoteControlTipLines);
+            if (!ConfigSync.instance.syncEnableMovingWhileEmoting)
+                HUDManager.Instance.ChangeControlTipMultiple(emoteControlTipLines);
         }
 
 
-        public static void OnStopCustomEmoteLocal() {
+        public static void OnStopCustomEmoteLocal()
+        {
+            Keybinds.toggledRotating = false;
             emoteCamera.enabled = false;
             StartOfRound.Instance.SwitchCamera(gameplayCamera);
+            CallChangeAudioListenerToObject(gameplayCamera.gameObject);
+
             localPlayerController.thisPlayerModel.shadowCastingMode = defaultShadowCastingMode;
             if (localPlayerController.currentlyHeldObjectServer != null)
                 localPlayerController.currentlyHeldObjectServer.SetControlTipsForItem();
             else
                 HUDManager.Instance.ClearControlTips();
-        }   
+        }
+
+
+        public static void CallChangeAudioListenerToObject(GameObject gameObject)
+        {
+            MethodInfo method = localPlayerController.GetType().GetMethod("ChangeAudioListenerToObject", BindingFlags.NonPublic | BindingFlags.Instance);
+            method.Invoke(localPlayerController, new object[] { gameObject });
+        }
     }
 }

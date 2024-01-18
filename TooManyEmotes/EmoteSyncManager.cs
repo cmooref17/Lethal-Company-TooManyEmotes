@@ -11,12 +11,11 @@ using TooManyEmotes.Patches;
 using TooManyEmotes.Config;
 using UnityEngine;
 
-namespace TooManyEmotes.Networking {
-
-
+namespace TooManyEmotes.Networking
+{
     [HarmonyPatch]
-    public static class EmoteSyncManager {
-
+    public static class EmoteSyncManager
+    {
         public static bool requestedSync = false;
         public static bool isSynced = false;
         public static HashSet<ulong> syncedClients;
@@ -182,9 +181,8 @@ namespace TooManyEmotes.Networking {
         }
 
 
-
-
-        public static void SendOnUnlockEmoteUpdate(int emoteId, int newEmoteCredits = -1) {
+        public static void SendOnUnlockEmoteUpdate(int emoteId, int newEmoteCredits = -1)
+        {
             var writer = new FastBufferWriter(sizeof(int) * 3, Allocator.Temp);
             Plugin.Log("Sending unlocked emote update to server. Emote id: " + emoteId);
             writer.WriteValue(newEmoteCredits);
@@ -194,7 +192,8 @@ namespace TooManyEmotes.Networking {
         }
 
 
-        public static void SendOnUnlockEmoteUpdateMulti(int newEmoteCredits = -1) {
+        public static void SendOnUnlockEmoteUpdateMulti(int newEmoteCredits = -1)
+        {
             var writer = new FastBufferWriter(sizeof(int) * 2 + sizeof(int) * StartOfRoundPatcher.unlockedEmotes.Count, Allocator.Temp);
             Plugin.Log("Sending all unlocked emotes update to server.");
             writer.WriteValue(newEmoteCredits);
@@ -205,106 +204,102 @@ namespace TooManyEmotes.Networking {
         }
 
 
-        private static void OnUnlockEmoteServerRpc(ulong clientId, FastBufferReader reader) {
+        private static void OnUnlockEmoteServerRpc(ulong clientId, FastBufferReader reader)
+        {
             if (!NetworkManager.Singleton.IsServer)
                 return;
 
-            if (reader.TryBeginRead(sizeof(int) * 2))
+            int newEmoteCredits;
+            int numEmotes;
+            reader.ReadValue(out newEmoteCredits);
+            reader.ReadValue(out numEmotes);
+
+            PlayerControllerB playerWhoUnlocked = null;
+            StartOfRoundPatcher.TryGetPlayerByClientId(clientId, out playerWhoUnlocked);
+
+            if (newEmoteCredits != -1)
             {
-                int newEmoteCredits;
-                int numEmotes;
-                reader.ReadValue(out newEmoteCredits);
-                reader.ReadValue(out numEmotes);
-
-                PlayerControllerB playerWhoUnlocked = null;
-                StartOfRoundPatcher.TryGetPlayerByClientId(clientId, out playerWhoUnlocked);
-
-                if (newEmoteCredits != -1)
+                if (!ConfigSync.instance.syncShareEverything && clientId != 0)
                 {
+                    if (playerWhoUnlocked != null)
+                        TerminalPatcher.currentEmoteCreditsByPlayer[playerWhoUnlocked.playerUsername] = newEmoteCredits;
+                }
+                else
+                    TerminalPatcher.currentEmoteCredits = newEmoteCredits;
+            }
+
+            Plugin.Log("Receiving unlocked emote update from client for " + numEmotes + " emotes.");
+            var writer = new FastBufferWriter(sizeof(ulong) + sizeof(int) * 2 + sizeof(int) * numEmotes, Allocator.Temp);
+            writer.WriteValueSafe(clientId);
+            writer.WriteValueSafe(TerminalPatcher.currentEmoteCredits);
+            writer.WriteValueSafe(numEmotes);
+            if (reader.TryBeginRead(sizeof(int) * numEmotes))
+            {
+                for (int i = 0; i < numEmotes; i++)
+                {
+                    int emoteId;
+                    reader.ReadValue(out emoteId);
+                    writer.WriteValueSafe(emoteId);
                     if (!ConfigSync.instance.syncShareEverything && clientId != 0)
                     {
                         if (playerWhoUnlocked != null)
-                            TerminalPatcher.currentEmoteCreditsByPlayer[playerWhoUnlocked.playerUsername] = newEmoteCredits;
+                            StartOfRoundPatcher.UnlockEmoteLocal(emoteId, playerWhoUnlocked.playerUsername);
                     }
                     else
-                        TerminalPatcher.currentEmoteCredits = newEmoteCredits;
+                        StartOfRoundPatcher.UnlockEmoteLocal(emoteId);
                 }
-
-                Plugin.Log("Receiving unlocked emote update from client for " + numEmotes + " emotes.");
-                var writer = new FastBufferWriter(sizeof(ulong) + sizeof(int) * 2 + sizeof(int) * numEmotes, Allocator.Temp);
-                writer.WriteValueSafe(clientId);
-                writer.WriteValueSafe(TerminalPatcher.currentEmoteCredits);
-                writer.WriteValueSafe(numEmotes);
-                if (reader.TryBeginRead(sizeof(int) * numEmotes))
-                {
-                    for (int i = 0; i < numEmotes; i++)
-                    {
-                        int emoteId;
-                        reader.ReadValue(out emoteId);
-                        if (!ConfigSync.instance.syncShareEverything && clientId != 0)
-                        {
-                            if (playerWhoUnlocked != null)
-                                StartOfRoundPatcher.UnlockEmoteLocal(emoteId, playerWhoUnlocked.playerUsername);
-                        }
-                        else
-                        {
-                            StartOfRoundPatcher.UnlockEmoteLocal(emoteId);
-                            writer.WriteValueSafe(emoteId);
-                        }
-                    }
-                    //if (ConfigSync.instance.syncShareEverything)
-                    NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes-OnUnlockEmoteClientRpc", writer);
-                    return;
-                }
-                Plugin.LogError("Failed to receive unlocked emote updates from client. Expected updates: " + numEmotes);
+                //if (ConfigSync.instance.syncShareEverything)
+                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes-OnUnlockEmoteClientRpc", writer);
                 return;
             }
-            Plugin.LogError("Failed to receive unlocked emote update from client.");
+            Plugin.LogError("Failed to receive unlocked emote updates from client. Expected updates: " + numEmotes);
         }
 
 
-        private static void OnUnlockEmoteClientRpc(ulong clientId, FastBufferReader reader) {
+        private static void OnUnlockEmoteClientRpc(ulong clientId, FastBufferReader reader)
+        {
             if (!NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsServer)
                 return;
 
-            if (reader.TryBeginRead(sizeof(ulong) + sizeof(int) * 2))
+            ulong clientIdUnlockedEmote;
+            int newEmoteCredits;
+            int numEmotes;
+            reader.ReadValue(out clientIdUnlockedEmote);
+            reader.ReadValue(out newEmoteCredits);
+            reader.ReadValue(out numEmotes);
+
+            StartOfRoundPatcher.TryGetPlayerByClientId(clientIdUnlockedEmote, out var playerWhoUnlocked);
+            if (!ConfigSync.instance.syncShareEverything && playerWhoUnlocked == null)
+                return;
+
+            if (newEmoteCredits != -1)
             {
-                ulong clientIdUnlockedEmote;
-                int currentEmoteCredits;
-                int numEmotes;
-                reader.ReadValue(out clientIdUnlockedEmote);
-                reader.ReadValue(out currentEmoteCredits);
-                reader.ReadValue(out numEmotes);
+                if (!ConfigSync.instance.syncShareEverything)
+                    TerminalPatcher.currentEmoteCreditsByPlayer[playerWhoUnlocked.playerUsername] = newEmoteCredits;
+                else
+                    TerminalPatcher.currentEmoteCredits = newEmoteCredits;
+            }
 
-                PlayerControllerB playerWhoUnlocked = null;
-                if (!ConfigSync.instance.syncShareEverything && !StartOfRoundPatcher.TryGetPlayerByClientId(clientIdUnlockedEmote, out playerWhoUnlocked))
-                    return;
-
-                if (currentEmoteCredits != -1)
-                    TerminalPatcher.currentEmoteCredits = currentEmoteCredits;
-
-                if (reader.TryBeginRead(sizeof(int) * numEmotes))
+            if (reader.TryBeginRead(sizeof(int) * numEmotes))
+            {
+                for (int i = 0; i < numEmotes; i++)
                 {
-                    for (int i = 0; i < numEmotes; i++)
-                    {
-                        int emoteId;
-                        reader.ReadValue(out emoteId);
-                        Plugin.Log("Receiving unlocked emote update from server. Emote id: " + emoteId);
-                        if (ConfigSync.instance.syncShareEverything)
-                            StartOfRoundPatcher.UnlockEmoteLocal(emoteId);
-                        else
-                            StartOfRoundPatcher.UnlockEmoteLocal(emoteId, playerWhoUnlocked.playerUsername);
-                    }
-                    return;
+                    int emoteId;
+                    reader.ReadValue(out emoteId);
+                    Plugin.Log("Receiving unlocked emote update from server. Emote id: " + emoteId);
+                    if (ConfigSync.instance.syncShareEverything)
+                        StartOfRoundPatcher.UnlockEmoteLocal(emoteId);
+                    else
+                        StartOfRoundPatcher.UnlockEmoteLocal(emoteId, playerWhoUnlocked.playerUsername);
                 }
-                Plugin.LogError("Failed to receive unlocked emote updates from client. Expected updates: " + numEmotes);
                 return;
             }
-            Plugin.LogError("Failed to receive unlocked emote update from client.");
+            Plugin.LogError("Failed to receive unlocked emote updates from client. Expected updates: " + numEmotes);
         }
 
 
-        public static void RotateEmoteSelectionServerRpc(int overrideSeed = 0) {
+        public static void RotateEmoteSelectionServerRpc(int overrideSeed = 0)
+        {
             if (!NetworkManager.Singleton.IsServer && !NetworkManager.Singleton.IsHost)
                 return;
 
@@ -316,7 +311,8 @@ namespace TooManyEmotes.Networking {
         }
 
 
-        static void RotateEmoteSelectionClientRpc(ulong clientId, FastBufferReader reader) {
+        static void RotateEmoteSelectionClientRpc(ulong clientId, FastBufferReader reader)
+        {
             if (!NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsServer)
                 return;
 

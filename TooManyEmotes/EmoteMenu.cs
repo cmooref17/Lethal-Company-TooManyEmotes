@@ -373,7 +373,8 @@ namespace TooManyEmotes {
         }
 
 
-        static void InitializeAnimationRenderer() {
+        static void InitializeAnimationRenderer()
+        {
             renderingCamera = new GameObject("AnimationRenderingCamera").AddComponent<Camera>();
             GameObject.Destroy(renderingCamera.GetComponent<AudioListener>());
             renderingCamera.cullingMask = playerLayerMask;
@@ -414,7 +415,8 @@ namespace TooManyEmotes {
             if (ConfigSettings.disableEmotesForSelf.Value)
                 return;
 
-            IEnumerator InitPlayerCloneAfterSpawnAnimation() {
+            IEnumerator InitPlayerCloneAfterSpawnAnimation()
+            {
                 yield return new WaitForSeconds(2);
                 previewPlayerObject = GameObject.Instantiate(__instance.gameObject, renderingCamera.transform);
                 previewPlayerObject.name = "PreviewPlayerAnimationObject";
@@ -476,8 +478,11 @@ namespace TooManyEmotes {
         [HarmonyPrefix]
         public static bool OnScrollMouse(InputAction.CallbackContext context, PlayerControllerB __instance)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || !isMenuOpen || __instance != localPlayerController || !context.performed)
+            if (ConfigSettings.disableEmotesForSelf.Value || __instance != localPlayerController || !isMenuOpen || !context.performed)
                 return true;
+
+            if (numPages == 0 || (numPages == 1 && currentPage == 0))
+                return false;
 
             if (context.ReadValue<float>() < 0 && !ConfigSettings.reverseEmoteWheelScrollDirection.Value)
                 SwapPrevPage();
