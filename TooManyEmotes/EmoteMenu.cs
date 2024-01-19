@@ -25,8 +25,8 @@ using TooManyEmotes.Networking;
 namespace TooManyEmotes {
 
     [HarmonyPatch]
-    public static class EmoteMenuManager {
-
+    public static class EmoteMenuManager
+    {
         public static QuickMenuManager quickMenuManager { get { return StartOfRound.Instance?.localPlayerController?.quickMenuManager; } }
         public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
         public static GameObject menuGameObject;
@@ -72,7 +72,8 @@ namespace TooManyEmotes {
 
         [HarmonyPatch(typeof(HUDManager), "Start")]
         [HarmonyPostfix]
-        public static void InitializeUI(HUDManager __instance) {
+        public static void InitializeUI(HUDManager __instance)
+        {
             if (ConfigSettings.disableEmotesForSelf.Value || Plugin.radialMenuPrefab == null)
                 return;
 

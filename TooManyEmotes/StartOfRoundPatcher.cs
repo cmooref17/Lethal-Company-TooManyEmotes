@@ -94,7 +94,7 @@ namespace TooManyEmotes.Patches
                     Plugin.animationClipsTier2.Contains(clip) ? 2 :
                     Plugin.animationClipsTier3.Contains(clip) ? 3 : 0;
 
-                if (emote.emoteName.Contains("_start"))
+                if (emote.emoteName.Contains("_start") && !emote.emoteName.Contains("_start_"))
                 {
                     string emoteLoopName = emote.emoteName.Replace("_start", "_loop");
                     var emoteLoop = Plugin.customAnimationClipsLoopDict[emoteLoopName];
@@ -336,7 +336,7 @@ namespace TooManyEmotes.Patches
                     unlockedEmotesTier2.Add(emote);
                 else if (emote.rarity == 1 && !unlockedEmotesTier1.Contains(emote))
                     unlockedEmotesTier1.Add(emote);
-                else if (!unlockedEmotesTier0.Contains(emote))
+                else if (emote.rarity == 0 && !unlockedEmotesTier0.Contains(emote))
                     unlockedEmotesTier0.Add(emote);
 
                 if (allFavoriteEmotes.Contains(emote.emoteName) && !unlockedFavoriteEmotes.Contains(emote))

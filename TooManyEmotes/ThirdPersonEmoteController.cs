@@ -36,7 +36,6 @@ namespace TooManyEmotes.Patches {
 
         public static int localPlayerBodyLayer = 0;
         public static ShadowCastingMode defaultShadowCastingMode = ShadowCastingMode.On;
-        static bool setDefaultShadowCastingMode = false;
 
         public static string[] emoteControlTipLines = new string[] { "Hold [ALT] : Rotate" };
 
@@ -49,7 +48,6 @@ namespace TooManyEmotes.Patches {
             if (ConfigSettings.disableEmotesForSelf.Value)
                 return;
 
-            setDefaultShadowCastingMode = false;
             gameplayCamera = __instance.gameplayCamera;
             if (emoteCamera == null)
             {
@@ -70,18 +68,19 @@ namespace TooManyEmotes.Patches {
             emoteCamera.enabled = false;
             StartOfRound.Instance.SwitchCamera(StartOfRound.Instance.activeCamera);
 
+            __instance.GetComponentInChildren<LODGroup>().enabled = false;
             __instance.thisPlayerModelLOD1.gameObject.layer = 5;
             __instance.thisPlayerModelLOD1.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
             __instance.thisPlayerModelLOD2.shadowCastingMode = ShadowCastingMode.Off;
             __instance.thisPlayerModelLOD2.enabled = false;
 
-            __instance.thisPlayerModel.gameObject.layer = localPlayerBodyLayer;
-            __instance.thisPlayerModel.shadowCastingMode = defaultShadowCastingMode;
+            __instance.thisPlayerModel.gameObject.layer = 23;
+            __instance.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On; // defaultShadowCastingMode;
 
             __instance.thisPlayerModelArms.gameObject.layer = 5;
             gameplayCamera.cullingMask &= ~(1 << 23);
             emoteCamera.cullingMask |= (1 << 23);
-            emoteCamera.cullingMask |= 1 << localPlayerBodyLayer;
+            //emoteCamera.cullingMask |= 1 << localPlayerBodyLayer;
             emoteCamera.cullingMask &= ~((1 << 5) | (1 << 7)); // ui/helmet visor
 
             emoteCameraPivot.transform.parent = __instance.transform;
@@ -188,8 +187,6 @@ namespace TooManyEmotes.Patches {
                 localPlayerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
                 emoteCameraPivot.eulerAngles = gameplayCamera.transform.eulerAngles + new Vector3(0, 0, 0);
             }
-            if (!setDefaultShadowCastingMode)
-                defaultShadowCastingMode = localPlayerController.thisPlayerModel.shadowCastingMode;
             localPlayerController.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
             HUDManager.Instance.ClearControlTips();
             if (!ConfigSync.instance.syncEnableMovingWhileEmoting)
