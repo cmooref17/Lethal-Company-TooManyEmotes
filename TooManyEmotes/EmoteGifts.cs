@@ -18,7 +18,7 @@ using Unity.Collections;
 using System.ComponentModel;
 using Unity.Mathematics;
 using DunGen;
-using UnityEngine.Rendering.HighDefinition;
+//using UnityEngine.Rendering.HighDefinition;
 using UnityEditor;
 using UnityEngine.Rendering;
 
