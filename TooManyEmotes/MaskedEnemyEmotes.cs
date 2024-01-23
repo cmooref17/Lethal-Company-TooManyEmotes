@@ -246,7 +246,7 @@ namespace TooManyEmotes.Patches
             IEnumerator PerformEmote()
             {
                 yield return new WaitForSeconds(delay);
-                if (CanPerformEmote(maskedEnemyData))
+                if (CanPerformEmote(maskedEnemyData) && Vector3.Distance(maskedEnemyData.lookingAtPlayer.transform.position, maskedEnemyData.maskedEnemy.transform.position) < 10f)
                 {
                     TryPerformEmote(maskedEnemyData, emote.emoteId);
                     if (NetworkManager.Singleton.IsServer)

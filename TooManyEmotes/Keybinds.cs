@@ -25,19 +25,19 @@ namespace TooManyEmotes.Input
         public static InputActionAsset Asset;
         public static InputActionMap ActionMap;
 
-        static InputAction OpenEmoteMenuAction;
-        static InputAction RotatePlayerEmoteAction;
-        static InputAction FavoriteEmoteAction;
-        static InputAction QuickEmoteFavorite1Action;
-        static InputAction QuickEmoteFavorite2Action;
-        static InputAction QuickEmoteFavorite3Action;
-        static InputAction QuickEmoteFavorite4Action;
-        static InputAction QuickEmoteFavorite5Action;
-        static InputAction QuickEmoteFavorite6Action;
-        static InputAction QuickEmoteFavorite7Action;
-        static InputAction QuickEmoteFavorite8Action;
+        public static InputAction OpenEmoteMenuAction;
+        public static InputAction RotatePlayerEmoteAction;
+        public static InputAction FavoriteEmoteAction;
+        public static InputAction QuickEmoteFavorite1Action;
+        public static InputAction QuickEmoteFavorite2Action;
+        public static InputAction QuickEmoteFavorite3Action;
+        public static InputAction QuickEmoteFavorite4Action;
+        public static InputAction QuickEmoteFavorite5Action;
+        public static InputAction QuickEmoteFavorite6Action;
+        public static InputAction QuickEmoteFavorite7Action;
+        public static InputAction QuickEmoteFavorite8Action;
 
-        static InputAction SelectEmoteUIAction;
+        public static InputAction SelectEmoteUIAction;
         public static InputAction RawScrollAction;
 
         public static bool holdingRotatePlayerModifier = false;
