@@ -22,6 +22,7 @@ using UnityEngine.EventSystems;
 using System.Xml.Linq;
 using TooManyEmotes.Networking;
 using TooManyEmotes.Input;
+using UnityEngine.Rendering.HighDefinition;
 
 namespace TooManyEmotes {
 
@@ -142,8 +143,8 @@ namespace TooManyEmotes {
 
             emoteLoadoutUIElementsList[0].loadoutName = "Favorites";
             emoteLoadoutUIElementsList[1].loadoutName = string.Format("<color={0}>Legendary</color>", UnlockableEmote.rarityColorCodes[3]);
-            emoteLoadoutUIElementsList[2].loadoutName = string.Format("<color={0}>Rare</color>", UnlockableEmote.rarityColorCodes[2]);
-            emoteLoadoutUIElementsList[3].loadoutName = string.Format("<color={0}>Uncommon</color>", UnlockableEmote.rarityColorCodes[1]);
+            emoteLoadoutUIElementsList[2].loadoutName = string.Format("<color={0}>Epic</color>", UnlockableEmote.rarityColorCodes[2]);
+            emoteLoadoutUIElementsList[3].loadoutName = string.Format("<color={0}>Rare</color>", UnlockableEmote.rarityColorCodes[1]);
             emoteLoadoutUIElementsList[4].loadoutName = string.Format("<color={0}>Common</color>", UnlockableEmote.rarityColorCodes[0]);
             emoteLoadoutUIElementsList[5].loadoutName = "Complementary";
             emoteLoadoutUIElementsList[6].loadoutName = "All";
@@ -246,15 +247,16 @@ namespace TooManyEmotes {
 
         public static void SwapPrevPage()
         {
+            hoveredEmoteUIIndex = -1;
             currentPage--;
-            if (currentPage < 0)
-                currentPage = numPages - 1;
+            currentPage = currentPage < 0 ? numPages - 1 : currentPage;
             UpdateEmoteWheel();
         }
 
 
         public static void SwapNextPage()
         {
+            hoveredEmoteUIIndex = -1;
             currentPage = (currentPage + 1) % numPages;
             UpdateEmoteWheel();
         }
@@ -290,7 +292,7 @@ namespace TooManyEmotes {
         public static void UpdateEmoteWheel()
         {
             currentPage = Mathf.Clamp(currentPage, 0, numPages - 1);
-            swapPageText.text = string.Format("[{0} / {1}]", currentPage + 1, numPages);
+            swapPageText.text = string.Format("Page [{0} / {1}]", currentPage + 1, numPages);
 
             for (int i = 0; i < emoteLoadoutUIElementsList.Count; i++)
             {
@@ -439,7 +441,7 @@ namespace TooManyEmotes {
         {
             if ((quickMenuManager.isMenuOpen && !isMenuOpen) || previewPlayerObject == null)
                 return false;
-            if (localPlayerController.isPlayerDead || localPlayerController.inTerminalMenu || localPlayerController.isTypingChat || localPlayerController.isPlayerDead || localPlayerController.inSpecialInteractAnimation || localPlayerController.isGrabbingObjectAnimation || localPlayerController.inShockingMinigame || localPlayerController.isClimbingLadder || localPlayerController.isSinking || localPlayerController.inAnimationWithEnemy != null)
+            if (localPlayerController.isPlayerDead || localPlayerController.inTerminalMenu || localPlayerController.isTypingChat || localPlayerController.isPlayerDead || localPlayerController.inSpecialInteractAnimation || localPlayerController.isGrabbingObjectAnimation || localPlayerController.inShockingMinigame || localPlayerController.isClimbingLadder || localPlayerController.isSinking || localPlayerController.inAnimationWithEnemy != null || CentipedePatcher.IsCentipedeLatchedOntoLocalPlayer())
                 return false;
             return true;
         }
@@ -498,7 +500,7 @@ namespace TooManyEmotes {
                 copyPlayerController.thisPlayerModel.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
 
                 previewPlayerMesh = copyPlayerController.thisPlayerModel;
-                GameObject.Destroy(modelGameObject.GetComponentInChildren<LODGroup>());
+                GameObject.DestroyImmediate(modelGameObject.GetComponentInChildren<LODGroup>());
                 GameObject.DestroyImmediate(metarigGameObject.GetComponentInChildren<RigBuilder>());
                 GameObject.DestroyImmediate(copyPlayerController.playerBodyAnimator);
 
@@ -508,7 +510,7 @@ namespace TooManyEmotes {
 
                 previewPlayerAnimator.Play("EmoteStart", 0, 0);
 
-                GameObject.Destroy(previewPlayerObject.GetComponent<NfgoPlayer>());
+                GameObject.DestroyImmediate(previewPlayerObject.GetComponent<NfgoPlayer>());
 
                 // It's brute force, but w/e
                 foreach (Transform child in previewPlayerObject.transform)
@@ -523,22 +525,27 @@ namespace TooManyEmotes {
                     if (child.name != "spine")
                         GameObject.Destroy(child.gameObject);
 
-                List<Component> components = new List<Component>();
-                components.AddRange(previewPlayerObject.GetComponentsInChildren<Camera>());
-                components.AddRange(previewPlayerObject.GetComponentsInChildren<AudioListener>());
-                components.AddRange(previewPlayerObject.GetComponentsInChildren<Collider>());
-                components.AddRange(previewPlayerObject.GetComponentsInChildren<CharacterController>());
-                components.AddRange(previewPlayerObject.GetComponentsInChildren<Rigidbody>());
-                
-                foreach (var comp in components)
-                    GameObject.DestroyImmediate(comp);
+                List<Component> destroyComponents = new List<Component>(previewPlayerObject.GetComponentsInChildren<HDAdditionalLightData>());
+                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<HDAdditionalCameraData>());
+                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioReverbFilter>());
+                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<OccludeAudio>());
+                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioLowPassFilter>());
+                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioHighPassFilter>());
+                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioChorusFilter>());
+                foreach (var component in destroyComponents)
+                    GameObject.DestroyImmediate(component);
 
+                foreach (Component component in previewPlayerObject.GetComponentsInChildren<Component>())
+                {
+                    if (component is Transform || component is SkinnedMeshRenderer || component is MeshFilter || component is Animator)
+                        continue;
+                    try { GameObject.DestroyImmediate(component); }
+                    catch { Plugin.LogError("Failed to destroy component of type: " + component.GetType().ToString() + " on animation previewer object."); }
+                }
+                
                 previewPlayerObject.transform.position = renderingCamera.transform.position + renderingCamera.transform.forward * 2.8f + Vector3.down * 1.35f;
                 previewPlayerObject.transform.LookAt(new Vector3(renderingCamera.transform.position.x, previewPlayerObject.transform.position.y, renderingCamera.transform.position.z));
                 SetObjectLayerRecursive(previewPlayerObject, playerLayer);
-
-                foreach (MonoBehaviour script in previewPlayerObject.GetComponents<MonoBehaviour>())
-                    GameObject.Destroy(script);
             }
 
             if (Plugin.radialMenuPrefab == null)
@@ -548,7 +555,8 @@ namespace TooManyEmotes {
         }
 
 
-        static void SetObjectLayerRecursive(GameObject obj, int layer) {
+        static void SetObjectLayerRecursive(GameObject obj, int layer)
+        {
             if (obj == null) return;
             obj.layer = layer;
             for (int i = 0; i < obj.transform.childCount; i++)

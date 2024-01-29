@@ -198,7 +198,7 @@ namespace TooManyEmotes.Patches
 
         public static bool CallCheckConditionsForEmote(PlayerControllerB playerController)
         {
-            bool otherConditions = playerController.inAnimationWithEnemy == null;
+            bool otherConditions = playerController.inAnimationWithEnemy == null && !(playerController == localPlayerController && CentipedePatcher.IsCentipedeLatchedOntoLocalPlayer());
             MethodInfo method = playerController.GetType().GetMethod("CheckConditionsForEmote", BindingFlags.NonPublic | BindingFlags.Instance);
             return (bool)method.Invoke(playerController, new object[] { }) && otherConditions;
         }

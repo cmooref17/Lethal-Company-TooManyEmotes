@@ -86,19 +86,19 @@ namespace TooManyEmotes.Config
             basePriceEmoteRaritySystemDisabled = AddConfigEntry("Emote Settings", "BasePriceEmote - Rarity System Disabled", 100, "[Host only] Base price of emotes if the rarity system is disabled.");
 
             startingEmoteCredits = AddConfigEntry("Emote Settings", "StartingEmoteCredits", 100, "[Host only] The number of emote credits you start each game with.");
-            addEmoteCreditsMultiplier = AddConfigEntry("Emote Settings", "GainEmoteCreditsMultiplier", 0.25f, "[Host only] You gain emote credits based off this multiplier of normal group credits earned. Example: If set to the default, 0.25, and you earn 200 group credits, you will also gain 50 emote credits.");
+            addEmoteCreditsMultiplier = AddConfigEntry("Emote Settings", "AddEmoteCreditsMultiplier", 0.4f, "[Host only] You gain emote credits based off this multiplier of normal group credits earned. Example: If set to the default, 0.25, and you earn 200 group credits, you will also gain 50 emote credits.");
             purchaseEmotesWithDefaultCurrency = AddConfigEntry("Emote Settings", "PurchaseEmotesWithDefaultCredits", true, "[Host only] Setting this to true will allow you to purchase emotes with normal group credits once you run out of emote credits. This setting will automatically be disabled if ShareEverything is false.");
 
             priceMultiplierEmotesStore = AddConfigEntry("Emote Settings", "PriceMultiplierEmotesStore", 1.0f, "[Host only] Price multiplier for emotes in the store. Only applies if UnlockEverythingAtStart is false.");
             basePriceEmoteTier0 = AddConfigEntry("Emote Settings", "PriceCommonEmote", 50, "[Host only] The base price of [common]emotes in the store.");
-            basePriceEmoteTier1 = AddConfigEntry("Emote Settings", "PriceUncommonEmote", 100, "[Host only] The base price of [uncommon] emotes in the store.");
-            basePriceEmoteTier2 = AddConfigEntry("Emote Settings", "PriceRareEmote", 200, "[Host only] The base price of [rare] emotes in the store.");
+            basePriceEmoteTier1 = AddConfigEntry("Emote Settings", "PriceRareEmote", 100, "[Host only] The base price of [rare] emotes in the store.");
+            basePriceEmoteTier2 = AddConfigEntry("Emote Settings", "PriceEpicEmote", 200, "[Host only] The base price of [epic] emotes in the store.");
             basePriceEmoteTier3 = AddConfigEntry("Emote Settings", "PriceLegendaryEmote", 300, "[Host only] The base price of [legendary] emotes in the store.");
 
             numEmotesStoreRotation = AddConfigEntry("Emote Settings", "EmotesInStoreRotation", 6, "[Host only] The number of emotes that will be available at a time in the store. Only applies if UnlockEverythingAtStart is false.");
             rotationChanceEmoteTier0 = AddConfigEntry("Emote Settings", "RotationWeightCommonEmote", 0.55f, "[Host only] The likelyhood of [common] emotes appearing (per slot) in the store rotation.");
-            rotationChanceEmoteTier1 = AddConfigEntry("Emote Settings", "RotationWeightUncommonEmote", 0.35f, "[Host only] The likelyhood of [uncommon] emotes appearing (per slot) in the store rotation.");
-            rotationChanceEmoteTier2 = AddConfigEntry("Emote Settings", "RotationWeightRareEmote", 0.08f, "[Host only] The likelyhood of [rare] emotes appearing (per slot) in the store rotation.");
+            rotationChanceEmoteTier1 = AddConfigEntry("Emote Settings", "RotationWeightRareEmote", 0.35f, "[Host only] The likelyhood of [rare] emotes appearing (per slot) in the store rotation.");
+            rotationChanceEmoteTier2 = AddConfigEntry("Emote Settings", "RotationWeightEpicEmote", 0.08f, "[Host only] The likelyhood of [epic] emotes appearing (per slot) in the store rotation.");
             rotationChanceEmoteTier3 = AddConfigEntry("Emote Settings", "RotationWeightLegendaryEmote", 0.02f, "[Host only] The likelyhood of [legendary] emotes appearing (per slot) in the store rotation.");
 
             enableMaskedEnemiesEmoting = AddConfigEntry("MaskedEnemyEmotes - Beta", "EnableMaskedEnemiesEmoting", true, "[Host only] Enabling this alone does not change the behaviour of the Masked Enemies, and shouldn't conflict with other mods.");
@@ -129,8 +129,8 @@ namespace TooManyEmotes.Config
             */
 
             emoteNameColorTier0 = AddConfigEntry("Accessibility", "CommonEmoteNameColor", "#00FF00", "The color of the [common] emote name in the terminal.");
-            emoteNameColorTier1 = AddConfigEntry("Accessibility", "UncommonEmoteNameColor", "#2828FF", "The color of the [uncommon] emote name in the terminal.");
-            emoteNameColorTier2 = AddConfigEntry("Accessibility", "RareEmoteNameColor", "#AA00EE", "The color of the [rare] emote name in the terminal.");
+            emoteNameColorTier1 = AddConfigEntry("Accessibility", "RareEmoteNameColor", "#2828FF", "The color of the [rare] emote name in the terminal.");
+            emoteNameColorTier2 = AddConfigEntry("Accessibility", "EpicEmoteNameColor", "#AA00EE", "The color of the [epic] emote name in the terminal.");
             emoteNameColorTier3 = AddConfigEntry("Accessibility", "LegendaryEmoteNameColor", "#FF2222", "The color of the [legendary] emote name in the terminal.");
 
             // fix weights

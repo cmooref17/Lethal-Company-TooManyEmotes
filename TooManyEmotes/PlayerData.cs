@@ -49,51 +49,6 @@ namespace TooManyEmotes
 
         public void EnableRigBuilder(bool enable)
         {
-            /*
-            IEnumerator EnableRigBuilderCoroutine()
-            {
-                animator.enabled = false;
-                yield return null;
-                yield return new WaitForEndOfFrame();
-                foreach (var cTransform in constraintsData.Keys)
-                {
-                    Plugin.LogWarning("ENABLE: " + cTransform.name);
-                    var constraintData = constraintsData[cTransform];
-                    if (enable)
-                        constraintData.SetConstraintToDefaultPositionRotation();
-                    constraintData.constraint.weight = 1;
-                }
-                foreach (var transform in bonePositions.Keys)
-                {
-                    transform.localPosition = bonePositions[transform];
-                    transform.localRotation = boneRotations[transform];
-                }
-
-                //rigBuilder.enabled = true;
-                yield return null;
-                yield return new WaitForEndOfFrame();
-                animator.enabled = true;
-            }
-
-            if (enable)
-            {
-                playerController.StartCoroutine(EnableRigBuilderCoroutine());
-                return;
-            }
-            animator.enabled = false;
-            foreach (var cTransform in constraintsData.Keys)
-            {
-                Plugin.LogWarning("DISABLE: " + cTransform.name);
-                var constraintData = constraintsData[cTransform];
-                //if (enable)
-                    //constraintData.SetConstraintToDefaultPositionRotation();
-                constraintData.constraint.weight = 0;
-            }
-            
-            //rigBuilder.enabled = false;
-            animator.enabled = true;
-            */
-
             IEnumerator EnableRigBuilder()
             {
                 TryGetCurrentAnimationClip(out var currentAnimationClip);
@@ -162,6 +117,12 @@ namespace TooManyEmotes
 
         public void PlayEmoteAtTime(UnlockableEmote emote, AnimationClip overrideClip = null, float normalizedTime = 0, bool playEmoteEndOfFrame = false)
         {
+            if (performingEmote == null || currentEmoteNumber != 1)
+            {
+                Plugin.LogWarning("Called PlayEmoteOnTime but loadedEmote is null! This is probably okay.");
+                performingEmote = null;
+                return;
+            }
             IEnumerator PlayEmoteEndOfFrame()
             {
                 yield return new WaitForEndOfFrame();

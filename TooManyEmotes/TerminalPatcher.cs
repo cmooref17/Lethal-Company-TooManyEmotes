@@ -40,13 +40,22 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(Terminal), "Awake")]
         [HarmonyPostfix]
-        public static void InitializeTerminal(Terminal __instance) {
+        public static void InitializeTerminal(Terminal __instance)
+        {
             terminalInstance = __instance;
             emoteSelection = new List<UnlockableEmote>();
             mysteryEmoteSelection = new List<UnlockableEmote>();
             currentEmoteCreditsByPlayer = new Dictionary<string, int>();
             if (!initializedTerminalNodes)
                 EditExistingTerminalNodes();
+        }
+
+
+        [HarmonyPatch(typeof(Terminal), "BeginUsingTerminal")]
+        [HarmonyPostfix]
+        public static void OnBeginUsingTerminal(Terminal __instance)
+        {
+            purchasingEmote = null;
         }
 
 
@@ -129,7 +138,7 @@ namespace TooManyEmotes.Patches
             if (__instance.screenText.text.Length <= 0)
                 return true;
 
-            string input = __instance.screenText.text.Substring(__instance.screenText.text.Length - __instance.textAdded);
+            string input = __instance.screenText.text.Substring(__instance.screenText.text.Length - __instance.textAdded).ToLower();
             string[] args = input.Split(' ');
             UnlockableEmote emote = null;
 

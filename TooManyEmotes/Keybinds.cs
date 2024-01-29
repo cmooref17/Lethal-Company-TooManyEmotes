@@ -258,17 +258,6 @@ namespace TooManyEmotes.Input
             EmoteMenuManager.ToggleFavoriteHoveredEmote();
         }
 
-        /*
-        public static void OnQuickEmote1(InputAction.CallbackContext context) => OnQuickEmote(context, 0);
-        public static void OnQuickEmote2(InputAction.CallbackContext context) => OnQuickEmote(context, 1);
-        public static void OnQuickEmote3(InputAction.CallbackContext context) => OnQuickEmote(context, 2);
-        public static void OnQuickEmote4(InputAction.CallbackContext context) => OnQuickEmote(context, 3);
-        public static void OnQuickEmote5(InputAction.CallbackContext context) => OnQuickEmote(context, 4);
-        public static void OnQuickEmote6(InputAction.CallbackContext context) => OnQuickEmote(context, 5);
-        public static void OnQuickEmote7(InputAction.CallbackContext context) => OnQuickEmote(context, 6);
-        public static void OnQuickEmote8(InputAction.CallbackContext context) => OnQuickEmote(context, 7);
-        */
-
 
         public static void OnQuickEmote(InputAction.CallbackContext context, int quickEmoteNumber)
         {

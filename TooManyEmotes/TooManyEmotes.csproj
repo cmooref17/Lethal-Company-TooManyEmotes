@@ -98,7 +98,7 @@
     </Reference>
     <Reference Include="Unity.RenderPipelines.HighDefinition.Runtime, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Unity.RenderPipelines.HighDefinition.Runtime.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Unity.RenderPipelines.HighDefinition.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" />
     <Reference Include="UnityEditor">
@@ -153,6 +153,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BoomboxMusicPlayer.cs" />
+    <Compile Include="CentipedePatcher.cs" />
     <Compile Include="CompatibilityPatcher.cs" />
     <Compile Include="ConfigSync.cs" />
     <Compile Include="EmoteGifts.cs" />
