@@ -86,7 +86,7 @@ namespace TooManyEmotes.Config
             basePriceEmoteRaritySystemDisabled = AddConfigEntry("Emote Settings", "BasePriceEmote - Rarity System Disabled", 100, "[Host only] Base price of emotes if the rarity system is disabled.");
 
             startingEmoteCredits = AddConfigEntry("Emote Settings", "StartingEmoteCredits", 100, "[Host only] The number of emote credits you start each game with.");
-            addEmoteCreditsMultiplier = AddConfigEntry("Emote Settings", "AddEmoteCreditsMultiplier", 0.5f, "[Host only] You gain emote credits based off this multiplier of normal group credits earned. Example: If set to the default, 0.5, and you earn 200 group credits, you will also gain 100 emote credits.");
+            addEmoteCreditsMultiplier = AddConfigEntry("Emote Settings", "GainEmoteCreditsMultiplier", 0.25f, "[Host only] You gain emote credits based off this multiplier of normal group credits earned. Example: If set to the default, 0.25, and you earn 200 group credits, you will also gain 50 emote credits.");
             purchaseEmotesWithDefaultCurrency = AddConfigEntry("Emote Settings", "PurchaseEmotesWithDefaultCredits", true, "[Host only] Setting this to true will allow you to purchase emotes with normal group credits once you run out of emote credits. This setting will automatically be disabled if ShareEverything is false.");
 
             priceMultiplierEmotesStore = AddConfigEntry("Emote Settings", "PriceMultiplierEmotesStore", 1.0f, "[Host only] Price multiplier for emotes in the store. Only applies if UnlockEverythingAtStart is false.");
@@ -179,6 +179,9 @@ namespace TooManyEmotes.Config
                 key = replaceIndex >= 0 ? key.Substring(replaceIndex + 2) : key;
 
                 string displayName = key.ToLower();
+                if (displayName.Contains("not-bound"))
+                    return "";
+                
                 displayName = displayName.Replace("leftalt", "Alt");
                 displayName = displayName.Replace("rightalt", "Alt");
                 displayName = displayName.Replace("leftctrl", "Ctrl");
@@ -194,6 +197,7 @@ namespace TooManyEmotes.Config
                 displayName = displayName.Replace("rightshoulder", "RB");
                 displayName = displayName.Replace("leftstickpress", "LS");
                 displayName = displayName.Replace("rightstickpress", "RS");
+                displayName = displayName.Replace("dpad/", "DPad-");
 
                 displayName = displayName.Replace("backquote", "`");
 

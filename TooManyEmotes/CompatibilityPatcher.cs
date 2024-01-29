@@ -85,7 +85,7 @@ namespace TooManyEmotes.CompatibilityPatcher
                     {
                         Plugin.Log("Applying compatibility patch for BetterEmotes");
 
-                        Type internalClassType = assembly.GetType("BetterEmote.EmotePatch");
+                        Type internalClassType = assembly.GetType("BetterEmote.Patches.EmotePatch");
                         FieldInfo animatorControllerFieldLocal = internalClassType.GetField("local", BindingFlags.Public | BindingFlags.Static);
                         RuntimeAnimatorController animatorControllerLocal = (RuntimeAnimatorController)animatorControllerFieldLocal.GetValue(null);
                         if (animatorControllerLocal != null)
@@ -134,8 +134,8 @@ namespace TooManyEmotes.CompatibilityPatcher
 
 
     [HarmonyPatch]
-    internal class MoreCompanyPatcher
-    {
+    internal class MoreCompanyPatcher {
+
         public static bool loadedMoreCompany = false;
         public static bool appliedPatch = false;
         public static List<GameObject> cosmeticInstances = new List<GameObject>();
@@ -143,9 +143,9 @@ namespace TooManyEmotes.CompatibilityPatcher
 
         [HarmonyPatch(typeof(HUDManager), "AddPlayerChatMessageClientRpc")]
         [HarmonyPrefix]
-        public static void ApplyPatch()
-        {
-            if (!Plugin.IsModLoaded("com.potatoepet.AdvancedCompany") && Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany"))
+        public static void ApplyPatch() {
+
+            if (Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany") && !Plugin.IsModLoaded("com.potatoepet.AdvancedCompany"))
             {
                 MoreCompanyPatch();
             }

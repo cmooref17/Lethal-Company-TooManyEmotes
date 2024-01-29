@@ -26,8 +26,14 @@ namespace TooManyEmotes.Input
         public static InputActionMap ActionMap;
 
         public static InputAction OpenEmoteMenuAction;
+        public static InputAction PerformSelectedEmoteAction;
         public static InputAction RotatePlayerEmoteAction;
         public static InputAction FavoriteEmoteAction;
+        public static InputAction ThumbStickAction;
+        public static InputAction PrevEmotePageAction;
+        public static InputAction NextEmotePageAction;
+        public static InputAction NextEmoteLoadoutUp;
+        public static InputAction NextEmoteLoadoutDown;
         public static InputAction QuickEmoteFavorite1Action;
         public static InputAction QuickEmoteFavorite2Action;
         public static InputAction QuickEmoteFavorite3Action;
@@ -37,18 +43,16 @@ namespace TooManyEmotes.Input
         public static InputAction QuickEmoteFavorite7Action;
         public static InputAction QuickEmoteFavorite8Action;
 
-        public static InputAction SelectEmoteUIAction;
         public static InputAction RawScrollAction;
 
         public static bool holdingRotatePlayerModifier = false;
         public static bool toggledRotating = false;
 
+
         public static void InitKeybinds()
         {
             Plugin.Log("Initializing custom emote hotkeys.");
 
-            bool inputUtilsLoaded = InputUtilsCompat.Enabled;
-            Plugin.Log("InputUtilsLoaded: " + inputUtilsLoaded);
             if (InputUtilsCompat.Enabled)
             {
                 Asset = InputUtilsCompat.Asset;
@@ -58,18 +62,14 @@ namespace TooManyEmotes.Input
                 RotatePlayerEmoteAction = InputUtilsCompat.RotateCharacterEmoteHotkey;
                 FavoriteEmoteAction = InputUtilsCompat.FavoriteEmoteHotkey;
 
-                /*
-                QuickEmoteFavorite1Action = InputUtilsCompat.QuickEmoteFavorite1;
-                QuickEmoteFavorite2Action = InputUtilsCompat.QuickEmoteFavorite2;
-                QuickEmoteFavorite3Action = InputUtilsCompat.QuickEmoteFavorite3;
-                QuickEmoteFavorite4Action = InputUtilsCompat.QuickEmoteFavorite4;
-                QuickEmoteFavorite5Action = InputUtilsCompat.QuickEmoteFavorite5;
-                QuickEmoteFavorite6Action = InputUtilsCompat.QuickEmoteFavorite6;
-                QuickEmoteFavorite7Action = InputUtilsCompat.QuickEmoteFavorite7;
-                QuickEmoteFavorite8Action = InputUtilsCompat.QuickEmoteFavorite8;
-                */
+                PrevEmotePageAction = InputUtilsCompat.PrevEmotePageHotkey;
+                NextEmotePageAction = InputUtilsCompat.NextEmotePageHotkey;
 
-                SelectEmoteUIAction = new InputAction("TooManyEmotes.SelectEmote", binding: "<Mouse>/leftButton", interactions: "Press");
+                NextEmoteLoadoutUp = InputUtilsCompat.NextEmoteLoadoutUpHotkey;
+                NextEmoteLoadoutDown = InputUtilsCompat.NextEmoteLoadoutDownHotkey;
+
+                ThumbStickAction = new InputAction("TooManyEmotes.ThumbStick", binding: "<Gamepad>/rightStick");
+                PerformSelectedEmoteAction = new InputAction("TooManyEmotes.PerformSelectedEmote", binding: "<Mouse>/leftButton", interactions: "Press");
                 RawScrollAction = new InputAction("TooManyEmotes.ScrollEmoteMenu", binding: "<Mouse>/scroll");
             }
             else
@@ -79,21 +79,24 @@ namespace TooManyEmotes.Input
                 Asset.AddActionMap(ActionMap);
 
                 OpenEmoteMenuAction = ActionMap.AddAction("TooManyEmotes.OpenEmoteMenu", binding: ConfigSettings.openEmoteMenuKeybind.Value, interactions: "Press");
+                OpenEmoteMenuAction.AddBinding("<Gamepad>/leftStickPress");
                 RotatePlayerEmoteAction = ActionMap.AddAction("TooManyEmotes.RotatePlayerEmote", binding: ConfigSettings.rotateCharacterInEmoteKeybind.Value, interactions: "Press");
+                RotatePlayerEmoteAction.AddBinding("<Gamepad>/");
                 FavoriteEmoteAction = ActionMap.AddAction("TooManyEmotes.FavoriteEmote", binding: "<Mouse>/middleButton", interactions: "Press");
+                FavoriteEmoteAction.AddBinding("<Gamepad>/rightStickPress");
 
-                /*
-                QuickEmoteFavorite1Action = ActionMap.AddAction("TooManyEmotes.FavoriteEmote", binding: ConfigSettings.quickEmoteFavorite1Keybind.Value, interactions: "Press");
-                QuickEmoteFavorite2Action = ActionMap.AddAction("TooManyEmotes.FavoriteEmote", binding: ConfigSettings.quickEmoteFavorite2Keybind.Value, interactions: "Press");
-                QuickEmoteFavorite3Action = ActionMap.AddAction("TooManyEmotes.FavoriteEmote", binding: ConfigSettings.quickEmoteFavorite3Keybind.Value, interactions: "Press");
-                QuickEmoteFavorite4Action = ActionMap.AddAction("TooManyEmotes.FavoriteEmote", binding: ConfigSettings.quickEmoteFavorite4Keybind.Value, interactions: "Press");
-                QuickEmoteFavorite5Action = ActionMap.AddAction("TooManyEmotes.FavoriteEmote", binding: ConfigSettings.quickEmoteFavorite5Keybind.Value, interactions: "Press");
-                QuickEmoteFavorite6Action = ActionMap.AddAction("TooManyEmotes.FavoriteEmote", binding: ConfigSettings.quickEmoteFavorite6Keybind.Value, interactions: "Press");
-                QuickEmoteFavorite7Action = ActionMap.AddAction("TooManyEmotes.FavoriteEmote", binding: ConfigSettings.quickEmoteFavorite7Keybind.Value, interactions: "Press");
-                QuickEmoteFavorite8Action = ActionMap.AddAction("TooManyEmotes.FavoriteEmote", binding: ConfigSettings.quickEmoteFavorite8Keybind.Value, interactions: "Press");
-                */
+                PrevEmotePageAction = ActionMap.AddAction("TooManyEmotes.PrevEmotePage", binding: "<Keyboard>/", interactions: "Press");
+                PrevEmotePageAction.AddBinding("<Gamepad>/dpad/left");
+                NextEmotePageAction = ActionMap.AddAction("TooManyEmotes.NextEmotePage", binding: "<Keyboard>/", interactions: "Press");
+                NextEmotePageAction.AddBinding("<Gamepad>/dpad/right");
 
-                SelectEmoteUIAction = new InputAction("TooManyEmotes.SelectEmote", binding: "<Mouse>/leftButton", interactions: "Press");
+                NextEmoteLoadoutUp = ActionMap.AddAction("TooManyEmotes.EmoteLoadoutUp", binding: "<Keyboard>/", interactions: "Press");
+                NextEmoteLoadoutUp.AddBinding("<Gamepad>/dpad/up");
+                NextEmoteLoadoutDown = ActionMap.AddAction("TooManyEmotes.EmoteLoadoutDown", binding: "<Keyboard>/", interactions: "Press");
+                NextEmoteLoadoutDown.AddBinding("<Gamepad>/dpad/down");
+
+                ThumbStickAction = new InputAction("TooManyEmotes.ThumbStick", binding: "<Gamepad>/rightStick");
+                PerformSelectedEmoteAction = new InputAction("TooManyEmotes.PerformSelectedEmote", binding: "<Mouse>/leftButton", interactions: "Press");
                 RawScrollAction = new InputAction("TooManyEmotes.ScrollEmoteMenu", binding: "<Mouse>/scroll");
             }
         }
@@ -108,13 +111,24 @@ namespace TooManyEmotes.Input
             OpenEmoteMenuAction.canceled += OnPressOpenEmoteMenu;
             FavoriteEmoteAction.performed += OnFavoriteEmote;
 
-            //QuickEmoteFavorite1Action.performed +=
-
             RotatePlayerEmoteAction.performed += OnUpdateRotatePlayerEmoteModifier;
             RotatePlayerEmoteAction.canceled += OnUpdateRotatePlayerEmoteModifier;
 
-            SelectEmoteUIAction.Enable();
-            SelectEmoteUIAction.performed += OnSelectEmoteUI;
+            PrevEmotePageAction.Enable();
+            NextEmotePageAction.Enable();
+            NextEmoteLoadoutUp.Enable();
+            NextEmoteLoadoutDown.Enable();
+
+            PrevEmotePageAction.performed += OnPrevEmotePage;
+            NextEmotePageAction.performed += OnNextEmotePage;
+            NextEmoteLoadoutUp.performed += OnEmoteLoadoutUp;
+            NextEmoteLoadoutDown.performed += OnEmoteLoadoutDown;
+
+            PerformSelectedEmoteAction.Enable();
+            PerformSelectedEmoteAction.performed += OnSelectEmoteUI;
+
+            ThumbStickAction.Enable();
+            ThumbStickAction.performed += EmoteMenuManager.OnUpdateThumbStickAngle;
         }
 
 
@@ -129,8 +143,53 @@ namespace TooManyEmotes.Input
             RotatePlayerEmoteAction.performed -= OnUpdateRotatePlayerEmoteModifier;
             RotatePlayerEmoteAction.canceled -= OnUpdateRotatePlayerEmoteModifier;
 
-            SelectEmoteUIAction.Disable();
-            SelectEmoteUIAction.performed -= OnSelectEmoteUI;
+            PrevEmotePageAction.Disable();
+            NextEmotePageAction.Disable();
+            NextEmoteLoadoutUp.Disable();
+            NextEmoteLoadoutDown.Disable();
+
+            PrevEmotePageAction.performed -= OnPrevEmotePage;
+            NextEmotePageAction.performed -= OnNextEmotePage;
+            NextEmoteLoadoutUp.performed -= OnEmoteLoadoutUp;
+            NextEmoteLoadoutDown.performed -= OnEmoteLoadoutDown;
+
+            PerformSelectedEmoteAction.Disable();
+            PerformSelectedEmoteAction.performed -= OnSelectEmoteUI;
+
+            ThumbStickAction.Disable();
+            ThumbStickAction.performed -= EmoteMenuManager.OnUpdateThumbStickAngle;
+        }
+
+
+        public static void OnPrevEmotePage(InputAction.CallbackContext context)
+        {
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || !EmoteMenuManager.isMenuOpen || !context.performed)
+                return;
+            EmoteMenuManager.SwapPrevPage();
+        }
+
+
+        public static void OnNextEmotePage(InputAction.CallbackContext context)
+        {
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || !EmoteMenuManager.isMenuOpen || !context.performed)
+                return;
+            EmoteMenuManager.SwapNextPage();
+        }
+
+        public static void OnEmoteLoadoutUp(InputAction.CallbackContext context)
+        {
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || !EmoteMenuManager.isMenuOpen || !context.performed)
+                return;
+
+            EmoteMenuManager.SetCurrentEmoteLoadout(EmoteMenuManager.currentLoadoutIndex != 0 ? EmoteMenuManager.currentLoadoutIndex - 1 : EmoteMenuManager.numLoadouts - 1);
+        }
+
+        public static void OnEmoteLoadoutDown(InputAction.CallbackContext context)
+        {
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || !EmoteMenuManager.isMenuOpen || !context.performed)
+                return;
+
+            EmoteMenuManager.SetCurrentEmoteLoadout((EmoteMenuManager.currentLoadoutIndex + 1) % EmoteMenuManager.numLoadouts);
         }
 
 
@@ -147,7 +206,7 @@ namespace TooManyEmotes.Input
             }
             else
             {
-                if (ConfigSettings.toggleEmoteMenu.Value)
+                if (ConfigSettings.toggleEmoteMenu.Value || StartOfRound.Instance.localPlayerUsingController)
                 {
                     if (context.performed)
                         EmoteMenuManager.CloseEmoteMenu();

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using TooManyEmotes.Config;
 using TooManyEmotes.Patches;
 using UnityEngine;
+using UnityEngine.Animations;
 using UnityEngine.Animations.Rigging;
 
 namespace TooManyEmotes
@@ -38,14 +39,61 @@ namespace TooManyEmotes
 
         public void ConvertAnimatorControllerToOverride()
         {
-            Plugin.LogWarning("Converting animator controller to override for player: " + playerController.name);
             if (animator != null && !(animator.runtimeAnimatorController is AnimatorOverrideController))
+            {
+                Plugin.LogWarning("Converting animator controller to override for player: " + playerController.name);
                 animator.runtimeAnimatorController = new AnimatorOverrideController(animator.runtimeAnimatorController);
+            }
         }
 
 
         public void EnableRigBuilder(bool enable)
         {
+            /*
+            IEnumerator EnableRigBuilderCoroutine()
+            {
+                animator.enabled = false;
+                yield return null;
+                yield return new WaitForEndOfFrame();
+                foreach (var cTransform in constraintsData.Keys)
+                {
+                    Plugin.LogWarning("ENABLE: " + cTransform.name);
+                    var constraintData = constraintsData[cTransform];
+                    if (enable)
+                        constraintData.SetConstraintToDefaultPositionRotation();
+                    constraintData.constraint.weight = 1;
+                }
+                foreach (var transform in bonePositions.Keys)
+                {
+                    transform.localPosition = bonePositions[transform];
+                    transform.localRotation = boneRotations[transform];
+                }
+
+                //rigBuilder.enabled = true;
+                yield return null;
+                yield return new WaitForEndOfFrame();
+                animator.enabled = true;
+            }
+
+            if (enable)
+            {
+                playerController.StartCoroutine(EnableRigBuilderCoroutine());
+                return;
+            }
+            animator.enabled = false;
+            foreach (var cTransform in constraintsData.Keys)
+            {
+                Plugin.LogWarning("DISABLE: " + cTransform.name);
+                var constraintData = constraintsData[cTransform];
+                //if (enable)
+                    //constraintData.SetConstraintToDefaultPositionRotation();
+                constraintData.constraint.weight = 0;
+            }
+            
+            //rigBuilder.enabled = false;
+            animator.enabled = true;
+            */
+
             IEnumerator EnableRigBuilder()
             {
                 TryGetCurrentAnimationClip(out var currentAnimationClip);
@@ -74,7 +122,7 @@ namespace TooManyEmotes
             if (enable)
                 playerController.StartCoroutine(EnableRigBuilder());
             else
-                rigBuilder.enabled = enable;
+                rigBuilder.enabled = false;
         }
 
         public bool TryGetCurrentAnimationClip(out AnimationClip animationClip, string stateName = "Dance1")

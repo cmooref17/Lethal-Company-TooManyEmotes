@@ -21,6 +21,7 @@ using TooManyEmotes.Config;
 using UnityEngine.EventSystems;
 using System.Xml.Linq;
 using TooManyEmotes.Networking;
+using TooManyEmotes.Input;
 
 namespace TooManyEmotes {
 
@@ -63,9 +64,12 @@ namespace TooManyEmotes {
         public static List<List<UnlockableEmote>> emoteLoadouts; // = new List<List<string>>();
         public static Color selectedLoadoutUIColor = new Color(0.2f, 0.2f, 1f);
         public static int currentLoadoutIndex = -1;
-        public static int numLoadouts = 3;
-
+        public static int numLoadouts { get { return emoteLoadouts.Count; } }
         public static int hoveredLoadoutUIIndex = -1;
+
+        public static Vector2 currentThumbstickPosition = Vector2.zero;
+        public static TextMeshProUGUI[] controlTipLines;
+        public static bool usingController { get { return StartOfRound.Instance.localPlayerUsingController; } }
 
 
 
@@ -87,6 +91,22 @@ namespace TooManyEmotes {
             currentEmoteText = menuTransform.Find("RadialMenuUI/RadialBase/CurrentEmoteText").GetComponent<TextMeshPro>();
             currentEmoteText.text = "";
             emoteUIElementsList = new List<EmoteUIElement>();
+
+            controlTipLines = new TextMeshProUGUI[HUDManager.Instance.controlTipLines.Length];
+
+            for (int i = 0; i < HUDManager.Instance.controlTipLines.Length; i++)
+            {
+                var newControlTipLine = GameObject.Instantiate(HUDManager.Instance.controlTipLines[i], HUDManager.Instance.controlTipLines[0].transform.parent);
+                newControlTipLine.transform.localScale = HUDManager.Instance.controlTipLines[0].transform.localScale;
+                newControlTipLine.transform.parent = menuTransform;
+                newControlTipLine.transform.SetPositionAndRotation(HUDManager.Instance.controlTipLines[i].transform.position, HUDManager.Instance.controlTipLines[i].transform.rotation);
+                newControlTipLine.text = "";
+                newControlTipLine.overflowMode = TextOverflowModes.Overflow;
+                newControlTipLine.enableWordWrapping = false;
+                //newControlTipLine.rectTransform.sizeDelta = new Vector2(newControlTipLine.rectTransform.sizeDelta.x * 1.5f, newControlTipLine.rectTransform.sizeDelta.y);
+                //newControlTipLine.rectTransform.anchoredPosition = newControlTipLine.rectTransform.anchoredPosition + new Vector2(newControlTipLine.rectTransform., 0);
+                controlTipLines[i] = newControlTipLine;
+            }
 
             currentPage = 0;
             hoveredEmoteUIIndex = -1;
@@ -162,11 +182,18 @@ namespace TooManyEmotes {
             }
             else
             {
-                Vector2 mousePosition = Mouse.current.position.ReadValue();
-                Vector2 screenCenter = new Vector2(Screen.width / 2, Screen.height / 2);
-                Vector2 direction = mousePosition - screenCenter;
+                Vector2 direction;
+                if (!usingController)
+                {
+                    Vector2 mousePosition = Mouse.current.position.ReadValue();
+                    Vector2 screenCenter = new Vector2(Screen.width / 2, Screen.height / 2);
+                    direction = mousePosition - screenCenter;
+                }
+                else
+                    direction = currentThumbstickPosition;
+
                 int emoteIndex = -1;
-                if (direction.magnitude / Screen.height >= 0.17f)
+                if ((!usingController && direction.magnitude / Screen.height >= 0.17f) || (usingController && currentThumbstickPosition != Vector2.zero))
                 {
                     float angle = Mathf.Atan2(direction.y, -direction.x) * Mathf.Rad2Deg - 67.5f;
                     if (angle < 0) angle += 360;
@@ -175,6 +202,22 @@ namespace TooManyEmotes {
 
                 if (emoteIndex != hoveredEmoteUIIndex)
                     OnHoveredNewElement(emoteIndex);
+            }
+        }
+
+
+        public static void OnUpdateThumbStickAngle(InputAction.CallbackContext context)
+        {
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || !context.performed || ConfigSync.instance.syncEnableMovingWhileEmoting || !isMenuOpen)
+                return;
+
+            currentThumbstickPosition = context.ReadValue<Vector2>();
+            currentThumbstickPosition = currentThumbstickPosition.magnitude > 0.75f ? currentThumbstickPosition : Vector2.zero;
+            StartOfRound.Instance.localPlayerUsingController = true;
+            if (currentThumbstickPosition == Vector2.zero && previewingEmote != null)
+            {
+                localPlayerController.PerformEmote(context, -(previewingEmote.emoteId + 1));
+                CloseEmoteMenu();
             }
         }
 
@@ -212,35 +255,54 @@ namespace TooManyEmotes {
 
         public static void SwapNextPage()
         {
-            currentPage++;
-            if (currentPage >= numPages)
-                currentPage = 0;
+            currentPage = (currentPage + 1) % numPages;
             UpdateEmoteWheel();
+        }
+
+
+        public static void UpdateControlTipLines()
+        {
+            int bindingIndex = usingController ? 1 : 0;
+
+            string prevPageKeybind = ConfigSettings.GetDisplayName(Keybinds.PrevEmotePageAction.bindings[bindingIndex].path);
+            string nextPageKeybind = ConfigSettings.GetDisplayName(Keybinds.NextEmotePageAction.bindings[bindingIndex].path);
+            string nextEmoteLoadoutUpKeybind = ConfigSettings.GetDisplayName(Keybinds.NextEmoteLoadoutUp.bindings[bindingIndex].path);
+            string nextEmoteLoadoutDownKeybind = ConfigSettings.GetDisplayName(Keybinds.NextEmoteLoadoutDown.bindings[bindingIndex].path);
+            string favoriteEmoteKeybind = ConfigSettings.GetDisplayName(Keybinds.FavoriteEmoteAction.bindings[bindingIndex].path);
+            //string performEmoteKeybind = ConfigSettings.GetDisplayName(InputUtilsCompat.Enabled ? Keybinds.PerformSelectedEmoteAction.bindings[bindingIndex].path : Keybinds.PerformSelectedEmoteAction.bindings[bindingIndex].overridePath);
+
+            int index = 0;
+            if (!usingController)
+                controlTipLines[index++].text = "Swap Page: [Scroll Mouse]";
+            else if (prevPageKeybind != "" || nextPageKeybind != "")
+                controlTipLines[index++].text = string.Format("Swap Page: [{0}/{1}]", prevPageKeybind, nextPageKeybind);
+                
+            if (usingController || nextEmoteLoadoutUpKeybind != "" || nextEmoteLoadoutDownKeybind != "")
+                controlTipLines[index++].text = string.Format("Swap Loadout: [{0}/{1}]", nextEmoteLoadoutUpKeybind, nextEmoteLoadoutDownKeybind);
+            controlTipLines[index++].text = string.Format("Favorite Emote: [{0}]", favoriteEmoteKeybind);
+            //if (usingController) controlTipLines[index++].text = string.Format("Perform Emote: [{0}]", performEmoteKeybind);
+
+            for (; index < controlTipLines.Length; index++)
+                controlTipLines[index].text = "";
         }
 
 
         public static void UpdateEmoteWheel()
         {
             currentPage = Mathf.Clamp(currentPage, 0, numPages - 1);
-            swapPageText.text = string.Format("[{0} / {1}]\n[Mouse Scroll]", currentPage + 1, numPages);
+            swapPageText.text = string.Format("[{0} / {1}]", currentPage + 1, numPages);
 
             for (int i = 0; i < emoteLoadoutUIElementsList.Count; i++)
             {
                 var uiElement = emoteLoadoutUIElementsList[i];
                 uiElement.OnHover(hoveredLoadoutUIIndex == uiElement.id);
             }
-
             for (int i = 0; i < emoteLoadouts.Count; i++)
             {
                 var emoteList = emoteLoadouts[i];
                 var textComponent = emoteLoadoutUIElementsList[i];
-                string text = textComponent.textContainer.text;
-                int indexOfSpace = text.IndexOf(" ");
-                indexOfSpace = indexOfSpace == -1 ? text.Length : indexOfSpace;
-                text = text.Substring(0, indexOfSpace) + " [" + emoteList.Count + "]";
-                textComponent.textContainer.text = text;
+                textComponent.textContainer.text = textComponent.loadoutName + " [" + emoteList.Count + "]";
             }
-
             for (int i = 0; i < emoteUIElementsList.Count; i++)
             {
                 var emoteUI = emoteUIElementsList[i];
@@ -280,7 +342,7 @@ namespace TooManyEmotes {
                 previewPlayerAnimator.SetBool("hasTransition", emote.transitionsToClip != null);
                 previewPlayerAnimator.Play("EmoteStart", 0, 0);
 
-                currentEmoteText.text = "[" + emote.displayNameColorCoded + "]\n[MMB] " + (StartOfRoundPatcher.allFavoriteEmotes.Contains(emote.emoteName) ? "Unfavorite" : "Favorite");
+                currentEmoteText.text = emote.displayNameColorCoded + (StartOfRoundPatcher.allFavoriteEmotes.Contains(emote.emoteName) ? " *" : "");
             }
             else
             {
@@ -350,6 +412,12 @@ namespace TooManyEmotes {
             Cursor.visible = true;
             quickMenuManager.isMenuOpen = true;
             previewPlayerMesh.material = localPlayerController.thisPlayerModel.material;
+            currentThumbstickPosition = Vector2.zero;
+
+            foreach (var controlTipLine in HUDManager.Instance.controlTipLines)
+                controlTipLine.enabled = false;
+
+            UpdateControlTipLines();
             UpdateEmoteWheel();
         }
 
@@ -361,6 +429,9 @@ namespace TooManyEmotes {
             localPlayerController.isFreeCamera = false;
             menuGameObject.SetActive(false);
             quickMenuManager.CloseQuickMenu();
+
+            foreach (var controlTipLine in HUDManager.Instance.controlTipLines)
+                controlTipLine.enabled = true;
         }
 
 
@@ -452,6 +523,16 @@ namespace TooManyEmotes {
                     if (child.name != "spine")
                         GameObject.Destroy(child.gameObject);
 
+                List<Component> components = new List<Component>();
+                components.AddRange(previewPlayerObject.GetComponentsInChildren<Camera>());
+                components.AddRange(previewPlayerObject.GetComponentsInChildren<AudioListener>());
+                components.AddRange(previewPlayerObject.GetComponentsInChildren<Collider>());
+                components.AddRange(previewPlayerObject.GetComponentsInChildren<CharacterController>());
+                components.AddRange(previewPlayerObject.GetComponentsInChildren<Rigidbody>());
+                
+                foreach (var comp in components)
+                    GameObject.DestroyImmediate(comp);
+
                 previewPlayerObject.transform.position = renderingCamera.transform.position + renderingCamera.transform.forward * 2.8f + Vector3.down * 1.35f;
                 previewPlayerObject.transform.LookAt(new Vector3(renderingCamera.transform.position.x, previewPlayerObject.transform.position.y, renderingCamera.transform.position.z));
                 SetObjectLayerRecursive(previewPlayerObject, playerLayer);
@@ -479,7 +560,7 @@ namespace TooManyEmotes {
         [HarmonyPrefix]
         public static bool OnScrollMouse(InputAction.CallbackContext context, PlayerControllerB __instance)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || __instance != localPlayerController || !isMenuOpen || !context.performed)
+            if (ConfigSettings.disableEmotesForSelf.Value || __instance != localPlayerController || !isMenuOpen || !context.performed || usingController)
                 return true;
 
             if (numPages == 0 || (numPages == 1 && currentPage == 0))
@@ -584,11 +665,12 @@ namespace TooManyEmotes {
             id = uiCount++;
             backgroundImage = GetComponentInChildren<Image>();
             textContainer = GetComponentInChildren<TextMeshPro>();
+            textContainer.text = loadoutName;
         }
 
         void Start()
         {
-            textContainer.text = loadoutName;
+            //textContainer.text = loadoutName;
         }
 
         public void OnHover(bool hovered = true)

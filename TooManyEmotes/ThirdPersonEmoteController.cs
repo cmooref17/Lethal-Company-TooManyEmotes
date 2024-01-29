@@ -113,15 +113,13 @@ namespace TooManyEmotes.Patches {
                             emoteCameraPivot.transform.localEulerAngles = new Vector3(emoteCameraPivot.localEulerAngles.x, 0, emoteCameraPivot.localEulerAngles.z);
                         }
                     }
-                    //else
-                    //{
-                        Vector2 vector = localPlayerController.playerActions.Movement.Look.ReadValue<Vector2>() * 0.008f * IngamePlayerSettings.Instance.settings.lookSensitivity;
-                        emoteCameraPivot.Rotate(new Vector3(0f, vector.x, 0f));
-                        float cameraPitch = emoteCameraPivot.localEulerAngles.x - vector.y;
-                        cameraPitch = (cameraPitch > 180) ? cameraPitch - 360 : cameraPitch;
-                        cameraPitch = Mathf.Clamp(cameraPitch, -45, 45);
-                        emoteCameraPivot.transform.eulerAngles = new Vector3(cameraPitch, emoteCameraPivot.eulerAngles.y, 0f);
-                    //}
+
+                    Vector2 vector = localPlayerController.playerActions.Movement.Look.ReadValue<Vector2>() * 0.008f * IngamePlayerSettings.Instance.settings.lookSensitivity;
+                    emoteCameraPivot.Rotate(new Vector3(0f, vector.x, 0f));
+                    float cameraPitch = emoteCameraPivot.localEulerAngles.x - vector.y;
+                    cameraPitch = (cameraPitch > 180) ? cameraPitch - 360 : cameraPitch;
+                    cameraPitch = Mathf.Clamp(cameraPitch, -45, 45);
+                    emoteCameraPivot.transform.eulerAngles = new Vector3(cameraPitch, emoteCameraPivot.eulerAngles.y, 0f);
 
                     if (Physics.Raycast(emoteCameraPivot.position, -emoteCameraPivot.forward * targetCameraDistance, out var hit, targetCameraDistance, cameraCollideLayerMask))
                         emoteCamera.transform.localPosition = Vector3.back * Mathf.Clamp(hit.distance - 0.2f, 0, targetCameraDistance);
@@ -133,14 +131,6 @@ namespace TooManyEmotes.Patches {
             return true;
         }
 
-
-        [HarmonyPatch(typeof(PlayerControllerB), "PlayerLookInput")]
-        [HarmonyPostfix]
-        public static void UpdateCameraPitchWhileMoving(PlayerControllerB __instance) {
-            //if (ConfigSync.instance.syncEnableMovingWhileEmoting)
-                //emoteCameraPivot.rotation = localPlayerController.gameplayCamera.transform.rotation;
-        }
-        
 
         [HarmonyPatch(typeof(PlayerControllerB), "ScrollMouse_performed")]
         [HarmonyPrefix]
@@ -196,7 +186,7 @@ namespace TooManyEmotes.Patches {
             localPlayerController.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
             HUDManager.Instance.ClearControlTips();
             if (!ConfigSync.instance.syncEnableMovingWhileEmoting)
-                HUDManager.Instance.ChangeControlTipMultiple(emoteControlTipLines);
+                UpdateControlTip();
         }
 
 
@@ -212,6 +202,30 @@ namespace TooManyEmotes.Patches {
                 localPlayerController.currentlyHeldObjectServer.SetControlTipsForItem();
             else
                 HUDManager.Instance.ClearControlTips();
+        }
+
+
+        public static void UpdateControlTip()
+        {
+            if (emoteControlTipLines != null && !ConfigSync.instance.syncEnableMovingWhileEmoting)
+            {
+                for (int i = 0; i < emoteControlTipLines.Length; i++)
+                {
+                    var line = emoteControlTipLines[i];
+                    if (line.Contains("Rotate"))
+                    {
+                        int bindingIndex = StartOfRound.Instance.localPlayerUsingController ? 1 : 0;
+                        string displayText = ConfigSettings.GetDisplayName(Keybinds.RotatePlayerEmoteAction.bindings[bindingIndex].path);
+                        if (displayText != "")
+                            emoteControlTipLines[i] = string.Format("Hold [{0}] : Rotate", displayText);
+                        else
+                            emoteControlTipLines[i] = "";
+                        break;
+                    }
+                }
+                if (emoteCamera.enabled)
+                    HUDManager.Instance.ChangeControlTipMultiple(emoteControlTipLines);
+            }
         }
 
 

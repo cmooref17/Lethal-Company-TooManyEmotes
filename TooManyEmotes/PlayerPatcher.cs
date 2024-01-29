@@ -18,7 +18,6 @@ using System.Collections;
 using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
 using TooManyEmotes.CompatibilityPatcher;
-using TooManyEmotes.Input;
 using System.Reflection;
 using Unity.Netcode;
 using MoreCompany.Cosmetics;
@@ -26,6 +25,7 @@ using UnityEditor.Animations;
 using TMPro;
 using UnityEngine.Scripting;
 using UnityEditor.PackageManager;
+using TooManyEmotes.Input;
 
 namespace TooManyEmotes.Patches
 {
@@ -87,24 +87,19 @@ namespace TooManyEmotes.Patches
             else
                 defaultDance1Clip = otherAnimatorController["Dance1"];
 
-            /*
             for (int i = 0; i < HUDManager.Instance.controlTipLines.Length; i++)
             {
                 var textComponent = HUDManager.Instance.controlTipLines[i];
                 if (textComponent.text == "")
                 {
-                    int bindingIndex = !StartOfRound.Instance.localPlayerUsingController ? 0 : 1;
-                    string displayName = ConfigSettings.GetDisplayName(InputUtilsCompat.Enabled ? Keybinds.OpenEmoteMenuAction.bindings[bindingIndex].path : Keybinds.OpenEmoteMenuAction.bindings[bindingIndex].overridePath);
-                    //hotkeyTooltip.text = ConfigSettings.toggleFocusReservedHotbar.Value ? string.Format(string.Format("Toggle: [{0}]", displayName)) : hotkeyTooltip.text = string.Format(string.Format("Hold: [{0}]", displayName));
-                    HUDManager.Instance.controlTipLines[i].text = string.Format("[{0}]: Open Emote Radial Menu", displayName);
+                    int bindingIndex = StartOfRound.Instance.localPlayerUsingController ? 1 : 0;
+                    HUDManager.Instance.controlTipLines[i].text = string.Format("[{0}]: Open Emote Radial Menu", ConfigSettings.GetDisplayName(InputUtilsCompat.Enabled ? Keybinds.OpenEmoteMenuAction.bindings[bindingIndex].path : Keybinds.OpenEmoteMenuAction.bindings[bindingIndex].path));
                     break;
                 }
             }
-            */
+
+            UpdateKeybindDisplayNames.UpdateControlTipLines();
         }
-
-
-
 
 
         [HarmonyPatch(typeof(StartOfRound), "OnPlayerDC")]

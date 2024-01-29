@@ -15,8 +15,15 @@ namespace TooManyEmotes.Input
         internal static bool Enabled => Plugin.IsModLoaded("com.rune580.LethalCompanyInputUtils");
 
         public static InputAction OpenEmoteMenuHotkey => IngameKeybinds.Instance.OpenEmoteMenuHotkey;
+        //public static InputAction PerformEmoteHotkey => IngameKeybinds.Instance.PerformEmoteHotkey;
         public static InputAction RotateCharacterEmoteHotkey => IngameKeybinds.Instance.RotateCharacterEmoteHotkey;
         public static InputAction FavoriteEmoteHotkey => IngameKeybinds.Instance.FavoriteEmoteHotkey;
+
+        public static InputAction PrevEmotePageHotkey => IngameKeybinds.Instance.PrevEmotePageHotkey;
+        public static InputAction NextEmotePageHotkey => IngameKeybinds.Instance.NextEmotePageHotkey;
+
+        public static InputAction NextEmoteLoadoutUpHotkey => IngameKeybinds.Instance.NextEmoteLoadoutUpHotkey;
+        public static InputAction NextEmoteLoadoutDownHotkey => IngameKeybinds.Instance.NextEmoteLoadoutDownHotkey;
         /*
         public static InputAction QuickEmoteFavorite1 => IngameKeybinds.Instance.QuickEmoteFavorite1;
         public static InputAction QuickEmoteFavorite2 => IngameKeybinds.Instance.QuickEmoteFavorite2;
