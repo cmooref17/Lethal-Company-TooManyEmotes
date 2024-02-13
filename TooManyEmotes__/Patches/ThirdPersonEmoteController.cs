@@ -169,13 +169,13 @@ namespace TooManyEmotes.Patches {
         [HarmonyPrefix]
         public static bool AdjustCameraDistance(InputAction.CallbackContext context, PlayerControllerB __instance)
         {
-            if (__instance == localPlayerController && context.performed && !ConfigSettings.disableEmotesForSelf.Value && EmoteControllerPlayer.emoteControllerLocal != null && EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote())
-            {
-                if (!EmoteMenuManager.isMenuOpen)
-                    __instance.StartCoroutine(AdjustCameraDistanceEndOfFrame());
-                return false;
-            }
-            return true;
+            if (ConfigSettings.disableEmotesForSelf.Value || /*ConfigSettings.enableFirstPersonEmotes.Value ||*/ !context.performed || __instance != localPlayerController || (EmoteControllerPlayer.emoteControllerLocal == null && !PlayerPatcher.emoteControllerLocal.IsPerformingCustomEmote()))
+                return true;
+
+            if (!EmoteMenuManager.isMenuOpen)
+                __instance.StartCoroutine(AdjustCameraDistanceEndOfFrame());
+
+            return false;
         }
 
 
@@ -183,6 +183,7 @@ namespace TooManyEmotes.Patches {
         {
             yield return new WaitForEndOfFrame();
             float value = Keybinds.RawScrollAction.ReadValue<Vector2>().y;
+            Plugin.LogWarning("SCROLL VALUE: " + value);
             if (value != 0)
             {
                 float direction = value < 0 ? 1 : -1;

@@ -32,11 +32,11 @@ namespace TooManyEmotes.Patches
     [HarmonyPatch]
     public class PlayerPatcher
     {
-        //public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
-        //public static Dictionary<GameObject, EmoteController> allEmoteControllers { get { return EmoteController.allEmoteControllers; } }
-        //public static Dictionary<PlayerControllerB, EmoteControllerPlayer> allPlayerEmoteControllers { get { return EmoteControllerPlayer.allPlayerEmoteControllers; } }
+        public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
+        public static Dictionary<GameObject, EmoteController> allEmoteControllers { get { return EmoteController.allEmoteControllers; } }
+        public static Dictionary<PlayerControllerB, EmoteControllerPlayer> allPlayerEmoteControllers { get { return EmoteControllerPlayer.allPlayerEmoteControllers; } }
         public static EmoteControllerPlayer emoteControllerLocal { get { return EmoteControllerPlayer.emoteControllerLocal; } }
-        //public static int emoteStateHash { get { return localPlayerController != null ? Animator.StringToHash(localPlayerController.playerBodyAnimator.GetLayerName(1) + ".Dance1") : -1; } }
+        public static int emoteStateHash { get { return localPlayerController != null ? Animator.StringToHash(localPlayerController.playerBodyAnimator.GetLayerName(1) + ".Dance1") : -1; } }
 
 
         [HarmonyPatch(typeof(PlayerControllerB), "Start")]
@@ -93,15 +93,6 @@ namespace TooManyEmotes.Patches
         {
             if (__instance != null && EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(__instance, out var emoteController) && emoteController.IsPerformingCustomEmote())
                 emoteController.StopPerformingEmote();
-        }
-
-
-        // Let's not remove this, unless ModelReplacementAPI updates their patch for this mod to reference the UnlockableEmotePlayer class.
-        public static UnlockableEmote GetCurrentlyPlayingEmote(PlayerControllerB playerController)
-        {
-            if (EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(playerController, out var emoteController))
-                return emoteController.performingEmote;
-            return null;
         }
 
 
@@ -175,13 +166,12 @@ namespace TooManyEmotes.Patches
         {
             if (context.performed && emoteControllerLocal.IsPerformingCustomEmote())
             {
-                Plugin.LogWarning("OnPerformEmoteLocalPlayer. Stopping custom emote.");
+                Plugin.LogWarning("OnPerformEmote. Stopping emote.");
                 emoteControllerLocal.StopPerformingEmote();
             }
         }
 
 
-        /*
         [HarmonyPatch(typeof(PlayerControllerB), "UpdatePlayerAnimationClientRpc")]
         [HarmonyPrefix]
         public static void UpdatePlayerAnimationClientRpcPrefix(int animationState, ref float animationSpeed, PlayerControllerB __instance)
@@ -204,13 +194,13 @@ namespace TooManyEmotes.Patches
                 return;
             }
 
-            // Let's do some fun logic. Why do I do this?
-            if (!allEmoteControllers.TryGetValue(__instance.gameObject, out var emoteController))
-            {
-                Debug.Assert(false);
+            if ((int)(animationSpeed * 100) == animationSpeed * 100)
                 return;
-            }
 
+            if (!allEmoteControllers.TryGetValue(__instance.gameObject, out var emoteController))
+                return;
+
+            // Let's do some fun logic. Why do I do this?
             int clientId = Mathf.RoundToInt(animationSpeed * 10000 % 1 * 100) - 1;
             if (clientId >= 0 && SessionManager.TryGetPlayerByClientId((ulong)clientId, out var syncWithPlayer) && allEmoteControllers.TryGetValue(syncWithPlayer.gameObject, out var syncWithEmoteController))
             {
@@ -237,6 +227,5 @@ namespace TooManyEmotes.Patches
                 allEmoteControllers[__instance.gameObject].StopPerformingEmote();
             }
         }
-        */
     }
 }

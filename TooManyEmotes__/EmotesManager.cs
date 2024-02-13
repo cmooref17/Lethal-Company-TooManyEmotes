@@ -147,8 +147,6 @@ namespace TooManyEmotes
             foreach (var emote in allUnlockableEmotes)
             {
                 emote.emoteId = id++;
-                if (emote.complementary)
-                    continue;
                 if (emote.rarity == 0)
                     allEmotesTier0.Add(emote);
                 else if (emote.rarity == 1)

@@ -10,24 +10,21 @@ using System.IO;
 using UnityEngine;
 using TooManyEmotes.Config;
 using TooManyEmotes.Input;
-using BepInEx.Logging;
-using System.Reflection;
 using TooManyEmotes.Audio;
 
 namespace TooManyEmotes
 {
-    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.9.1")]
+    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.8.5")]
     [BepInDependency("com.rune580.LethalCompanyInputUtils", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("me.swipez.melonloader.morecompany", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         private Harmony _harmony;
         public static Plugin instance;
-        static ManualLogSource logger;
 
         public static List<AnimationClip> customAnimationClips;
         public static HashSet<AnimationClip> customAnimationClipsHash;
-        public static Dictionary<string, AnimationClip> customAnimationClipsLoopDict;
+        public static Dictionary<string, AnimationClip> customAnimationClipsLoopDict = new Dictionary<string, AnimationClip>();
 
         public static List<AnimationClip> complementaryAnimationClips;
         public static List<AnimationClip> animationClipsTier0;
@@ -40,38 +37,38 @@ namespace TooManyEmotes
         public static GameObject radialMenuPrefab;
         public static RuntimeAnimatorController previewAnimatorController;
 
-        public static RuntimeAnimatorController humanoidAnimatorController;
         public static Avatar humanoidAvatar;
         public static GameObject humanoidSkeletonPrefab;
 
         //public static Dictionary<string, AnimationClip> miscAnimationClips;
         public static Dictionary<string, AudioClip> musicClips;
+
         public static Dictionary<string, GameObject> emotePropPrefabs;
 
-
-        void Awake()
+        private void Awake()
         {
             instance = this;
-            CreateCustomLogger();
             ConfigSettings.BindConfigSettings();
             Keybinds.InitKeybinds();
 
             LoadEmoteAssets();
             LoadMiscAnimationAssets();
             LoadRadialMenuAsset();
-            //LoadEmotePropAssets();
-            //AudioManager.LoadAudioAssets();
+            LoadEmotePropAssets();
+            AudioManager.LoadAudioAssets();
 
             this._harmony = new Harmony("TooManyEmotes");
-            PatchAll();
+            this._harmony.PatchAll();
             Log("TooManyEmotes loaded");
         }
+
+
+        public static bool IsModLoaded(string guid) => BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey(guid);
 
 
         static void LoadEmoteAssets()
         {
             customAnimationClips = new List<AnimationClip>();
-            customAnimationClipsHash = new HashSet<AnimationClip>();
             customAnimationClipsLoopDict = new Dictionary<string, AnimationClip>();
 
             complementaryAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_complementary"));
@@ -92,30 +89,23 @@ namespace TooManyEmotes
             }
             */
 
-            customAnimationClipsHash.UnionWith(complementaryAnimationClips);
-            customAnimationClipsHash.UnionWith(animationClipsTier0);
-            customAnimationClipsHash.UnionWith(animationClipsTier1);
-            customAnimationClipsHash.UnionWith(animationClipsTier2);
-            customAnimationClipsHash.UnionWith(animationClipsTier3);
+            customAnimationClips.AddRange(complementaryAnimationClips);
+            customAnimationClips.AddRange(animationClipsTier0);
+            customAnimationClips.AddRange(animationClipsTier1);
+            customAnimationClips.AddRange(animationClipsTier2);
+            customAnimationClips.AddRange(animationClipsTier3);
 
-            foreach (var clip in customAnimationClipsHash)
+            foreach (var clip in customAnimationClips)
             {
                 if (clip.name.StartsWith("fn_")) clip.name = clip.name.Replace("fn_", "");
-                if (clip.name.EndsWith("_loop"))
-                {
-                    if (customAnimationClipsLoopDict.ContainsKey(clip.name))
-                        LogWarning("Attempted to add duplicate emote in CustomAnimationClipsLoopDict. AnimationClip: " + clip.name);
-                    else
-                        customAnimationClipsLoopDict.Add(clip.name, clip);
-                }
-
+                if (clip.name.EndsWith("_loop")) customAnimationClipsLoopDict.Add(clip.name, clip);
             }
-
-            customAnimationClips = new List<AnimationClip>(customAnimationClipsHash);
-            customAnimationClipsHash = new HashSet<AnimationClip>(customAnimationClips);
 
             foreach (var animationClipLoop in customAnimationClipsLoopDict.Values)
                 customAnimationClips.Remove(animationClipLoop);
+
+            customAnimationClipsHash = new HashSet<AnimationClip>(customAnimationClips);
+            customAnimationClipsHash.UnionWith(customAnimationClipsLoopDict.Values);
         }
 
 
@@ -141,23 +131,10 @@ namespace TooManyEmotes
         {
             try
             {
-                string miscAssetBundlePath = Path.Combine(Path.GetDirectoryName(instance.Info.Location), "Assets/misc");
+                string miscAssetBundlePath = Path.Combine(Path.GetDirectoryName(instance.Info.Location), "misc");
                 AssetBundle miscAssetBundle = AssetBundle.LoadFromFile(miscAssetBundlePath);
-                humanoidAnimatorController = miscAssetBundle.LoadAsset<RuntimeAnimatorController>("humanoid_animator_controller");
-                humanoidAvatar = miscAssetBundle.LoadAsset<Avatar>("humanoid_avatar");
-                humanoidSkeletonPrefab = miscAssetBundle.LoadAsset<GameObject>("humanoid_skeleton");
-
-                Animator animator = humanoidSkeletonPrefab.GetComponentInChildren<Animator>();
-                if (animator == null)
-                    animator = humanoidSkeletonPrefab.AddComponent<Animator>();
-
-
-                if (humanoidAnimatorController == null)
-                    LogError("Failed to load humanoid animator controller from asset bundle: misc");
-                if (humanoidAvatar == null)
-                    LogError("Failed to load humanoid avatar from asset bundle: misc");
-                if (humanoidSkeletonPrefab == null)
-                    LogError("Failed to load humanoid skeleton prefab from asset bundle: misc");
+                humanoidAvatar = miscAssetBundle.LoadAsset<Avatar>("HumanoidAvatar");
+                humanoidSkeletonPrefab = miscAssetBundle.LoadAsset<GameObject>("HumanoidSkeletonPrefab");
             }
             catch
             {
@@ -170,7 +147,7 @@ namespace TooManyEmotes
         {
             try
             {
-                string propsAssetBundlePath = Path.Combine(Path.GetDirectoryName(instance.Info.Location), "Assets/props");
+                string propsAssetBundlePath = Path.Combine(Path.GetDirectoryName(instance.Info.Location), "props");
                 AssetBundle prefabAssetBundle = AssetBundle.LoadFromFile(propsAssetBundlePath);
                 var prefabs = prefabAssetBundle.LoadAllAssets<GameObject>();
                 foreach (var prefab in prefabs)
@@ -183,8 +160,7 @@ namespace TooManyEmotes
         }
 
 
-        public static void LoadRadialMenuAsset()
-        {
+        public static void LoadRadialMenuAsset() {
             try
             {
                 string assetsPath = Path.Combine(Path.GetDirectoryName(instance.Info.Location), "Assets/radial_menu");
@@ -199,32 +175,8 @@ namespace TooManyEmotes
             }
         }
 
-
-        void PatchAll()
-        {
-            IEnumerable<Type> types;
-            try
-            {
-                types = Assembly.GetExecutingAssembly().GetTypes();
-            }
-            catch (ReflectionTypeLoadException e)
-            {
-                types = e.Types.Where(t => t != null);
-            }
-            foreach (var type in types)
-                this._harmony.PatchAll(type);
-        }
-
-        void CreateCustomLogger()
-        {
-            try { logger = BepInEx.Logging.Logger.CreateLogSource(string.Format("{0}-{1}", Info.Metadata.Name, Info.Metadata.Version)); }
-            catch { logger = Logger; }
-        }
-
-        public static void Log(string message) => logger.LogInfo(message);
-        public static void LogError(string message) => logger.LogError(message);
-        public static void LogWarning(string message) => logger.LogWarning(message);
-
-        public static bool IsModLoaded(string guid) => BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey(guid);
+        public static void Log(string message) => instance.Logger.LogInfo(message);
+        public static void LogWarning(string message) => instance.Logger.LogWarning(message);
+        public static void LogError(string message) => instance.Logger.LogError(message);
     }
 }

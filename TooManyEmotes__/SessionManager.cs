@@ -172,17 +172,14 @@ namespace TooManyEmotes
 
             if (_unlockedEmotes == unlockedEmotes)
             {
-                if (!emote.complementary)
-                {
-                    if (emote.rarity == 3 && !unlockedEmotesTier3.Contains(emote))
-                        unlockedEmotesTier3.Add(emote);
-                    else if (emote.rarity == 2 && !unlockedEmotesTier2.Contains(emote))
-                        unlockedEmotesTier2.Add(emote);
-                    else if (emote.rarity == 1 && !unlockedEmotesTier1.Contains(emote))
-                        unlockedEmotesTier1.Add(emote);
-                    else if (emote.rarity == 0 && !unlockedEmotesTier0.Contains(emote))
-                        unlockedEmotesTier0.Add(emote);
-                }
+                if (emote.rarity == 3 && !unlockedEmotesTier3.Contains(emote))
+                    unlockedEmotesTier3.Add(emote);
+                else if (emote.rarity == 2 && !unlockedEmotesTier2.Contains(emote))
+                    unlockedEmotesTier2.Add(emote);
+                else if (emote.rarity == 1 && !unlockedEmotesTier1.Contains(emote))
+                    unlockedEmotesTier1.Add(emote);
+                else if (emote.rarity == 0 && !unlockedEmotesTier0.Contains(emote))
+                    unlockedEmotesTier0.Add(emote);
 
                 if (EmotesManager.allFavoriteEmotes.Contains(emote.emoteName) && !unlockedFavoriteEmotes.Contains(emote))
                     unlockedFavoriteEmotes.Add(emote);

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
 using UnityEngine.Rendering;
+using TooManyEmotes.CompatibilityPatcher;
 using MoreCompany.Cosmetics;
 using TMPro;
 using UnityEngine.InputSystem;
@@ -16,15 +17,13 @@ using TooManyEmotes.Config;
 using TooManyEmotes.Input;
 using System.Reflection;
 using TooManyEmotes.Networking;
-using TooManyEmotes.Compatibility;
 
 namespace TooManyEmotes.Patches {
 
     [HarmonyPatch]
-    public class ThirdPersonEmoteController
-    {
+    public class ThirdPersonEmoteController {
+
         public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
-        public static Transform localPlayerCameraContainer { get { return localPlayerController?.cameraContainerTransform; } }
 
         public static GameObject playerHUDHelmetModel;
         public static Camera gameplayCamera;
@@ -38,17 +37,16 @@ namespace TooManyEmotes.Patches {
         public static int localPlayerBodyLayer = 0;
         public static ShadowCastingMode defaultShadowCastingMode = ShadowCastingMode.On;
 
-        public static string[] emoteControlTipLines = new string[] { "Hold [ALT] : Rotate", "[Mouse Scroll] : Zoom" };
+        public static string[] emoteControlTipLines = new string[] { "Hold [ALT] : Rotate" };
 
-        public static Vector3 firstPersonCameraPosition;
-        public static Quaternion firstPersonCameraRotation;
 
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
         public static void InitLocalPlayerController(PlayerControllerB __instance)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled) return;
+            if (ConfigSettings.disableEmotesForSelf.Value)
+                return;
 
             gameplayCamera = __instance.gameplayCamera;
             if (emoteCamera == null)
@@ -64,23 +62,22 @@ namespace TooManyEmotes.Patches {
         [HarmonyPostfix]
         public static void OnPlayerSpawn(PlayerControllerB __instance)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled)
+            if (ConfigSettings.disableEmotesForSelf.Value)
                 return;
-
-            /*
-            if (ConfigSettings.enableFirstPersonEmotes.Value)
-            {
-                firstPersonCameraPosition = localPlayerCameraContainer.transform.localPosition;
-                firstPersonCameraRotation = localPlayerCameraContainer.transform.localRotation;
-                return;
-            }
-            */
 
             emoteCamera.enabled = false;
             StartOfRound.Instance.SwitchCamera(StartOfRound.Instance.activeCamera);
 
-            ReloadPlayerModel(__instance);
+            __instance.GetComponentInChildren<LODGroup>().enabled = false;
+            __instance.thisPlayerModelLOD1.gameObject.layer = 5;
+            __instance.thisPlayerModelLOD1.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+            __instance.thisPlayerModelLOD2.shadowCastingMode = ShadowCastingMode.Off;
+            __instance.thisPlayerModelLOD2.enabled = false;
 
+            __instance.thisPlayerModel.gameObject.layer = 23;
+            __instance.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On; // defaultShadowCastingMode;
+
+            __instance.thisPlayerModelArms.gameObject.layer = 5;
             gameplayCamera.cullingMask &= ~(1 << 23);
             emoteCamera.cullingMask |= (1 << 23);
             //emoteCamera.cullingMask |= 1 << localPlayerBodyLayer;
@@ -93,46 +90,16 @@ namespace TooManyEmotes.Patches {
         }
 
 
-        public static void ReloadPlayerModel(PlayerControllerB playerController)
-        {
-            //if (ConfigSettings.enableFirstPersonEmotes.Value) return;
-
-            try
-            {
-                playerController.GetComponentInChildren<LODGroup>().enabled = false;
-                playerController.thisPlayerModelLOD1.gameObject.layer = 5;
-                playerController.thisPlayerModelLOD1.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
-                playerController.thisPlayerModelLOD2.shadowCastingMode = ShadowCastingMode.Off;
-                playerController.thisPlayerModelLOD2.enabled = false;
-            
-                playerController.thisPlayerModel.gameObject.layer = 23;
-                playerController.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On; // defaultShadowCastingMode;
-                playerController.thisPlayerModelArms.gameObject.layer = 5;
-            }
-            catch (Exception e)
-            {
-                Plugin.LogError("Error while trying to reset player model for player: " + playerController.name + " Error: " + e);
-            }
-        }
-
 
         [HarmonyPatch(typeof(PlayerControllerB), "PlayerLookInput")]
         [HarmonyPrefix]
         public static bool UseFreeCamWhileEmoting(PlayerControllerB __instance)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled || __instance != localPlayerController || EmoteControllerPlayer.emoteControllerLocal == null)
+            if (ConfigSettings.disableEmotesForSelf.Value)
                 return true;
 
-            if (EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote())
+            if (__instance == localPlayerController && PlayerPatcher.playerDataLocal.isPerformingEmote)
             {
-                /*
-                if (ConfigSettings.enableFirstPersonEmotes.Value)
-                {
-                    localPlayerCameraContainer.SetPositionAndRotation(localPlayerController.playerGlobalHead.position, localPlayerController.transform.rotation);
-                    return true;
-                }
-                */
-
                 Vector3 targetPosition = Vector3.back * Mathf.Clamp(targetCameraDistance, clampCameraDistance.x, clampCameraDistance.y);
                 emoteCamera.transform.localPosition = Vector3.Lerp(emoteCamera.transform.localPosition, targetPosition, 10 * Time.deltaTime);
 
@@ -169,10 +136,25 @@ namespace TooManyEmotes.Patches {
         [HarmonyPrefix]
         public static bool AdjustCameraDistance(InputAction.CallbackContext context, PlayerControllerB __instance)
         {
-            if (__instance == localPlayerController && context.performed && !ConfigSettings.disableEmotesForSelf.Value && EmoteControllerPlayer.emoteControllerLocal != null && EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote())
+            if (ConfigSettings.disableEmotesForSelf.Value || !context.performed || __instance != localPlayerController || !PlayerPatcher.playerDataLocal.isPerformingEmote)
+                return true;
+
+            if (!EmoteMenuManager.isMenuOpen)
+                __instance.StartCoroutine(AdjustCameraDistanceEndOfFrame());
+
+            return false;
+        }
+
+
+        [HarmonyPatch(typeof(QuickMenuManager), "OpenQuickMenu")]
+        [HarmonyPrefix]
+        public static bool CancelMovingEmote()
+        {
+            if (PlayerPatcher.playerDataLocal.isPerformingEmote && ConfigSync.instance.syncEnableMovingWhileEmoting)
             {
-                if (!EmoteMenuManager.isMenuOpen)
-                    __instance.StartCoroutine(AdjustCameraDistanceEndOfFrame());
+                localPlayerController.performingEmote = false;
+                PlayerPatcher.OnUpdateCustomEmote(-1, localPlayerController);
+                localPlayerController.StopPerformingEmoteServerRpc();
                 return false;
             }
             return true;
@@ -193,8 +175,6 @@ namespace TooManyEmotes.Patches {
 
         public static void OnStartCustomEmoteLocal()
         {
-            //if (ConfigSettings.enableFirstPersonEmotes.Value) return;
-
             Keybinds.toggledRotating = ConfigSync.instance.syncEnableMovingWhileEmoting;
             if (!emoteCamera.enabled)
             {
@@ -203,16 +183,7 @@ namespace TooManyEmotes.Patches {
                 localPlayerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
                 emoteCameraPivot.eulerAngles = gameplayCamera.transform.eulerAngles + new Vector3(0, 0, 0);
             }
-
-            // Double checking values
-            localPlayerController.thisPlayerModelLOD1.gameObject.layer = 5;
-            localPlayerController.thisPlayerModelLOD1.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
-            localPlayerController.thisPlayerModelLOD2.shadowCastingMode = ShadowCastingMode.Off;
-            localPlayerController.thisPlayerModelLOD2.enabled = false;
-
-            localPlayerController.thisPlayerModel.gameObject.layer = 23;
             localPlayerController.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
-
             HUDManager.Instance.ClearControlTips();
             if (!ConfigSync.instance.syncEnableMovingWhileEmoting)
                 UpdateControlTip();
@@ -221,13 +192,6 @@ namespace TooManyEmotes.Patches {
 
         public static void OnStopCustomEmoteLocal()
         {
-            /*
-            if (ConfigSettings.enableFirstPersonEmotes.Value)
-            {
-                localPlayerCameraContainer.SetLocalPositionAndRotation(firstPersonCameraPosition, firstPersonCameraRotation);
-                return;
-            }
-            */
             Keybinds.toggledRotating = false;
             emoteCamera.enabled = false;
             StartOfRound.Instance.SwitchCamera(gameplayCamera);
@@ -243,31 +207,30 @@ namespace TooManyEmotes.Patches {
 
         public static void UpdateControlTip()
         {
-            //if (ConfigSettings.enableFirstPersonEmotes.Value) return;
-            if (emoteControlTipLines == null)
-                return;
-
-            int bindingIndex = StartOfRound.Instance.localPlayerUsingController ? 1 : 0;
-            int index = 0;
-            emoteControlTipLines[index++] = "Zoom In/Out : [Scroll Mouse]";
-            if (!ConfigSync.instance.syncEnableMovingWhileEmoting)
+            if (emoteControlTipLines != null && !ConfigSync.instance.syncEnableMovingWhileEmoting)
             {
-                string rotateDisplayText = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.RotatePlayerEmoteAction);
-                if (rotateDisplayText != "")
-                    emoteControlTipLines[index++] = string.Format("Rotate : Hold [{0}]", rotateDisplayText);
+                for (int i = 0; i < emoteControlTipLines.Length; i++)
+                {
+                    var line = emoteControlTipLines[i];
+                    if (line.Contains("Rotate"))
+                    {
+                        int bindingIndex = StartOfRound.Instance.localPlayerUsingController ? 1 : 0;
+                        string displayText = ConfigSettings.GetDisplayName(Keybinds.RotatePlayerEmoteAction.bindings[bindingIndex].path);
+                        if (displayText != "")
+                            emoteControlTipLines[i] = string.Format("Hold [{0}] : Rotate", displayText);
+                        else
+                            emoteControlTipLines[i] = "";
+                        break;
+                    }
+                }
+                if (emoteCamera.enabled)
+                    HUDManager.Instance.ChangeControlTipMultiple(emoteControlTipLines);
             }
-            for (; index < emoteControlTipLines.Length; index++)
-                emoteControlTipLines[index] = "";
-
-            if (emoteCamera.enabled && EmoteControllerPlayer.emoteControllerLocal != null && EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote())
-                HUDManager.Instance.ChangeControlTipMultiple(emoteControlTipLines);
         }
 
 
         public static void CallChangeAudioListenerToObject(GameObject gameObject)
         {
-            //if (ConfigSettings.enableFirstPersonEmotes.Value) return;
-
             MethodInfo method = localPlayerController.GetType().GetMethod("ChangeAudioListenerToObject", BindingFlags.NonPublic | BindingFlags.Instance);
             method.Invoke(localPlayerController, new object[] { gameObject });
         }
