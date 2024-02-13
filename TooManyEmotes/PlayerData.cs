@@ -10,7 +10,7 @@ using TooManyEmotes.Patches;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Animations.Rigging;
-
+/*
 namespace TooManyEmotes
 {
     public class PlayerData
@@ -117,14 +117,7 @@ namespace TooManyEmotes
 
         public void PlayEmoteAtTime(UnlockableEmote emote, AnimationClip overrideClip = null, float normalizedTime = 0, bool playEmoteEndOfFrame = false)
         {
-            /*
-            if (performingEmote == null || currentEmoteNumber != 1)
-            {
-                Plugin.LogWarning("Called PlayEmoteOnTime but loadedEmote is null! This is probably okay.");
-                performingEmote = null;
-                return;
-            }
-            */
+            
             IEnumerator PlayEmoteEndOfFrame()
             {
                 yield return new WaitForEndOfFrame();
@@ -184,3 +177,4 @@ namespace TooManyEmotes
         }
     }
 }
+*/

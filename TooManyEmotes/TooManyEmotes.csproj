@@ -152,31 +152,45 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BoomboxMusicPlayer.cs" />
-    <Compile Include="CentipedePatcher.cs" />
-    <Compile Include="CompatibilityPatcher.cs" />
-    <Compile Include="ConfigSync.cs" />
+    <Compile Include="AdditionalEmoteData.cs" />
+    <Compile Include="Audio\AudioManager.cs" />
+    <Compile Include="BoneMap.cs" />
+    <Compile Include="Networking\SyncPerformingEmoteManager.cs" />
+    <Compile Include="Patches\BoomboxMusicPlayer.cs" />
+    <Compile Include="Patches\CentipedePatcher.cs" />
+    <Compile Include="Compatibility\LCVR_Patcher.cs" />
+    <Compile Include="Compatibility\MirrorDecor_Patcher.cs" />
+    <Compile Include="Compatibility\MoreCompany_Patcher.cs" />
+    <Compile Include="Networking\ConfigSync.cs" />
+    <Compile Include="EmoteControllers\EmoteControllerMaskedEnemy.cs" />
+    <Compile Include="EmoteControllers\EmoteControllerPlayer.cs" />
+    <Compile Include="EmoteControllers\EmoteController.cs" />
     <Compile Include="EmoteGifts.cs" />
     <Compile Include="EmoteMenu.cs" />
-    <Compile Include="DressGirlVisibilityPatcher.cs" />
-    <Compile Include="InputUtilsCompat.cs" />
-    <Compile Include="IngameKeybinds.cs" />
-    <Compile Include="MaskedEnemyEmotes.cs" />
+    <Compile Include="Patches\DressGirlVisibilityPatcher.cs" />
+    <Compile Include="EmotePropManager.cs" />
+    <Compile Include="Patches\LocomotionEmotePatcher.cs" />
+    <Compile Include="Compatibility\InputUtils_Compat.cs" />
+    <Compile Include="Input\IngameKeybinds.cs" />
+    <Compile Include="Patches\MaskedEnemyPatcher.cs" />
     <Compile Include="PlayerData.cs" />
-    <Compile Include="StartOfRoundPatcher.cs" />
-    <Compile Include="EmoteSyncManager.cs" />
-    <Compile Include="ThirdPersonEmoteController.cs" />
+    <Compile Include="EmotesManager.cs" />
+    <Compile Include="SessionManager.cs" />
+    <Compile Include="Patches\SyncWithEmoteControllerManager.cs" />
+    <Compile Include="Networking\SyncManager.cs" />
+    <Compile Include="Patches\ThirdPersonEmoteController.cs" />
     <Compile Include="UnlockableEmote.cs" />
-    <Compile Include="ConfigSettings.cs" />
-    <Compile Include="Keybinds.cs" />
-    <Compile Include="SaveManager.cs" />
-    <Compile Include="TerminalPatcher.cs" />
-    <Compile Include="PlayerPatcher.cs" />
+    <Compile Include="Config\ConfigSettings.cs" />
+    <Compile Include="Input\Keybinds.cs" />
+    <Compile Include="Patches\SaveManager.cs" />
+    <Compile Include="Patches\TerminalPatcher.cs" />
+    <Compile Include="Patches\PlayerPatcher.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="PluginInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UpdateKeybindDisplayNames.cs" />
+    <Compile Include="Input\KeybindDisplayNames.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy /Y "$(TargetDir)$(TargetName).dll" "C:\Users\cmoor\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\plugins\FlipMods-TooManyEmotes\"</PostBuildEvent>

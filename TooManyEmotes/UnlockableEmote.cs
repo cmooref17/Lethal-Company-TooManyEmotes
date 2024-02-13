@@ -4,30 +4,54 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TooManyEmotes.Audio;
 using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
 using UnityEngine;
 
 namespace TooManyEmotes
 {
-
     public class UnlockableEmote
     {
         public int emoteId;
         public string emoteName;
-        public string randomEmotePoolName = "";
         public string displayName = "";
         public string displayNameColorCoded { get { return string.Format("<color={0}>{1}</color>", nameColor, displayName); } }
-        public bool purchasable = true;
         public AnimationClip animationClip;
         public AnimationClip transitionsToClip = null;
+
+        public string randomEmotePoolName = "";
         public List<UnlockableEmote> randomEmotePool;
+
+        public bool humanoidAnimation { get { return animationClip.isHumanMotion; } }
+        public bool useLeftHandIK = false;
+        public bool useRightHandIK = false;
+        public bool useLeftFootIK = false;
+        public bool useRightFootIK = false;
+        public bool useHeadIK = false;
+
+        public string constrainLeftHandIKToPropName = "";
+        public Vector3 constrainLeftHandIKToPropPosition;
+        public Vector3 constrainLeftHandIKToPropRotation;
+        public string constrainRightHandIKToPropName = "";
+        public Vector3 constrainRightHandIKToPropPosition;
+        public Vector3 constrainRightHandIKToPropRotation;
+
+        public bool purchasable = true;
         public bool complementary = false;
         public bool isPose = false;
         public bool loopable { get { return animationClip.isLooping || (transitionsToClip != null && transitionsToClip.isLooping); } }
+
+        public bool hasAudio { get { return AudioManager.audioAssetNames != null && AudioManager.audioAssetNames.Contains(emoteName); } }
+        public AudioClip cachedAudioClip;
+
+        public string emoteSyncGroupName = "";
+        public List<UnlockableEmote> emoteSyncGroup;
+
         public bool canSyncEmote = false;
         public bool favorite = false;
         public int rarity = 0;
+
         public string rarityText
         {
             get
@@ -54,6 +78,18 @@ namespace TooManyEmotes
         }
         public string nameColor { get { return rarityColorCodes[rarity]; } }
         public static string[] rarityColorCodes = new string[] { ConfigSettings.emoteNameColorTier0.Value, ConfigSettings.emoteNameColorTier1.Value, ConfigSettings.emoteNameColorTier2.Value, ConfigSettings.emoteNameColorTier3.Value };
+
         public bool ClipIsInEmote(AnimationClip clip) => clip != null && (clip == animationClip || clip == transitionsToClip);
+
+        public AudioClip LoadAudioClip()
+        {
+            if (hasAudio)
+            {
+                if (cachedAudioClip != null)
+                    cachedAudioClip = AudioManager.LoadAudioClip(emoteName);
+                return cachedAudioClip;
+            }
+            return null;
+        }
     }
 }
