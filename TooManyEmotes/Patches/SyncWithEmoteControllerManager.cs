@@ -25,15 +25,31 @@ namespace TooManyEmotes.Patches
         [HarmonyPostfix]
         public static void CheckIfLookingAtSyncableEmoteController(PlayerControllerB __instance)
         {
-            if (__instance != localPlayerController || EmoteControllerPlayer.emoteControllerLocal == null || ConfigSettings.disableEmotesForSelf.Value)
+            if (__instance != localPlayerController || EmoteControllerPlayer.emoteControllerLocal == null || ConfigSettings.disableEmotesForSelf.Value || Compatibility.LCVR_Patcher.Enabled)
                 return;
 
-            ResetState();
             if (localPlayerController.cursorTip.text.Contains("Sync emote"))
                 localPlayerController.cursorTip.text = "";
 
-            if (Physics.Raycast(localPlayerController.gameplayCamera.transform.position + localPlayerController.gameplayCamera.transform.forward * 0.5f, localPlayerController.gameplayCamera.transform.forward * 4.5f, out var hit, 4.5f, syncableEmoteLayerMask) && !EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote() && !__instance.isPlayerDead)
+            if (!EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote() && !__instance.isPlayerDead && Physics.Raycast(localPlayerController.gameplayCamera.transform.position + localPlayerController.gameplayCamera.transform.forward * 0.5f, localPlayerController.gameplayCamera.transform.forward * 4.5f, out var hit, 4.5f, syncableEmoteLayerMask))
             {
+                try
+                {
+                    EmoteController syncWithEmoteController = hit.collider.GetComponentInChildren<EmoteController>() ?? hit.collider.GetComponentInParent<EmoteController>();
+                    //Plugin.LogWarning("SourceEmoteController: " + EmoteControllerPlayer.emoteControllerLocal.emoteControllerName + " SyncWithController: " + syncWithEmoteController.emoteControllerName + " EQual?: " + (EmoteControllerPlayer.emoteControllerLocal == syncWithEmoteController));
+                    if (CanSyncWithEmoteController(EmoteControllerPlayer.emoteControllerLocal, syncWithEmoteController))
+                    {
+                        if (!(syncWithEmoteController is EmoteControllerMaskedEnemy) || ConfigSettings.enableSyncingEmotesWithMaskedEnemies.Value)
+                        {
+                            lookingAtSyncableEmoteController = syncWithEmoteController;
+                            localPlayerController.cursorTip.text = "[E] Sync emote";
+                            return;
+                        }
+                    }
+                }
+                catch (Exception e) { }
+
+                /*
                 var maskedEnemy = hit.collider.gameObject.GetComponentInParent<MaskedPlayerEnemy>();
                 if (ConfigSettings.enableSyncingEmotesWithMaskedEnemies.Value && maskedEnemy != null && EmoteControllerMaskedEnemy.allMaskedEnemyEmoteControllers.TryGetValue(maskedEnemy, out var emoteControllerMaskedEnemy) && emoteControllerMaskedEnemy.IsPerformingCustomEmote() && emoteControllerMaskedEnemy.performingEmote.canSyncEmote)
                 {
@@ -53,24 +69,48 @@ namespace TooManyEmotes.Patches
                         }
                     }
                 }
+                */
             }
+            ResetState();
         }
 
 
         [HarmonyPatch(typeof(PlayerControllerB), "Interact_performed")]
         [HarmonyPrefix]
-        public static bool OnSyncEmoteWithPlayer(InputAction.CallbackContext context, PlayerControllerB __instance)
+        public static bool SyncWithEmoteController_performed(InputAction.CallbackContext context, PlayerControllerB __instance)
         {
-            if (context.performed && EmoteControllerPlayer.emoteControllerLocal != null && !ConfigSettings.disableEmotesForSelf.Value && !__instance.isPlayerDead && lookingAtSyncableEmoteController != null && __instance.cursorTip.text.Contains("Sync emote"))
+            if (__instance != localPlayerController || !context.performed)
+                return true;
+
+            if (EmoteControllerPlayer.emoteControllerLocal != null && lookingAtSyncableEmoteController != null && !ConfigSettings.disableEmotesForSelf.Value && !Compatibility.LCVR_Patcher.Enabled && !__instance.isPlayerDead)
             {
-                if (lookingAtSyncableEmoteController != null && lookingAtSyncableEmoteController.IsPerformingCustomEmote())
+                bool canSync = CanSyncWithEmoteController(EmoteControllerPlayer.emoteControllerLocal, lookingAtSyncableEmoteController);
+                if (canSync)
                 {
+                    Plugin.Log("[SyncWithEmoteController_performed] Attempting to sync with emote controller: " + lookingAtSyncableEmoteController);
                     EmoteControllerPlayer.emoteControllerLocal.TrySyncingEmoteWithEmoteController(lookingAtSyncableEmoteController);
+                    ResetState();
                     return false;
                 }
             }
             ResetState();
             return true;
+        }
+
+
+        public static bool CanSyncWithEmoteController(EmoteController sourceEmoteController, EmoteController syncWithEmoteController)
+        {
+            if (sourceEmoteController == EmoteControllerPlayer.emoteControllerLocal && (ConfigSettings.disableEmotesForSelf.Value || Compatibility.LCVR_Patcher.Enabled))
+            {
+                return false;
+            }
+
+            if (sourceEmoteController == null || syncWithEmoteController == null || sourceEmoteController == syncWithEmoteController)
+            {
+                return false;
+            }
+
+            return !sourceEmoteController.IsPerformingCustomEmote() && syncWithEmoteController.IsPerformingCustomEmote() && syncWithEmoteController.performingEmote.canSyncEmote;
         }
 
 

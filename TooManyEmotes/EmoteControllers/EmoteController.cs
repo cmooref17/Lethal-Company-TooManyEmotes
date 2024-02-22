@@ -27,6 +27,10 @@ namespace TooManyEmotes
         public static Dictionary<GameObject, EmoteController> allEmoteControllers = new Dictionary<GameObject, EmoteController>();
 
         public bool initialized = false;
+        public ulong emoteControllerId { get { return GetEmoteControllerId(); } }
+        public string emoteControllerName { get { return GetEmoteControllerName(); } }
+
+
         public Transform metarig;
         protected Vector3 originalMetarigLocalPosition = Vector3.zero;
         public Animator originalAnimator;
@@ -35,34 +39,17 @@ namespace TooManyEmotes
         public Animator animator;
         public AnimatorOverrideController animatorController;
 
+        //public AudioSource audioSource;
+
         protected bool isPerformingEmote = false;
         public UnlockableEmote performingEmote;
 
         public List<Transform> groundContactPoints = new List<Transform>();
         public float normalizedTimeAnimation { get { return animator.GetCurrentAnimatorStateInfo(0).normalizedTime; } }
 
-        public Dictionary<Transform, Transform> boneMapBody;
-        public Dictionary<Transform, Transform> boneMapHead;
-        public Dictionary<Transform, Transform> boneMapLeftArm;
-        public Dictionary<Transform, Transform> boneMapRightArm;
-        public Dictionary<Transform, Transform> boneMapLeftLeg;
-        public Dictionary<Transform, Transform> boneMapRightLeg;
-        public Dictionary<Transform, Transform> boneMapLeftFingers;
-        public Dictionary<Transform, Transform> boneMapRightFingers;
-        public Dictionary<Transform, Transform> boneMapLeftToes;
-        public Dictionary<Transform, Transform> boneMapRightToes;
+        protected Dictionary<Transform, Transform> boneMap;
 
-        public Dictionary<Transform, Transform> boneMapLeftHandIK;
-        public Dictionary<Transform, Transform> boneMapRightHandIK;
-        public Dictionary<Transform, Transform> boneMapLeftFootIK;
-        public Dictionary<Transform, Transform> boneMapRightFootIK;
-        public Dictionary<Transform, Transform> boneMapHeadIK;
-
-        public Transform leftHandIKTarget;
-        public Transform rightHandIKTarget;
-        public Transform leftFootIKTarget;
-        public Transform rightFootIKTarget;
-        public Transform headIKTarget;
+        public bool isSimpleEmoteController { get { return GetType() == typeof(EmoteController); } }
 
 
 
@@ -110,6 +97,9 @@ namespace TooManyEmotes
 
                 allEmoteControllers.Add(gameObject, this);
                 initialized = true;
+
+                //audioSource = gameObject.AddComponent<AudioSource>();
+                //audioSource.dopplerLevel = 0;
             }
             catch (Exception e)
             {
@@ -123,8 +113,12 @@ namespace TooManyEmotes
             if (!initialized)
                 return;
 
-            CreateBoneMap();
-            AddGroundContactPoints();
+            if (!isSimpleEmoteController)
+                CreateBoneMap();
+            else
+                Debug.LogWarning("Using the base emote controller. Remember that when doing this, the bonemap will need to be built manually.");
+
+            //AddGroundContactPoints();
         }
 
 
@@ -135,28 +129,6 @@ namespace TooManyEmotes
         {
             if (initialized && isPerformingEmote)
                 StopPerformingEmote();
-        }
-
-
-        protected virtual void AddGroundContactPoints()
-        {
-            try
-            {
-                foreach (var bone in boneMapLeftToes.Keys)
-                {
-                    if (bone.name.ToLower().Contains("heel") || bone.name.ToLower().Contains("toe"))
-                        groundContactPoints.Add(bone);
-                }
-                foreach (var bone in boneMapRightToes.Keys)
-                {
-                    if (bone.name.ToLower().Contains("heel") || bone.name.ToLower().Contains("toe"))
-                        groundContactPoints.Add(bone);
-                }
-            }
-            catch
-            {
-                Plugin.LogError("[" + name + "] Failed to find ground contact points.");
-            }
         }
 
 
@@ -187,7 +159,7 @@ namespace TooManyEmotes
                 }
             }
 
-            if (animator == null || animatorController == null || !isPerformingEmote)
+            if (animator == null || animatorController == null || boneMap == null || !isPerformingEmote)
                 return;
 
             TranslateAnimation();
@@ -196,41 +168,19 @@ namespace TooManyEmotes
 
         protected virtual void TranslateAnimation()
         {
-            if (performingEmote == null)
+            if (boneMap == null || performingEmote == null || boneMap.Count <= 0)
                 return;
 
-            TranslateBoneMapInAnimation(boneMapBody);
 
-            TranslateBoneMapInAnimation(performingEmote.useLeftHandIK ? boneMapLeftHandIK : boneMapLeftArm);
-            TranslateBoneMapInAnimation(performingEmote.useRightHandIK ? boneMapRightHandIK : boneMapRightArm);
-            TranslateBoneMapInAnimation(performingEmote.useLeftFootIK ? boneMapLeftFootIK : boneMapLeftLeg);
-            TranslateBoneMapInAnimation(performingEmote.useRightFootIK ? boneMapRightFootIK : boneMapRightLeg);
-            TranslateBoneMapInAnimation(performingEmote.useHeadIK ? boneMapHeadIK : boneMapHead);
-
-            TranslateBoneMapInAnimation(boneMapLeftFingers, true);
-            TranslateBoneMapInAnimation(boneMapRightFingers, true);
-            TranslateBoneMapInAnimation(boneMapLeftToes, true);
-            TranslateBoneMapInAnimation(boneMapRightToes, true);
-
-            CorrectVerticalPosition();
-        }
-
-
-        protected virtual void TranslateBoneMapInAnimation(Dictionary<Transform, Transform> boneMap, bool useLocalPositionRotation = false)
-        {
             foreach (var pair in boneMap)
             {
-                if (useLocalPositionRotation)
-                {
-                    pair.Value.transform.localPosition = pair.Key.localPosition;
-                    pair.Value.transform.localRotation = pair.Key.localRotation;
-                }
-                else
-                {
-                    pair.Value.transform.position = pair.Key.position;
-                    pair.Value.transform.rotation = pair.Key.rotation;
-                }
+                var sourceBone = pair.Key;
+                var targetBone = pair.Value;
+
+                targetBone.transform.position = sourceBone.transform.position;
+                targetBone.transform.rotation = sourceBone.transform.rotation;
             }
+            //CorrectVerticalPosition();
         }
 
 
@@ -238,6 +188,8 @@ namespace TooManyEmotes
         {
             if (isPerformingEmote)
             {
+                return performingEmote == null || (!performingEmote.loopable && !performingEmote.isPose && normalizedTimeAnimation >= 1);
+                /*
                 if (performingEmote == null || (!performingEmote.loopable && !performingEmote.isPose && normalizedTimeAnimation >= 1))
                 {
                     if (performingEmote == null)
@@ -248,6 +200,7 @@ namespace TooManyEmotes
                         Plugin.LogWarning("Why are we stopping the emote? Ignore this message.");
                     return true;
                 }
+                */
             }
             return false;
         }
@@ -287,36 +240,25 @@ namespace TooManyEmotes
                 }
                 if (!emote.ClipIsInEmote(overrideAnimationClip))
                 {
-                    Debug.LogError("Failed to perform emote where overrideAnimationClip is not the start or loop clip of the passed emote.");
+                    Debug.LogError("Failed to perform emote where overrideAnimationClip is not the start or loop clip of the passed emote. Clip: " + overrideAnimationClip.name + " Emote: " + emote.emoteName);
                     return;
                 }
                 animationClip = overrideAnimationClip;
             }
 
-            playAtTimeNormalized = playAtTimeNormalized % 1;
-            Plugin.Log("[" + name + "] Performing emote: " + emote.emoteName + (animationClip == overrideAnimationClip ? " OverrideClip: " + animationClip.name : "") + (playAtTimeNormalized > 0 ? " PlayAtTime: " + playAtTimeNormalized : ""));
-            animator.SetBool("loop", emote.transitionsToClip != null);
+            playAtTimeNormalized %= 1;
+            if (!isSimpleEmoteController)
+                Plugin.Log("[" + name + "] Performing emote: " + emote.emoteName + (animationClip == overrideAnimationClip ? " OverrideClip: " + animationClip.name : "") + (playAtTimeNormalized > 0 ? " PlayAtTime: " + playAtTimeNormalized : ""));
+            animator.avatar = emote.humanoidAnimation ? Plugin.humanoidAvatar : null;
 
+            animatorController["emote"] = emote.animationClip;
             if (emote.transitionsToClip != null)
-            {
-                if (animationClip == emote.animationClip)
-                {
-                    animatorController["emote_start"] = animationClip;
-                    animatorController["emote_loop"] = emote.transitionsToClip;
-                    animator.Play("emote_start", 0, playAtTimeNormalized);
-                }
-                else
-                {
-                    animatorController["emote_loop"] = animationClip;
-                    animator.Play("emote_loop", 0, playAtTimeNormalized);
-                }
-            }
-            else
-            {
-                animatorController["emote"] = animationClip;
-                animator.Play("emote", 0, playAtTimeNormalized);
-            }
-            animator.Update(0);
+                animatorController["emote_loop"] = emote.transitionsToClip;
+
+            //if (!isSimpleEmoteController) Plugin.LogWarning("EMOTE: " + emote.emoteName + " SET EMOTE CLIP: " + animatorController["emote"].name + " SET LOOP CLIP: " + (animatorController["emote_loop"] != null ? animatorController["emote_loop"].name : "NULL"));
+
+            animator.SetBool("loop", emote.transitionsToClip != null);
+            animator.Play(animationClip == emote.transitionsToClip ? "emote_loop" : "emote", 0, playAtTimeNormalized);
 
             performingEmote = emote;
             isPerformingEmote = true;
@@ -328,7 +270,7 @@ namespace TooManyEmotes
             IEnumerator PerformAfterDelay()
             {
                 yield return new WaitForSeconds(delayForSeconds);
-                if (CanPerformEmote())  
+                if (CanPerformEmote())
                     PerformEmote(emote, overrideAnimationClip, playAtTimeNormalized);
             }
             StartCoroutine(PerformAfterDelay());
@@ -337,18 +279,21 @@ namespace TooManyEmotes
 
         public void SyncWithEmoteController(EmoteController emoteController)
         {
-            if (emoteController == null || !emoteController.IsPerformingCustomEmote() || !CanPerformEmote())
+            if (emoteController == null || !emoteController.IsPerformingCustomEmote())
                 return;
-            Plugin.Log("[" + name + "] Attempting to sync with emote controller: " + emoteController.name + " Emote: " + emoteController.performingEmote.emoteName + " PlayEmoteAtTimeNormalized: " + (emoteController.normalizedTimeAnimation % 1));
+            if (!isSimpleEmoteController)
+                Plugin.Log("[" + name + "] Attempting to sync with emote controller: " + emoteController.name + " Emote: " + emoteController.performingEmote.emoteName + " PlayEmoteAtTimeNormalized: " + (emoteController.normalizedTimeAnimation % 1));
             PerformEmote(emoteController.performingEmote, emoteController.GetCurrentAnimationClip(), emoteController.normalizedTimeAnimation);
         }
 
 
         public virtual void StopPerformingEmote()
         {
-            Plugin.Log(string.Format("[" + name + "] Stopping emote."));
+            if (!isSimpleEmoteController)
+                Plugin.Log(string.Format("[" + name + "] Stopping emote."));
             isPerformingEmote = false;
             metarig.localPosition = new Vector3(metarig.localPosition.x, 0, metarig.localPosition.z);
+            //audioSource.Stop();
         }
 
 
@@ -361,46 +306,14 @@ namespace TooManyEmotes
                 return animatorController["emote"];
 
             var stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-            if (stateInfo.IsName("emote_loop"))
-                return animatorController["emote_loop"];
-            return animatorController["emote_start"];
+            return animatorController[stateInfo.IsName("emote_loop") ? "emote_loop" : "emote"];
         }
 
 
-        public void CreateBoneMap()
-        {
-            boneMapBody = BoneMap.CreateBoneMapBody(humanoidSkeleton, metarig);
-            boneMapHead = BoneMap.CreateBoneMapHead(humanoidSkeleton, metarig);
-            boneMapLeftArm = BoneMap.CreateBoneMapLeftArm(humanoidSkeleton, metarig);
-            boneMapRightArm = BoneMap.CreateBoneMapRightArm(humanoidSkeleton, metarig);
-            boneMapLeftLeg = BoneMap.CreateBoneMapLeftLeg(humanoidSkeleton, metarig);
-            boneMapRightLeg = BoneMap.CreateBoneMapRightLeg(humanoidSkeleton, metarig);
-            boneMapLeftFingers = BoneMap.CreateBoneMapLeftFingers(humanoidSkeleton, metarig);
-            boneMapRightFingers = BoneMap.CreateBoneMapRightFingers(humanoidSkeleton, metarig);
-            boneMapLeftToes = BoneMap.CreateBoneMapLeftToes(humanoidSkeleton, metarig);
-            boneMapRightToes = BoneMap.CreateBoneMapRightToes(humanoidSkeleton, metarig);
-
-            boneMapLeftHandIK = BoneMap.CreateBoneMapLeftHandTargetIK(humanoidSkeleton, metarig);
-            boneMapRightHandIK = BoneMap.CreateBoneMapRightHandTargetIK(humanoidSkeleton, metarig);
-            boneMapLeftFootIK = BoneMap.CreateBoneMapLeftFootTargetIK(humanoidSkeleton, metarig);
-            boneMapRightFootIK = BoneMap.CreateBoneMapRightFootTargetIK(humanoidSkeleton, metarig);
-            boneMapHeadIK = BoneMap.CreateBoneMapHeadTargetIK(humanoidSkeleton, metarig);
-
-            if (boneMapLeftHandIK != null && boneMapLeftHandIK.Count > 0)
-                leftHandIKTarget = boneMapLeftHandIK.Values.First();
-            if (boneMapRightHandIK != null && boneMapRightHandIK.Count > 0)
-                rightHandIKTarget = boneMapRightHandIK.Values.First();
-            if (boneMapLeftFootIK != null && boneMapLeftFootIK.Count > 0)
-                leftFootIKTarget = boneMapLeftFootIK.Values.First();
-            if (boneMapRightFootIK != null && boneMapRightFootIK.Count > 0)
-                rightFootIKTarget = boneMapRightFootIK.Values.First();
-            if (boneMapLeftHandIK != null && boneMapLeftHandIK.Count > 0)
-                leftHandIKTarget = boneMapLeftHandIK.Values.First();
-            if (boneMapHeadIK != null && boneMapHeadIK.Count > 0)
-                headIKTarget = boneMapHeadIK.Values.First();
-        }
+        protected virtual void CreateBoneMap() { }
 
 
-        public virtual ulong GetEmoteControllerId() => 0;
+        protected virtual ulong GetEmoteControllerId() => 0;
+        protected virtual string GetEmoteControllerName() => name;
     }
 }

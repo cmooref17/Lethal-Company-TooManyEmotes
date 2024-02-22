@@ -44,6 +44,9 @@
     <Reference Include="BepInEx">
       <HintPath>..\..\..\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\core\BepInEx.dll</HintPath>
     </Reference>
+    <Reference Include="LCVR">
+      <HintPath>D:\Downloads\DaXcess-LethalCompanyVR-1.1.9\BepInEx\plugins\LCVR\LCVR.dll</HintPath>
+    </Reference>
     <Reference Include="LethalCompanyInputUtils">
       <HintPath>..\..\..\..\..\Downloads\Rune580-LethalCompany_InputUtils-0.4.4\LethalCompanyInputUtils\LethalCompanyInputUtils.dll</HintPath>
     </Reference>
@@ -154,7 +157,7 @@
   <ItemGroup>
     <Compile Include="AdditionalEmoteData.cs" />
     <Compile Include="Audio\AudioManager.cs" />
-    <Compile Include="BoneMap.cs" />
+    <Compile Include="BoneMapper.cs" />
     <Compile Include="Networking\SyncPerformingEmoteManager.cs" />
     <Compile Include="Patches\BoomboxMusicPlayer.cs" />
     <Compile Include="Patches\CentipedePatcher.cs" />
@@ -168,13 +171,14 @@
     <Compile Include="EmoteGifts.cs" />
     <Compile Include="EmoteMenu.cs" />
     <Compile Include="Patches\DressGirlVisibilityPatcher.cs" />
-    <Compile Include="EmotePropManager.cs" />
+    <Compile Include="Props\PropAnimationData.cs" />
+    <Compile Include="Props\EmotePropManager.cs" />
     <Compile Include="Patches\LocomotionEmotePatcher.cs" />
     <Compile Include="Compatibility\InputUtils_Compat.cs" />
     <Compile Include="Input\IngameKeybinds.cs" />
     <Compile Include="Patches\MaskedEnemyPatcher.cs" />
-    <Compile Include="PlayerData.cs" />
     <Compile Include="EmotesManager.cs" />
+    <Compile Include="Props\PropObject.cs" />
     <Compile Include="SessionManager.cs" />
     <Compile Include="Patches\SyncWithEmoteControllerManager.cs" />
     <Compile Include="Networking\SyncManager.cs" />

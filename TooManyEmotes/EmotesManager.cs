@@ -19,6 +19,7 @@ using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
 using TooManyEmotes.Patches;
 using Unity.Collections;
+using TooManyEmotes.Audio;
 //using static UnityEditor.Progress;
 
 namespace TooManyEmotes
@@ -37,9 +38,7 @@ namespace TooManyEmotes
         public static List<UnlockableEmote> allEmotesTier3;
 
 
-        [HarmonyPatch(typeof(PreInitSceneScript), "Awake")]
-        [HarmonyPostfix]
-        public static void InitializeEmotes()
+        public static void BuildEmotesList()
         {
             allUnlockableEmotes = new List<UnlockableEmote>();
             allUnlockableEmotesDict = new Dictionary<string, UnlockableEmote>();
@@ -118,6 +117,8 @@ namespace TooManyEmotes
                     emote.emoteName = emote.emoteName.Replace("_random", "");
                     emote.displayName = emote.randomEmotePoolName;
                 }
+
+                //if (AudioManager.AudioExists(emote.emoteName)) { emote.LoadAudioClip(); }
 
                 if (emote.transitionsToClip != null || emote.animationClip.isLooping || emote.isPose || emote.emoteSyncGroup != null)
                     emote.canSyncEmote = true;

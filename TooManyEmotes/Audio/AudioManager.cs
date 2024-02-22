@@ -21,6 +21,8 @@ namespace TooManyEmotes.Audio
 
         public readonly static string audioFileExtension = ".wav";
 
+        public static bool AudioExists(string audioName) => audioAssetNames != null && audioAssetNames.Contains(audioName);
+
 
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
         [HarmonyPostfix]
@@ -113,8 +115,7 @@ namespace TooManyEmotes.Audio
             {
                 try
                 {
-                    foreach (var emote in EmotesManager.allUnlockableEmotes)
-                        emote.cachedAudioClip = null;
+                    //foreach (var emote in EmotesManager.allUnlockableEmotes) emote.cachedAudioClip = null;
                 }
                 catch { }
             }

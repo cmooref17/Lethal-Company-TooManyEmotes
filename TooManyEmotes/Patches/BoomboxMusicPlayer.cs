@@ -13,6 +13,7 @@ namespace TooManyEmotes.Patches
     [HarmonyPatch]
     public static class BoomboxMusicPlayer
     {
+        /*
         public static List<BoomboxItem> allBoomboxes = new List<BoomboxItem>();
 
         [HarmonyPatch(typeof(BoomboxItem), "Start")]
@@ -26,14 +27,14 @@ namespace TooManyEmotes.Patches
         // Likely won't be used for much emotes (or any) for copyright reasons. This was mainly a test method
         public static void OnPlayEmoteWithMusic(UnlockableEmote emote, PlayerControllerB playerController)
         {
-            if (!Plugin.musicClips.ContainsKey(emote.emoteName))
+            if (!Plugin.emoteAudioClips.ContainsKey(emote.emoteName))
                 return;
 
             BoomboxItem boombox = GetNearestBoombox(playerController);
-            if (boombox == null || (boombox.isPlayingMusic && Plugin.musicClips.ContainsKey(boombox.boomboxAudio.clip.name)))
+            if (boombox == null || (boombox.isPlayingMusic && Plugin.emoteAudioClips.ContainsKey(boombox.boomboxAudio.clip.name)))
                 return;
 
-            AudioClip musicClip = Plugin.musicClips[emote.emoteName];
+            AudioClip musicClip = Plugin.emoteAudioClips[emote.emoteName];
             boombox.boomboxAudio.PlayOneShot(musicClip);
         }
 
@@ -53,5 +54,6 @@ namespace TooManyEmotes.Patches
             }
             return nearestBoombox;
         }
+        */
     }
 }

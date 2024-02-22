@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using TooManyEmotes.Audio;
 using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
+using TooManyEmotes.Props;
 using UnityEngine;
 
 namespace TooManyEmotes
@@ -24,29 +25,20 @@ namespace TooManyEmotes
         public List<UnlockableEmote> randomEmotePool;
 
         public bool humanoidAnimation { get { return animationClip.isHumanMotion; } }
-        public bool useLeftHandIK = false;
-        public bool useRightHandIK = false;
-        public bool useLeftFootIK = false;
-        public bool useRightFootIK = false;
-        public bool useHeadIK = false;
-
-        public string constrainLeftHandIKToPropName = "";
-        public Vector3 constrainLeftHandIKToPropPosition;
-        public Vector3 constrainLeftHandIKToPropRotation;
-        public string constrainRightHandIKToPropName = "";
-        public Vector3 constrainRightHandIKToPropPosition;
-        public Vector3 constrainRightHandIKToPropRotation;
 
         public bool purchasable = true;
         public bool complementary = false;
         public bool isPose = false;
         public bool loopable { get { return animationClip.isLooping || (transitionsToClip != null && transitionsToClip.isLooping); } }
 
-        public bool hasAudio { get { return AudioManager.audioAssetNames != null && AudioManager.audioAssetNames.Contains(emoteName); } }
-        public AudioClip cachedAudioClip;
+        //public bool hasAudio { get { return AudioManager.AudioExists(emoteName); } }
+        //public string audioClipName { get { return animationClip != null && AudioManager.AudioExists(animationClip.name) ? animationClip.name : ""; } }
+        //public string audioClipLoopName { get { return transitionsToClip != null && AudioManager.AudioExists(transitionsToClip.name) ? transitionsToClip.name : ""; } }
 
         public string emoteSyncGroupName = "";
         public List<UnlockableEmote> emoteSyncGroup;
+
+        public List<PropAnimationData> propAnimationsData;
 
         public bool canSyncEmote = false;
         public bool favorite = false;
@@ -81,15 +73,43 @@ namespace TooManyEmotes
 
         public bool ClipIsInEmote(AnimationClip clip) => clip != null && (clip == animationClip || clip == transitionsToClip);
 
+        /*
+        public void AddPropAnimationData(PropAnimationData propAnimationData)
+        {
+            if (propAnimationData.parentEmote != null && propAnimationData.parentEmote != this)
+            {
+                Plugin.LogError("Error adding prop animation to unlockable emote. Prop animation data has another parent unlockable emote: " + propAnimationData.parentEmote.emoteName + ". This emote: " + emoteName);
+                return;
+            }
+            if (propAnimationsData == null)
+                propAnimationsData = new List<PropAnimationData>();
+            propAnimationsData.Add(propAnimationData);
+        }
+
+
         public AudioClip LoadAudioClip()
         {
             if (hasAudio)
             {
-                if (cachedAudioClip != null)
-                    cachedAudioClip = AudioManager.LoadAudioClip(emoteName);
-                return cachedAudioClip;
+                if (AudioManager.loadedAudioClipsDict.TryGetValue(animationClip.name, out var audioClip))
+                    return audioClip;
+                else
+                    return AudioManager.LoadAudioClip(audioClipName);
             }
             return null;
         }
+
+        public AudioClip LoadAudioLoopClip()
+        {
+            if (hasAudio && transitionsToClip != null)
+            {
+                if (AudioManager.loadedAudioClipsDict.TryGetValue(emoteName, out var audioClip))
+                    return audioClip;
+                else
+                    return AudioManager.LoadAudioClip(emoteName);
+            }
+            return null;
+        }
+        */
     }
 }

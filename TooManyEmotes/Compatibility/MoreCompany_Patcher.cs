@@ -1,4 +1,5 @@
 ﻿using BepInEx.Bootstrap;
+using GameNetcodeStuff;
 using HarmonyLib;
 using MoreCompany.Cosmetics;
 using System;
@@ -30,6 +31,7 @@ namespace TooManyEmotes.Compatibility
                     MoreCompanyPatch();
             }
         }
+
 
         // seperate method without inlining to avoid throwing errors on chat message
         [MethodImpl(MethodImplOptions.NoInlining)]

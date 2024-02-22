@@ -22,12 +22,12 @@ namespace TooManyEmotes
 {
     public class EmoteControllerPlayer : EmoteController
     {
-        public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
         public static Dictionary<PlayerControllerB, EmoteControllerPlayer> allPlayerEmoteControllers = new Dictionary<PlayerControllerB, EmoteControllerPlayer>();
-        public static EmoteControllerPlayer emoteControllerLocal { get { return localPlayerController != null && allPlayerEmoteControllers.ContainsKey(localPlayerController) ? allPlayerEmoteControllers[localPlayerController] : null; } }
-        public static int emoteStateHash { get { return localPlayerController != null ? Animator.StringToHash(localPlayerController.playerBodyAnimator.GetLayerName(1) + ".Dance1") : -1; } }
-
         public PlayerControllerB playerController;
+
+        public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
+        public static EmoteControllerPlayer emoteControllerLocal { get { return localPlayerController != null && allPlayerEmoteControllers.ContainsKey(localPlayerController) ? allPlayerEmoteControllers[localPlayerController] : null; } }
+
         public bool isLocalPlayer { get { return playerController == StartOfRound.Instance?.localPlayerController; } }
         public ulong clientId { get { return playerController.actualClientId; } }
         public ulong playerId { get { return playerController.playerClientId; } }
@@ -35,6 +35,16 @@ namespace TooManyEmotes
         public string username { get { return playerController.playerUsername; } }
 
         public float timeSinceStartingEmote { get { return (float)Traverse.Create(playerController).Field("timeSinceStartingEmote").GetValue(); } set { Traverse.Create(playerController).Field("timeSinceStartingEmote").SetValue(value); } }
+
+
+        public static List<string> sourceBoneNames = new List<string>
+        {
+            "spine", "spine.001", "spine.002", "spine.003", "spine.004", "CameraContainer",
+            "shoulder.L", "arm.L_upper", "arm.L_lower", "hand.L", "finger1.L", "finger1.L.001", "finger2.L", "finger2.L.001", "finger3.L", "finger3.L.001", "finger4.L", "finger4.L.001", "finger5.L", "finger5.L.001",
+            "shoulder.R", "arm.R_upper", "arm.R_lower", "hand.R", "finger1.R", "finger1.R.001", "finger2.R", "finger2.R.001", "finger3.R", "finger3.R.001", "finger4.R", "finger4.R.001", "finger5.R", "finger5.R.001",
+            "thigh.L", "shin.L", "foot.L", "heel.02.L", "toe.L",
+            "thigh.R", "shin.R", "foot.R", "heel.02.R", "toe.R"
+        };
 
 
         protected override void Awake()
@@ -52,6 +62,8 @@ namespace TooManyEmotes
                     return;
                 }
                 allPlayerEmoteControllers.Add(playerController, this);
+
+                //if (humanoidSkeleton != null) humanoidSkeleton.transform.parent = transform;
             }
             catch (Exception e)
             {
@@ -73,10 +85,12 @@ namespace TooManyEmotes
         }
 
 
+        /*
         protected override void AddGroundContactPoints()
         {
             base.AddGroundContactPoints();
         }
+        */
 
 
         protected override void Update()
@@ -94,7 +108,7 @@ namespace TooManyEmotes
 
             bool isEmoting = isPerformingEmote;
             base.LateUpdate();
-            
+
             if (isEmoting && !isPerformingEmote && playerController.performingEmote)
             {
                 playerController.performingEmote = false;
@@ -112,7 +126,7 @@ namespace TooManyEmotes
 
         protected override void TranslateAnimation()
         {
-            if (!initialized || playerController == null || !playerController.performingEmote)
+            if (!initialized || playerController == null)
                 return;
             base.TranslateAnimation();
         }
@@ -172,7 +186,7 @@ namespace TooManyEmotes
                 return;
             }
 
-            Plugin.Log("Attempting to sync emote for player: " + playerController.name + " with emote controller with id: " + emoteController.GetEmoteControllerId());
+            Plugin.Log("Attempting to sync emote for player: " + playerController.name + " with emote controller with id: " + emoteController.emoteControllerId);
 
             if (!CanPerformEmote() || !emoteController.IsPerformingCustomEmote())
                 return;
@@ -192,15 +206,6 @@ namespace TooManyEmotes
             if (!isLocalPlayer)
                 return true;
 
-            if (!initialized)
-                Debug.LogError("CanPerformEmote: NOT INITIALIZED");
-
-            if (ConfigSettings.disableEmotesForSelf.Value)
-                Debug.LogError("CanPerformEmote: EMOTING FOR SELF DISABLED");
-
-            if (LCVR_Patcher.Enabled)
-                Debug.LogError("CanPerformEmote: LCVR ENABLED");
-
             if (!initialized || ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled)
                 return false;
 
@@ -216,12 +221,10 @@ namespace TooManyEmotes
 
         public override void PerformEmote(UnlockableEmote emote, AnimationClip overrideAnimationClip = null, float playAtTimeNormalized = 0)
         {
-            if (playerController == null)
-                Plugin.LogError("PLAYERCONTROLLER NULL IN PERFORMEMOTE");
             if (playerController == null || (isLocalPlayer && (ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled)))
                 return;
 
-            base.PerformEmote(emote);
+            base.PerformEmote(emote, overrideAnimationClip, playAtTimeNormalized);
             if (isPerformingEmote)
             {
                 playerController.performingEmote = true;
@@ -243,6 +246,13 @@ namespace TooManyEmotes
         }
 
 
-        public override ulong GetEmoteControllerId() => playerController != null ? playerController.NetworkObjectId : 0;
+        protected override void CreateBoneMap()
+        {
+            boneMap = BoneMapper.CreateBoneMap(humanoidSkeleton, metarig, sourceBoneNames);
+        }
+
+
+        protected override ulong GetEmoteControllerId() => playerController != null ? playerController.NetworkObjectId : 0;
+        protected override string GetEmoteControllerName() => playerController != null ? playerController.playerUsername : base.GetEmoteControllerName();
     }
 }

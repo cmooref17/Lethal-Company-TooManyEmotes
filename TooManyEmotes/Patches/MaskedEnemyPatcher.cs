@@ -70,7 +70,8 @@ namespace TooManyEmotes.Patches
             if (!ConfigSync.instance.syncEnableMaskedEnemiesEmoting || __instance.isEnemyDead || !EmoteControllerMaskedEnemy.allMaskedEnemyEmoteControllers.TryGetValue(__instance, out var emoteController))
                 return;
 
-            if (NetworkManager.Singleton.IsServer && emoteController.CanPerformEmote() && !emoteController.stoppedAndStaring)
+
+            if (NetworkManager.Singleton.IsServer && !emoteController.stoppedAndStaring && emoteController.CanPerformEmote())
             {
                 emoteController.stoppedAndStaring = true;
                 if (!CalculateShouldEmoteChance(emoteController))
@@ -81,7 +82,6 @@ namespace TooManyEmotes.Patches
 
                 playersEmotedWithThisRound.Add(emoteController.lookingAtPlayer);
                 var emote = GetRandomUnlockedEmote(emoteController);
-                emoteController.pendingEmote = emote;
 
                 float delay = GetRandomEmoteDelay(emoteController);
                 float duration = GetRandomEmoteDuration(emoteController);
@@ -90,6 +90,8 @@ namespace TooManyEmotes.Patches
 
                 PerformEmoteAfterDelay(emote, emoteController, delay);
             }
+            else if (emoteController.stopAndStareTimer <= 0 && emoteController.stoppedAndStaring)
+                emoteController.stoppedAndStaring = false;
         }
 
 
@@ -186,17 +188,23 @@ namespace TooManyEmotes.Patches
             IEnumerator PerformEmote()
             {
                 yield return new WaitForSeconds(delay);
-                float distanceToTarget = Vector3.Distance(emoteController.lookingAtPlayer.transform.position, emoteController.maskedEnemy.transform.position);
-                if (distanceToTarget > 20f)
-                    Plugin.LogWarning("Failed to perform emote on masked enemy. Target player is too far away. Distance: " + distanceToTarget);
-                else if (!emoteController.CanPerformEmote())
-                    Plugin.LogWarning("Failed to perform emote on masked enemy: " + emoteController.maskedEnemy.name);
-                else
+                if (emoteController.lookingAtPlayer != null)
                 {
-                    emoteController.PerformEmote(emote);
-                    if (NetworkManager.Singleton.IsServer)
-                        SendUpdateMaskedEnemyEmoteToClients(emoteController, emote.emoteId);
+                    float distanceToTarget = Vector3.Distance(emoteController.lookingAtPlayer.transform.position, emoteController.maskedEnemy.transform.position);
+                    if (distanceToTarget > 25f)
+                        Plugin.LogWarning("Failed to perform emote on masked enemy. Target player is too far away. Distance: " + distanceToTarget);
+                    else if (!emoteController.CanPerformEmote())
+                        Plugin.LogWarning("Failed to perform emote on masked enemy: " + emoteController.maskedEnemy.name);
+                    else
+                    {
+                        emoteController.PerformEmote(emote);
+                        if (NetworkManager.Singleton.IsServer)
+                            SendUpdateMaskedEnemyEmoteToClients(emoteController, emote.emoteId);
+                    }
                 }
+                else
+                    Plugin.LogWarning("PerformEmoteDelayed - Not looking at player.");
+                    
             }
             if (emote != null)
                 emoteController.maskedEnemy.StartCoroutine(PerformEmote());

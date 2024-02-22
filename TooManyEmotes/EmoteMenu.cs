@@ -336,29 +336,23 @@ namespace TooManyEmotes
             if (emoteIndex >= 0 && emoteIndex < currentLoadoutEmotesList.Count && currentLoadoutEmotesList[emoteIndex] != null)
             {
                 UnlockableEmote emote = currentLoadoutEmotesList[emoteIndex];
+                previewPlayerAnimator.avatar = emote.humanoidAnimation ? Plugin.humanoidAvatar : null;
                 previewPlayerObject.SetActive(true);
                 renderingCamera.enabled = true;
 
                 previewPlayerAnimator.SetBool("loop", emote.transitionsToClip != null);
+                previewPlayerAnimatorController["emote"] = emote.animationClip;
 
                 if (emote.transitionsToClip != null)
-                {
-                    previewPlayerAnimatorController["emote_start"] = emote.animationClip;
                     previewPlayerAnimatorController["emote_loop"] = emote.transitionsToClip;
-                    previewPlayerAnimator.Play("emote_start", 0, 0);
-                }
-                else
-                {
-                    previewPlayerAnimatorController["emote"] = emote.animationClip;
-                    previewPlayerAnimator.Play("emote", 0, 0);
-                }
+
+                previewPlayerAnimator.Play("emote", 0, 0);
 
                 currentEmoteText.text = emote.displayNameColorCoded + (EmotesManager.allFavoriteEmotes.Contains(emote.emoteName) ? " *" : "");
             }
             else
             {
                 previewPlayerAnimatorController["emote"] = null;
-                previewPlayerAnimatorController["emote_start"] = null;
                 previewPlayerAnimatorController["emote_loop"] = null;
                 previewPlayerObject.SetActive(false);
                 currentEmoteText.text = "";
@@ -519,16 +513,9 @@ namespace TooManyEmotes
                 previewPlayerMesh = copyPlayerController.thisPlayerModel;
                 GameObject.DestroyImmediate(modelGameObject.GetComponentInChildren<LODGroup>());
                 GameObject.DestroyImmediate(metarigGameObject.GetComponentInChildren<RigBuilder>());
+                GameObject.DestroyImmediate(metarigGameObject.GetComponentInChildren<GraphicRaycaster>());
+                GameObject.DestroyImmediate(metarigGameObject.GetComponentInChildren<TMP_Text>());
                 GameObject.DestroyImmediate(copyPlayerController.playerBodyAnimator);
-
-                previewPlayerAnimator = metarigGameObject.AddComponent<Animator>();
-                previewPlayerAnimator.avatar = Plugin.humanoidAvatar;
-                previewPlayerAnimatorController = new AnimatorOverrideController(Plugin.humanoidAnimatorController);
-                previewPlayerAnimator.runtimeAnimatorController = previewPlayerAnimatorController;
-                previewPlayerAnimator.SetBool("loop", false);
-                previewPlayerAnimator.SetBool("force_loop_all_emotes", true);
-                previewPlayerAnimator.Play("emote", 0, 0);
-
                 GameObject.DestroyImmediate(previewPlayerObject.GetComponent<NfgoPlayer>());
 
                 // It's brute force, but w/e
@@ -561,7 +548,37 @@ namespace TooManyEmotes
                     try { GameObject.DestroyImmediate(component); }
                     catch { Plugin.LogError("Failed to destroy component of type: " + component.GetType().ToString() + " on animation previewer object."); }
                 }
-                
+
+                //var humanoidSkeleton = GameObject.Instantiate(Plugin.humanoidSkeletonPrefab, modelGameObject.transform).transform;
+                //humanoidSkeleton.name = "HumanoidSkeleton";
+                //humanoidSkeleton.localScale = Vector3.one * 0.5f;
+                previewPlayerAnimator = modelGameObject.AddComponent<Animator>();
+                previewPlayerAnimator.avatar = Plugin.humanoidAvatar;
+                previewPlayerAnimatorController = new AnimatorOverrideController(Plugin.humanoidAnimatorController);
+                previewPlayerAnimator.runtimeAnimatorController = previewPlayerAnimatorController;
+                previewPlayerAnimator.SetBool("loop", false);
+                //previewPlayerAnimator.SetBool("force_loop_all_emotes", true);
+                previewPlayerAnimator.Play("emote", 0, 0);
+
+                /*
+                var boneMap = BoneMapper.CreateBoneMap(humanoidSkeleton, metarigGameObject.transform, EmoteControllerPlayer.sourceBoneNames);
+                if (boneMap != null)
+                {
+                    foreach (var pair in boneMap)
+                    {
+                        if (pair.Key != null && pair.Value != null)
+                        {
+                            pair.Value.parent = pair.Key.parent;
+                            pair.Value.position = pair.Key.transform.position;
+                            pair.Value.rotation = pair.Key.transform.rotation;
+                            pair.Value.localScale = pair.Key.transform.localScale;
+                        }
+                    }
+                    foreach (var bone in boneMap.Keys)
+                        GameObject.Destroy(bone.gameObject);
+                }
+                */
+
                 previewPlayerObject.transform.position = renderingCamera.transform.position + renderingCamera.transform.forward * 2.8f + Vector3.down * 1.35f;
                 previewPlayerObject.transform.LookAt(new Vector3(renderingCamera.transform.position.x, previewPlayerObject.transform.position.y, renderingCamera.transform.position.z));
                 SetObjectLayerRecursive(previewPlayerObject, playerLayer);
@@ -592,13 +609,14 @@ namespace TooManyEmotes
 
             if (isMenuOpen)
             {
-                Plugin.LogError("EXITING FUNCTION");
                 if (numPages == 0 || (numPages == 1 && currentPage == 0))
-                {
                     return false;
-                }
 
-                if (context.ReadValue<float>() < 0 && !ConfigSettings.reverseEmoteWheelScrollDirection.Value)
+                float scrollDirection = context.ReadValue<float>();
+                if (scrollDirection == 0)
+                    return false;
+
+                if (scrollDirection < 0 == !ConfigSettings.reverseEmoteWheelScrollDirection.Value)
                     SwapPrevPage();
                 else
                     SwapNextPage();

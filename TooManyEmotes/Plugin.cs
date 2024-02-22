@@ -13,10 +13,12 @@ using TooManyEmotes.Input;
 using BepInEx.Logging;
 using System.Reflection;
 using TooManyEmotes.Audio;
+using TooManyEmotes.Compatibility;
+using TooManyEmotes.Props;
 
 namespace TooManyEmotes
 {
-    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.9.1")]
+    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.9.4")]
     [BepInDependency("com.rune580.LethalCompanyInputUtils", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("me.swipez.melonloader.morecompany", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
@@ -44,9 +46,9 @@ namespace TooManyEmotes
         public static Avatar humanoidAvatar;
         public static GameObject humanoidSkeletonPrefab;
 
-        //public static Dictionary<string, AnimationClip> miscAnimationClips;
-        public static Dictionary<string, AudioClip> musicClips;
-        public static Dictionary<string, GameObject> emotePropPrefabs;
+        public static HashSet<AudioClip> emoteAudioClips;
+        public static HashSet<GameObject> emotePropPrefabs;
+        public static HashSet<RuntimeAnimatorController> emotePropAnimatorControllers;
 
 
         void Awake()
@@ -56,11 +58,19 @@ namespace TooManyEmotes
             ConfigSettings.BindConfigSettings();
             Keybinds.InitKeybinds();
 
+            if (IsModLoaded("io.daxcess.lcvr"))
+                LCVR_Patcher.CheckIfVRIsEnabled();
+
             LoadEmoteAssets();
             LoadMiscAnimationAssets();
             LoadRadialMenuAsset();
+
             //LoadEmotePropAssets();
             //AudioManager.LoadAudioAssets();
+
+            EmotesManager.BuildEmotesList();
+            //EmotePropManager.BuildEmotePropList();
+            //AudioManager.BuildAudioClipList();
 
             this._harmony = new Harmony("TooManyEmotes");
             PatchAll();
@@ -79,18 +89,6 @@ namespace TooManyEmotes
             animationClipsTier1 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_1"));
             animationClipsTier2 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_2"));
             animationClipsTier3 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_3"));
-
-            /*
-            var miscClips = LoadEmoteAssetBundle("Assets/emotes_misc");
-            if (miscClips != null && miscClips.Length >= 1)
-            {
-                foreach (var clip in miscClips)
-                {
-                    if (clip.name.Contains("idle"))
-                        idleClip = clip;
-                }
-            }
-            */
 
             customAnimationClipsHash.UnionWith(complementaryAnimationClips);
             customAnimationClipsHash.UnionWith(animationClipsTier0);
@@ -174,7 +172,7 @@ namespace TooManyEmotes
                 AssetBundle prefabAssetBundle = AssetBundle.LoadFromFile(propsAssetBundlePath);
                 var prefabs = prefabAssetBundle.LoadAllAssets<GameObject>();
                 foreach (var prefab in prefabs)
-                    emotePropPrefabs.Add(prefab.name, prefab);
+                    emotePropPrefabs.Add(prefab);
             }
             catch
             {

@@ -27,7 +27,6 @@ namespace TooManyEmotes
 
         public int id { get { return (int)maskedEnemy.NetworkObjectId; } }
         public int emoteCount = 0;
-        public UnlockableEmote pendingEmote = null;
         public bool stoppedAndStaring = false;
         public bool behaviour1 = false;
 
@@ -57,6 +56,8 @@ namespace TooManyEmotes
                     return;
                 }
                 allMaskedEnemyEmoteControllers.Add(maskedEnemy, this);
+
+                //if (humanoidSkeleton != null) humanoidSkeleton.transform.parent = transform;
             }
             catch (Exception e)
             {
@@ -80,7 +81,7 @@ namespace TooManyEmotes
             if (base.CheckIfShouldStopEmoting())
                 return true;
 
-            return (NetworkManager.Singleton.IsServer && (agent.speed > 0 || stopAndStareTimer <= 0)) || (!NetworkManager.Singleton.IsServer && Vector3.Distance(emotedAtPosition, maskedEnemy.transform.position) > 0.01f) || inKillAnimation;
+            return maskedEnemy.isEnemyDead || (NetworkManager.Singleton.IsServer && (agent.speed > 0 || stopAndStareTimer <= 0)) || (!NetworkManager.Singleton.IsServer && Vector3.Distance(emotedAtPosition, maskedEnemy.transform.position) > 0.01f) || inKillAnimation;
         }
 
 
@@ -90,7 +91,8 @@ namespace TooManyEmotes
         public override bool CanPerformEmote()
         {
             bool canPerformEmote = base.CanPerformEmote();
-            canPerformEmote &= lookingAtPlayer != null && (!NetworkManager.Singleton.IsServer || stopAndStareTimer >= 2) && !inKillAnimation && ((NetworkManager.Singleton.IsServer && agent.speed == 0) || (!NetworkManager.Singleton.IsServer && !isMoving));
+
+            canPerformEmote = canPerformEmote && lookingAtPlayer != null && (!NetworkManager.Singleton.IsServer || stopAndStareTimer >= 2) && !inKillAnimation && ((NetworkManager.Singleton.IsServer && agent.speed == 0) || (!NetworkManager.Singleton.IsServer && !isMoving)) && !maskedEnemy.isEnemyDead;
             return canPerformEmote;
         }
 
@@ -99,7 +101,10 @@ namespace TooManyEmotes
         {
             base.PerformEmote(emote, overrideAnimationClip, playAtTimeNormalized);
             if (isPerformingEmote)
+            {
+                emoteCount++;
                 emotedAtPosition = maskedEnemy.transform.position;
+            }
         }
 
 
@@ -107,10 +112,15 @@ namespace TooManyEmotes
         {
             base.StopPerformingEmote();
             stoppedAndStaring = false;
-            pendingEmote = null;
         }
 
 
-        public override ulong GetEmoteControllerId() => maskedEnemy != null ? maskedEnemy.NetworkObjectId : 0;
+        protected override void CreateBoneMap()
+        {
+            boneMap = BoneMapper.CreateBoneMap(humanoidSkeleton, metarig, EmoteControllerPlayer.sourceBoneNames);
+        }
+
+        protected override ulong GetEmoteControllerId() => maskedEnemy != null ? maskedEnemy.NetworkObjectId : 0;
+        protected override string GetEmoteControllerName() => maskedEnemy != null ? maskedEnemy.name : base.GetEmoteControllerName();
     }
 }

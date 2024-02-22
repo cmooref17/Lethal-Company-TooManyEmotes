@@ -338,7 +338,6 @@ namespace TooManyEmotes.Patches
                 else
                 {
                     double itemRarity = random.NextDouble();
-                    Plugin.Log("Rotate new emote value: " + itemRarity);
                     float threshold = 1 - ConfigSync.instance.syncRotationChanceEmoteTier3;
                     if (itemRarity >= threshold)
                         emote = GetRandomEmoteNotUnlocked(EmotesManager.allEmotesTier3, random);

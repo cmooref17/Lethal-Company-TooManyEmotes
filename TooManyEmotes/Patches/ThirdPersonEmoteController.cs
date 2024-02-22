@@ -57,6 +57,8 @@ namespace TooManyEmotes.Patches {
                 emoteCamera = new GameObject("EmoteCamera").AddComponent<Camera>();
                 emoteCamera.CopyFrom(gameplayCamera);
             }
+
+            ResetCamera(); // Calling again in case corporate restructure (or another mod) is enabled and throws an error that blocks the SpawnPlayerAnimation method
         }
 
 
@@ -76,17 +78,23 @@ namespace TooManyEmotes.Patches {
             }
             */
 
+            ResetCamera();
+        }
+
+
+        public static void ResetCamera()
+        {
             emoteCamera.enabled = false;
             StartOfRound.Instance.SwitchCamera(StartOfRound.Instance.activeCamera);
 
-            ReloadPlayerModel(__instance);
+            ReloadPlayerModel(localPlayerController);
 
             gameplayCamera.cullingMask &= ~(1 << 23);
             emoteCamera.cullingMask |= (1 << 23);
             //emoteCamera.cullingMask |= 1 << localPlayerBodyLayer;
             emoteCamera.cullingMask &= ~((1 << 5) | (1 << 7)); // ui/helmet visor
 
-            emoteCameraPivot.transform.parent = __instance.transform;
+            emoteCameraPivot.transform.parent = localPlayerController.transform;
             emoteCameraPivot.SetLocalPositionAndRotation(Vector3.up * 1.8f, Quaternion.identity);
             emoteCamera.transform.parent = emoteCameraPivot;
             emoteCamera.transform.SetLocalPositionAndRotation(Vector3.back * targetCameraDistance, Quaternion.identity);

@@ -171,11 +171,11 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(PlayerControllerB), "PerformEmote")]
         [HarmonyPrefix]
-        public static void CheckIfShouldStopPerformingCustomEmote(InputAction.CallbackContext context, int emoteID)
+        public static void StopCustomEmoteOnDefaultEmote(InputAction.CallbackContext context, int emoteID)
         {
             if (context.performed && emoteControllerLocal.IsPerformingCustomEmote())
             {
-                Plugin.LogWarning("OnPerformEmoteLocalPlayer. Stopping custom emote.");
+                //Plugin.LogWarning("OnPerformEmoteLocalPlayer. Stopping custom emote.");
                 emoteControllerLocal.StopPerformingEmote();
             }
         }
