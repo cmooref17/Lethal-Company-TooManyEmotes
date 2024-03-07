@@ -41,28 +41,19 @@ namespace TooManyEmotes
         public Vector3 emotedAtPosition;
 
 
-        protected override void Awake()
+        public override void Initialize(string sourceRootBoneName = "metarig")
         {
-            base.Awake();
+            base.Initialize();
             if (!initialized)
                 return;
 
-            try
+            maskedEnemy = GetComponentInParent<MaskedPlayerEnemy>();
+            if (maskedEnemy == null)
             {
-                maskedEnemy = GetComponentInParent<MaskedPlayerEnemy>();
-                if (maskedEnemy == null)
-                {
-                    Plugin.LogError("Failed to find MaskedPlayerEnemy component in parent of EmoteControllerMaskedEnemy.");
-                    return;
-                }
-                allMaskedEnemyEmoteControllers.Add(maskedEnemy, this);
-
-                //if (humanoidSkeleton != null) humanoidSkeleton.transform.parent = transform;
+                Plugin.LogError("Failed to find MaskedPlayerEnemy component in parent of EmoteControllerMaskedEnemy.");
+                return;
             }
-            catch (Exception e)
-            {
-                Debug.LogError("Failed to initialize EmoteControllerMaskedEnemy. Error: " + e);
-            }
+            allMaskedEnemyEmoteControllers.Add(maskedEnemy, this);
         }
 
 
@@ -97,14 +88,15 @@ namespace TooManyEmotes
         }
 
 
-        public override void PerformEmote(UnlockableEmote emote, AnimationClip overrideAnimationClip = null, float playAtTimeNormalized = 0)
+        public override bool PerformEmote(UnlockableEmote emote, int overrideEmoteId = -1)
         {
-            base.PerformEmote(emote, overrideAnimationClip, playAtTimeNormalized);
+            bool success = base.PerformEmote(emote);
             if (isPerformingEmote)
             {
                 emoteCount++;
                 emotedAtPosition = maskedEnemy.transform.position;
             }
+            return success;
         }
 
 

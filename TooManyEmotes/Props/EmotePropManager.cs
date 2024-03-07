@@ -11,17 +11,18 @@ namespace TooManyEmotes.Props
     [HarmonyPatch]
     public static class EmotePropManager
     {
-        public static Transform propPoolParent;
-        //public static HashSet<EmotePropAnimation> emoteProps = new HashSet<EmotePropAnimation>();
-        public static Dictionary<string, HashSet<GameObject>> propPoolsDict = new Dictionary<string, HashSet<GameObject>>();
-
+        public static bool initialized = false;
         public static Dictionary<string, GameObject> propPrefabs = new Dictionary<string, GameObject>();
-        public static Dictionary<string, RuntimeAnimatorController> propAnimatorControllers = new Dictionary<string, RuntimeAnimatorController>();
-        public static Dictionary<string, PropAnimationData> propAnimationData = new Dictionary<string, PropAnimationData>();
 
-        /*
+        public static Transform propPoolParent;
+        public static Dictionary<string, HashSet<PropObject>> propPoolsDict = new Dictionary<string, HashSet<PropObject>>();
+
+        //public static Dictionary<string, RuntimeAnimatorController> propAnimatorControllers = new Dictionary<string, RuntimeAnimatorController>();
+        //public static Dictionary<string, PropAnimationData> propAnimationData = new Dictionary<string, PropAnimationData>();
+
+
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         public static void Init()
         {
             CleanPropPools();
@@ -31,13 +32,11 @@ namespace TooManyEmotes.Props
 
         public static void BuildEmotePropList()
         {
-            if (Plugin.emotePropPrefabs == null || Plugin.emotePropAnimatorControllers == null)
+            if (Plugin.emotePropPrefabs == null)
                 return;
 
             CleanPropPools();
             propPrefabs.Clear();
-            propAnimatorControllers.Clear();
-            propAnimationData.Clear();
 
             if (EmotesManager.allUnlockableEmotes == null || EmotesManager.allUnlockableEmotes.Count <= 0)
             {
@@ -47,13 +46,27 @@ namespace TooManyEmotes.Props
 
             foreach (var propPrefab in Plugin.emotePropPrefabs)
             {
-                if (propPrefab == null || !propPrefab.name.ToLower().StartsWith("prop_"))
+                if (propPrefab == null)
                     continue;
 
-                string propName = propPrefab.name.Substring(5);
-                propPrefabs.Add(propName, propPrefab);
+                propPrefabs.Add(propPrefab.name, propPrefab);
+                string emoteName = propPrefab.name;
+                if (propPrefab.name.Contains("."))
+                {
+                    var args = propPrefab.name.Split('.');
+                    if (args.Length > 0 && args[0].Length > 0)
+                        emoteName = args[0];
+                }
+                if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote))
+                {
+                    if (emote.propNamesInEmote == null)
+                        emote.propNamesInEmote = new List<string>();
+                    emote.propNamesInEmote.Add(propPrefab.name);
+                }
             }
+            initialized = true;
 
+            /*
             foreach (var propAC in Plugin.emotePropAnimatorControllers)
             {
                 if (propAC == null)
@@ -80,39 +93,45 @@ namespace TooManyEmotes.Props
                     emote.AddPropAnimationData(emotePropAnimation);
                 }
             }
+            */
         }
 
 
-        public static GameObject LoadEmoteProp(string emoteName)
+        public static PropObject LoadEmoteProp(string propName)
         {
-            if (propPoolsDict.TryGetValue(emoteName, out var pool))
+            if (!propPrefabs.TryGetValue(propName, out var prefab))
             {
-                foreach (var prop in pool)
-                {
-                    if (!prop.activeSelf)
-                    {
-                        prop.SetActive(true);
-                        return prop;
-                    }
-                }
-            }
-            else
-                propPoolsDict.Add(emoteName, new HashSet<GameObject>());
-
-            if (!propPrefabs.TryGetValue(emoteName, out var prefab))
-            {
-                Plugin.LogError("Failed to instantiate emote prop for emote: " + emoteName);
+                Plugin.LogError("Failed to instantiate emote prop: " + propName + ". Prop does not exist!");
                 return null;
             }
 
+            if (!propPoolsDict.TryGetValue(propName, out var pool))
+            {
+                pool = new HashSet<PropObject>();
+                propPoolsDict.Add(propName, pool);
+            }
+
+            foreach (var prop in pool)
+            {
+                if (!prop.active)
+                {
+                    prop.active = true;
+                    return prop;
+                }
+            }
+
             GameObject newProp = GameObject.Instantiate(prefab);
+            newProp.name = prefab.name;
+
             PropObject propObject = newProp.GetComponentInChildren<PropObject>();
             if (propObject == null)
                 propObject = newProp.AddComponent<PropObject>();
+
+            propObject.active = true;
+            pool.Add(propObject);
             propObject.InitializeEmoteProp();
 
-            newProp.name = prefab.name;
-            return newProp;
+            return propObject;
         }
 
 
@@ -134,6 +153,5 @@ namespace TooManyEmotes.Props
                 pool.Clear();
             }
         }
-        */
     }
 }

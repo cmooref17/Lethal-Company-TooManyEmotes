@@ -142,8 +142,8 @@ namespace TooManyEmotes.Patches
             var random = new System.Random(currentLevelSeed + 100 * emoteController.id + emoteController.emoteCount);
             var emote = emotesList[random.Next(emotesList.Count)];
 
-            if (emote.randomEmotePool != null && emote.randomEmotePool.Count > 0)
-                emote = emote.randomEmotePool[random.Next(emote.randomEmotePool.Count)];
+            if (emote.randomEmote && emote.emoteSyncGroup != null && emote.emoteSyncGroup.Count > 0)
+                emote = emote.emoteSyncGroup[random.Next(emote.emoteSyncGroup.Count)];
             return emote;
         }
 
@@ -192,9 +192,13 @@ namespace TooManyEmotes.Patches
                 {
                     float distanceToTarget = Vector3.Distance(emoteController.lookingAtPlayer.transform.position, emoteController.maskedEnemy.transform.position);
                     if (distanceToTarget > 25f)
-                        Plugin.LogWarning("Failed to perform emote on masked enemy. Target player is too far away. Distance: " + distanceToTarget);
+                    {
+                        //Plugin.LogWarning("Failed to perform emote on masked enemy. Target player is too far away. Distance: " + distanceToTarget + ". This is okay.");
+                    }
                     else if (!emoteController.CanPerformEmote())
-                        Plugin.LogWarning("Failed to perform emote on masked enemy: " + emoteController.maskedEnemy.name);
+                    {
+                        //Plugin.LogWarning("Failed to perform emote on masked enemy: " + emoteController.maskedEnemy.name);
+                    }
                     else
                     {
                         emoteController.PerformEmote(emote);
@@ -203,7 +207,9 @@ namespace TooManyEmotes.Patches
                     }
                 }
                 else
-                    Plugin.LogWarning("PerformEmoteDelayed - Not looking at player.");
+                {
+                    //Plugin.LogWarning("PerformEmoteDelayed - Not looking at player.");
+                }
                     
             }
             if (emote != null)

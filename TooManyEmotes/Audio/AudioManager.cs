@@ -19,16 +19,73 @@ namespace TooManyEmotes.Audio
         public static HashSet<AudioClip> loadedAudioClips = new HashSet<AudioClip>();
         public static Dictionary<string, AudioClip> loadedAudioClipsDict = new Dictionary<string, AudioClip>();
 
-        public readonly static string audioFileExtension = ".wav";
+        //public readonly static string audioFileExtension = ".ogg";
 
-        public static bool AudioExists(string audioName) => audioAssetNames != null && audioAssetNames.Contains(audioName);
+        public static bool AudioExists(string audioName) => loadedAudioClipsDict.ContainsKey(audioName); //audioAssetNames != null && audioAssetNames.Contains(audioName);
+
+        public static bool muteEmoteAudio = false;
+        public static float emoteVolumeMultiplier = 1;
 
 
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
         [HarmonyPostfix]
         public static void Init()
         {
-            ClearAudioClipCache();
+            LoadPreferences();
+            //ClearAudioClipCache();
+        }
+
+
+        public static void SavePreferences()
+        {
+            ES3.Save("TooManyEmotes.MuteEmoteAudio", muteEmoteAudio);
+            ES3.Save("TooManyEmotes.EmoteAudioVolume", emoteVolumeMultiplier);
+        }
+
+
+        public static void LoadPreferences()
+        {
+            muteEmoteAudio = ES3.Load("TooManyEmotes.MuteEmoteAudio", false);
+            emoteVolumeMultiplier = ES3.Load("TooManyEmotes.EmoteAudioVolume", 1.0f);
+        }
+
+
+        public static void BuildAudioClipList()
+        {
+            LoadAllAudioClips();
+            /*
+
+            foreach (var audioClip in loadedAudioClips)
+            {
+                string emoteName = audioClip.name;
+                if (audioClip.name.Contains("."))
+                {
+                    var args = audioClip.name.Split('.');
+                    if (args.Length > 0 && args[0].Length > 0)
+                        emoteName = args[0];
+                }
+                emoteName = emoteName.Replace("_start", "").Replace("_loop", "");
+                if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote))
+                {
+                    if (emote.animationClip != null && emote.animationClip.name == audioClip.name)
+                        emote.
+                    emote.propNamesInEmote.Add(propPrefab.name);
+                }
+
+            }
+            */
+            /*
+            foreach (var audioClip in loadedAudioClips)
+            {
+                string emoteName = audioClip.name.Replace(audioFileExtension, "");
+                if (emoteName.EndsWith("_start"))
+                    emoteName = emoteName.Substring(0, emoteName.Length - 6);
+                else if (emoteName.EndsWith("_loop"))
+                    emoteName = emoteName.Substring(0, emoteName.Length - 5);
+
+                if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote)) { }
+            }
+            */
         }
 
 
@@ -36,13 +93,13 @@ namespace TooManyEmotes.Audio
         {
             try
             {
-                string assetsPath = Path.Combine(Path.GetDirectoryName(Plugin.instance.Info.Location), "Assets/emote_audio");
+                string assetsPath = Path.Combine(Path.GetDirectoryName(Plugin.instance.Info.Location), "Assets/compressed_audio");
                 audioAssetBundle = AssetBundle.LoadFromFile(assetsPath);
                 audioAssetNames.UnionWith(audioAssetBundle.GetAllAssetNames());
             }
             catch
             {
-                Plugin.LogError("Failed to load emotes audio asset bundle: emotes_audio.");
+                Plugin.LogWarning("Failed to load emotes audio asset bundle: compressed_audio.");
             }
         }
 
@@ -57,10 +114,13 @@ namespace TooManyEmotes.Audio
             try
             {
                 loadedAudioClips.UnionWith(audioAssetBundle.LoadAllAssets<AudioClip>());
+                Plugin.Log("Loading " + loadedAudioClips.Count + " audio clips.");
                 foreach (var clip in loadedAudioClips)
                 {
                     if (!loadedAudioClipsDict.ContainsKey(clip.name))
+                    {
                         loadedAudioClipsDict[clip.name] = clip;
+                    }
                 }
             }
             catch

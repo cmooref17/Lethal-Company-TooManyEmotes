@@ -159,11 +159,12 @@ namespace TooManyEmotes
             if (playerUsername != "" && !ConfigSync.instance.syncShareEverything && playerUsername != localPlayerUsername && !unlockedEmotesByPlayer.TryGetValue(playerUsername, out _unlockedEmotes))
                 return;
 
-            if (emote.randomEmotePool != null)
+            // Check if one of the emotes in the sync group is already unlocked
+            if (emote.emoteSyncGroup != null)
             {
-                foreach (var rEmote in emote.randomEmotePool)
+                foreach (var syncEmote in emote.emoteSyncGroup)
                 {
-                    if (_unlockedEmotes.Contains(rEmote))
+                    if (_unlockedEmotes.Contains(syncEmote))
                         return;
                 }
             }
@@ -218,11 +219,15 @@ namespace TooManyEmotes
                 if (EmotesManager.allUnlockableEmotesDict.ContainsKey(emoteName))
                 {
                     var emote = EmotesManager.allUnlockableEmotesDict[emoteName];
-                    if (emote != null && unlockedEmotes.Contains(emote))
-                        unlockedFavoriteEmotes.Add(emote);
+                    if (emote != null)
+                    {
+                        if (emote.emoteSyncGroup != null && emote.emoteSyncGroup.Count > 0)
+                            emote = emote.emoteSyncGroup[0];
+                        if (unlockedEmotes.Contains(emote))
+                            unlockedFavoriteEmotes.Add(emote);
+                    }
                 }
-                else
-                    Plugin.LogWarning("Error loading favorited emote. Emote does not exist. The emote has likely been temporarily removed in this update.");
+                //else Plugin.LogWarning("Error loading favorited emote. Emote does not exist. The emote has likely been temporarily removed in this update.");
             }
         }
 

@@ -19,15 +19,15 @@ namespace TooManyEmotes.Patches
         [HarmonyPostfix]
         public static void AllowMovingInEmoteConditions(ref bool __result, PlayerControllerB __instance)
         {
-            if (!ConfigSync.instance.syncEnableMovingWhileEmoting || __result)
+            if (__result)
                 return;
-            if (!EmoteController.allEmoteControllers.TryGetValue(__instance.gameObject, out var emoteController) || !emoteController.IsPerformingCustomEmote())
-                return;
-
-            bool isJumping = (bool)Traverse.Create(__instance).Field("isJumping").GetValue();
-            bool result = !(__instance.inSpecialInteractAnimation || __instance.isPlayerDead || isJumping || __instance.isCrouching || __instance.isClimbingLadder || __instance.isGrabbingObjectAnimation || __instance.inTerminalMenu || __instance.isTypingChat);
-            if (result)
-                __result = true;
+            if (EmoteController.allEmoteControllers.TryGetValue(__instance.gameObject, out var emoteController) && emoteController.IsPerformingCustomEmote() && (ConfigSync.instance.syncEnableMovingWhileEmoting || emoteController.performingEmote.canMoveWhileEmoting))
+            {
+                bool isJumping = (bool)Traverse.Create(__instance).Field("isJumping").GetValue();
+                bool result = !(__instance.inSpecialInteractAnimation || __instance.isPlayerDead || isJumping || __instance.isCrouching || __instance.isClimbingLadder || __instance.isGrabbingObjectAnimation || __instance.inTerminalMenu || __instance.isTypingChat);
+                if (result)
+                    __result = true;
+            }
         }
 
 

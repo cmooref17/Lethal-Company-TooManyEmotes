@@ -46,14 +46,15 @@ namespace TooManyEmotes.Networking
         }
 
 
-        public static void SendSyncEmoteUpdateToServer(EmoteController emoteController)
+        public static void SendSyncEmoteUpdateToServer(EmoteController emoteController, short overrideEmoteId = -1)
         {
             if (!NetworkManager.Singleton.IsClient || emoteController == null)
                 return;
 
             Plugin.Log("Sending sync emote update to server. Sync with emote controller id: " + emoteController);
-            var writer = new FastBufferWriter(sizeof(ulong), Allocator.Temp);
+            var writer = new FastBufferWriter(sizeof(ulong) + sizeof(short), Allocator.Temp);
             writer.WriteValue(emoteController.emoteControllerId);
+            writer.WriteValue(overrideEmoteId);
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes.SyncEmoteServerRpc", NetworkManager.ServerClientId, writer);
         }
 
@@ -69,8 +70,7 @@ namespace TooManyEmotes.Networking
                 return;
             }
 
-            int emoteId;
-            reader.ReadValue(out emoteId);
+            reader.ReadValue(out int emoteId);
 
             if (emoteId < 0 || emoteId >= EmotesManager.allUnlockableEmotes.Count)
             {
@@ -80,7 +80,7 @@ namespace TooManyEmotes.Networking
 
             var emote = EmotesManager.allUnlockableEmotes[emoteId];
             Plugin.Log("Receiving performing emote update from client: " + clientId + " Emote: " + emote.emoteName);
-            if (NetworkManager.Singleton.IsClient)
+            if (NetworkManager.Singleton.IsClient && emoteController != EmoteControllerPlayer.emoteControllerLocal)
                 emoteController.PerformEmote(emote);
             ServerSendPerformingEmoteUpdateToClients(emoteController, emote);
         }
@@ -98,8 +98,8 @@ namespace TooManyEmotes.Networking
                 return;
             }
 
-            ulong emoteControllerId;
-            reader.ReadValue(out emoteControllerId);
+            reader.ReadValue(out ulong emoteControllerId);
+            reader.ReadValue(out short overrideEmoteId);
 
             var syncWithEmoteController = GetEmoteControllerById(emoteControllerId);
             if (syncWithEmoteController == null)
@@ -115,9 +115,9 @@ namespace TooManyEmotes.Networking
             }
 
             Plugin.Log("Receiving sync emote update from client with id: " + clientId + " Sync with emote controller id: " + emoteControllerId);
-            if (NetworkManager.Singleton.IsClient)
-                emoteController.SyncWithEmoteController(syncWithEmoteController);
-            ServerSendSyncEmoteUpdateToClients(emoteController, syncWithEmoteController);
+            if (NetworkManager.Singleton.IsClient && emoteController != EmoteControllerPlayer.emoteControllerLocal)
+                emoteController.SyncWithEmoteController(syncWithEmoteController, overrideEmoteId);
+            ServerSendSyncEmoteUpdateToClients(emoteController, syncWithEmoteController, overrideEmoteId);
         }
 
 
@@ -139,7 +139,7 @@ namespace TooManyEmotes.Networking
         }
 
         // SYNC EMOTE
-        public static void ServerSendSyncEmoteUpdateToClients(EmoteController emoteController, EmoteController syncWithEmoteController)
+        public static void ServerSendSyncEmoteUpdateToClients(EmoteController emoteController, EmoteController syncWithEmoteController, short overrideEmoteId = -1)
         {
             if (!NetworkManager.Singleton.IsServer)
             {
@@ -150,9 +150,10 @@ namespace TooManyEmotes.Networking
             if (emoteController == null || syncWithEmoteController == null)
                 return;
 
-            var writer = new FastBufferWriter(sizeof(ulong) * 2, Allocator.Temp);
+            var writer = new FastBufferWriter(sizeof(ulong) * 2 + sizeof(short), Allocator.Temp);
             writer.WriteValue(emoteController.emoteControllerId);
             writer.WriteValue(syncWithEmoteController.emoteControllerId);
+            writer.WriteValue(overrideEmoteId);
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes.SyncEmoteClientRpc", writer);
         }
 
@@ -162,8 +163,7 @@ namespace TooManyEmotes.Networking
             if (!NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsServer)
                 return;
 
-            ulong emoteControllerId;
-            reader.ReadValue(out emoteControllerId);
+            reader.ReadValue(out ulong emoteControllerId);
 
             // Do not update player's local emote controller
             if (EmoteControllerPlayer.emoteControllerLocal != null && emoteControllerId == EmoteControllerPlayer.emoteControllerLocal.emoteControllerId)
@@ -176,8 +176,7 @@ namespace TooManyEmotes.Networking
                 return;
             }
 
-            int emoteId;
-            reader.ReadValue(out emoteId);
+            reader.ReadValue(out int emoteId);
 
             if (emoteId < 0 || emoteId >= EmotesManager.allUnlockableEmotes.Count)
             {
@@ -211,10 +210,10 @@ namespace TooManyEmotes.Networking
                 return;
             }
 
-            ulong syncWithEmoteControllerId;
-            reader.ReadValue(out syncWithEmoteControllerId);
-            var syncWithEmoteController = GetEmoteControllerById(syncWithEmoteControllerId);
+            reader.ReadValue(out ulong syncWithEmoteControllerId);
+            reader.ReadValue(out short overrideEmoteId);
 
+            var syncWithEmoteController = GetEmoteControllerById(syncWithEmoteControllerId);
             if (syncWithEmoteController == null)
             {
                 Plugin.LogWarning("Could not handle sync emote request from server for emote controller with id: " + emoteControllerId + ". Failed to find emote controller with id: " + emoteControllerId + " to sync with.");
@@ -228,7 +227,7 @@ namespace TooManyEmotes.Networking
             }
 
             Plugin.Log("Receiving sync emote update from server for emote controller with id: " + emoteControllerId + " SyncWithEmoteControllerId: " + syncWithEmoteControllerId);
-            emoteController.SyncWithEmoteController(syncWithEmoteController);
+            emoteController.SyncWithEmoteController(syncWithEmoteController, overrideEmoteId);
         }
 
 

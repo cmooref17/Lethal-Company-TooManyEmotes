@@ -81,7 +81,7 @@ namespace TooManyEmotes.Patches
         [HarmonyPrefix]
         public static void OnPlayerDeath(Vector3 bodyVelocity, PlayerControllerB __instance)
         {
-            Plugin.LogWarning("Player died while emoting. What a loser... I mean, I hope this handles smoothly.");
+            Plugin.LogWarning("Player died while emoting. Heh... I mean, I hope this handles smoothly.");
             if (__instance!= null && EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(__instance, out var emoteController) && emoteController.IsPerformingCustomEmote())
                 emoteController.StopPerformingEmote();
         }

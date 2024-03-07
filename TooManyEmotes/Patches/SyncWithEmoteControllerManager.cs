@@ -36,7 +36,6 @@ namespace TooManyEmotes.Patches
                 try
                 {
                     EmoteController syncWithEmoteController = hit.collider.GetComponentInChildren<EmoteController>() ?? hit.collider.GetComponentInParent<EmoteController>();
-                    //Plugin.LogWarning("SourceEmoteController: " + EmoteControllerPlayer.emoteControllerLocal.emoteControllerName + " SyncWithController: " + syncWithEmoteController.emoteControllerName + " EQual?: " + (EmoteControllerPlayer.emoteControllerLocal == syncWithEmoteController));
                     if (CanSyncWithEmoteController(EmoteControllerPlayer.emoteControllerLocal, syncWithEmoteController))
                     {
                         if (!(syncWithEmoteController is EmoteControllerMaskedEnemy) || ConfigSettings.enableSyncingEmotesWithMaskedEnemies.Value)
@@ -47,29 +46,7 @@ namespace TooManyEmotes.Patches
                         }
                     }
                 }
-                catch (Exception e) { }
-
-                /*
-                var maskedEnemy = hit.collider.gameObject.GetComponentInParent<MaskedPlayerEnemy>();
-                if (ConfigSettings.enableSyncingEmotesWithMaskedEnemies.Value && maskedEnemy != null && EmoteControllerMaskedEnemy.allMaskedEnemyEmoteControllers.TryGetValue(maskedEnemy, out var emoteControllerMaskedEnemy) && emoteControllerMaskedEnemy.IsPerformingCustomEmote() && emoteControllerMaskedEnemy.performingEmote.canSyncEmote)
-                {
-                    lookingAtSyncableEmoteController = emoteControllerMaskedEnemy;
-                    localPlayerController.cursorTip.text = "[E] Sync emote";
-                    return;
-                }
-                PlayerControllerB hitPlayer = hit.collider.gameObject.GetComponentInParent<PlayerControllerB>();
-                if (hitPlayer != null && hitPlayer != localPlayerController)
-                {
-                    if (EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(hitPlayer, out var emoteControllerPlayer) && emoteControllerPlayer.IsPerformingCustomEmote() && emoteControllerPlayer.performingEmote.canSyncEmote)
-                    {
-                        if (SessionManager.unlockedEmotes.Contains(emoteControllerPlayer.performingEmote) || ConfigSync.instance.syncSyncUnsharedEmotes)
-                        {
-                            lookingAtSyncableEmoteController = emoteControllerPlayer;
-                            localPlayerController.cursorTip.text = "[E] Sync emote";
-                        }
-                    }
-                }
-                */
+                catch { }
             }
             ResetState();
         }

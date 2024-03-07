@@ -181,15 +181,9 @@ namespace TooManyEmotes.Patches
         public static void LoadFavoritedEmotes()
         {
             EmotesManager.allFavoriteEmotes.Clear();
-            List<string> favoritedEmotes = new List<string>(ES3.Load("TooManyEmotes.FavoriteEmotes", new string[0]));
-            int numFavoritedEmotes = favoritedEmotes.Count;
-            favoritedEmotes.RemoveAll(emoteName => !EmotesManager.allUnlockableEmotesDict.ContainsKey(emoteName));
-            
-            EmotesManager.allFavoriteEmotes.AddRange(favoritedEmotes);
+            EmotesManager.allFavoriteEmotes.AddRange(ES3.Load("TooManyEmotes.FavoriteEmotes", new string[0]));
+            //EmotesManager.allFavoriteEmotes.RemoveAll(emoteName => !EmotesManager.allUnlockableEmotesDict.ContainsKey(emoteName));
             SessionManager.UpdateUnlockedFavoriteEmotes();
-
-            if (favoritedEmotes.Count != numFavoritedEmotes)
-                SaveFavoritedEmotes();
         }
     }
 }

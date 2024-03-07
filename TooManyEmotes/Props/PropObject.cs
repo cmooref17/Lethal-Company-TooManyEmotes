@@ -9,11 +9,10 @@ namespace TooManyEmotes.Props
 {
     public class PropObject : MonoBehaviour
     {
-        /*
         bool initialized = false;
-        public PropAnimationData animationData { get; private set; }
+        public bool active { get { return gameObject.activeSelf; } set { gameObject.SetActive(value); } }
         public Animator animator;
-        public RuntimeAnimatorController animatorController { get { return animator != null ? animator.runtimeAnimatorController : null; } private set { if (animator == null) return; animator.runtimeAnimatorController = value; } }
+        public RuntimeAnimatorController animatorController { get { return animator != null ? animator.runtimeAnimatorController : null; } }
 
 
         void Awake()
@@ -32,11 +31,27 @@ namespace TooManyEmotes.Props
         }
 
 
-        public void SetAnimatorController(PropAnimationData animationData)
+        public void SyncWithEmoteController(EmoteController emoteController)
         {
-            this.animationData = animationData;
-            animatorController = animationData.animatorController;
+            if (animator != null)
+            {
+                animator.SetBool("loop", emoteController.isLooping);
+                animator.Play(emoteController.currentStateHash, 0, emoteController.currentAnimationTimeNormalized % 1);
+            }
         }
-        */
+
+
+        public void SetPropLayer(int layer)
+        {
+            SetPropLayerRecursive(gameObject, layer);
+        }
+
+
+        void SetPropLayerRecursive(GameObject obj, int layer)
+        {
+            obj.layer = layer;
+            for (int i = 0; i < obj.transform.childCount; i++)
+                SetPropLayerRecursive(obj.transform.GetChild(i).gameObject, layer);
+        }
     }
 }

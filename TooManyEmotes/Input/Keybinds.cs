@@ -15,6 +15,7 @@ using TooManyEmotes.Config;
 using TooManyEmotes.Patches;
 using TooManyEmotes.Networking;
 using TooManyEmotes.Compatibility;
+using TooManyEmotes.UI;
 
 namespace TooManyEmotes.Input
 {

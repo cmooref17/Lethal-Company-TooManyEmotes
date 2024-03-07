@@ -17,9 +17,10 @@ using TooManyEmotes.Input;
 using System.Reflection;
 using TooManyEmotes.Networking;
 using TooManyEmotes.Compatibility;
+using TooManyEmotes.UI;
 
-namespace TooManyEmotes.Patches {
-
+namespace TooManyEmotes.Patches
+{
     [HarmonyPatch]
     public class ThirdPersonEmoteController
     {
@@ -146,7 +147,7 @@ namespace TooManyEmotes.Patches {
 
                 if (!localPlayerController.quickMenuManager.isMenuOpen && !EmoteMenuManager.isMenuOpen)
                 {
-                    if (Keybinds.holdingRotatePlayerModifier || Keybinds.toggledRotating)
+                    if (Keybinds.holdingRotatePlayerModifier || Keybinds.toggledRotating || EmoteControllerPlayer.emoteControllerLocal.performingEmote.canMoveWhileEmoting)
                     {
                         if (emoteCameraPivot.localEulerAngles.y != 0)
                         {
@@ -165,7 +166,7 @@ namespace TooManyEmotes.Patches {
                     if (Physics.Raycast(emoteCameraPivot.position, -emoteCameraPivot.forward * targetCameraDistance, out var hit, targetCameraDistance, cameraCollideLayerMask))
                         emoteCamera.transform.localPosition = Vector3.back * Mathf.Clamp(hit.distance - 0.2f, 0, targetCameraDistance);
 
-                    if (!Keybinds.holdingRotatePlayerModifier && !Keybinds.toggledRotating)
+                    if (!Keybinds.holdingRotatePlayerModifier && !Keybinds.toggledRotating && !EmoteControllerPlayer.emoteControllerLocal.performingEmote.canMoveWhileEmoting)
                         return false;
                 }
             }
@@ -255,14 +256,13 @@ namespace TooManyEmotes.Patches {
             if (emoteControlTipLines == null)
                 return;
 
-            int bindingIndex = StartOfRound.Instance.localPlayerUsingController ? 1 : 0;
             int index = 0;
             emoteControlTipLines[index++] = "Zoom In/Out : [Scroll Mouse]";
             if (!ConfigSync.instance.syncEnableMovingWhileEmoting)
             {
                 string rotateDisplayText = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.RotatePlayerEmoteAction);
                 if (rotateDisplayText != "")
-                    emoteControlTipLines[index++] = string.Format("Rotate : Hold [{0}]", rotateDisplayText);
+                    emoteControlTipLines[index++] = string.Format("Rotate : " + (Keybinds.toggledRotating ? "Toggle" : "Hold") + " [{0}]", rotateDisplayText);
             }
             for (; index < emoteControlTipLines.Length; index++)
                 emoteControlTipLines[index] = "";

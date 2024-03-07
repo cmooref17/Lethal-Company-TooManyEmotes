@@ -34,6 +34,7 @@ namespace TooManyEmotes
         public ulong steamId { get { return playerController.playerSteamId; } }
         public string username { get { return playerController.playerUsername; } }
 
+        public Animator originalAnimator;
         public float timeSinceStartingEmote { get { return (float)Traverse.Create(playerController).Field("timeSinceStartingEmote").GetValue(); } set { Traverse.Create(playerController).Field("timeSinceStartingEmote").SetValue(value); } }
 
 
@@ -47,28 +48,20 @@ namespace TooManyEmotes
         };
 
 
-        protected override void Awake()
+        public override void Initialize(string sourceRootBoneName = "metarig")
         {
-            base.Awake();
+            base.Initialize();
             if (!initialized)
                 return;
 
-            try
+            originalAnimator = metarig.GetComponentInChildren<Animator>();
+            playerController = GetComponentInParent<PlayerControllerB>();
+            if (playerController == null)
             {
-                playerController = GetComponentInParent<PlayerControllerB>();
-                if (playerController == null)
-                {
-                    Plugin.LogError("Failed to find PlayerControllerB component in parent of EmoteControllerPlayer.");
-                    return;
-                }
-                allPlayerEmoteControllers.Add(playerController, this);
-
-                //if (humanoidSkeleton != null) humanoidSkeleton.transform.parent = transform;
+                Plugin.LogError("Failed to find PlayerControllerB component in parent of EmoteControllerPlayer.");
+                return;
             }
-            catch (Exception e)
-            {
-                Debug.LogError("Failed to initialize EmoteControllerPlayer: " + playerController.name + ". Error: " + e);
-            }
+            allPlayerEmoteControllers.Add(playerController, this);
         }
 
 
@@ -142,7 +135,7 @@ namespace TooManyEmotes
 
         public override bool IsPerformingCustomEmote()
         {
-            return base.IsPerformingCustomEmote() && playerController.performingEmote;
+            return base.IsPerformingCustomEmote();
         }
 
 
@@ -162,10 +155,26 @@ namespace TooManyEmotes
             if (!CanPerformEmote())
                 return;
 
-            if (emote.randomEmotePool != null && emote.randomEmotePool.Count > 0)
-                emote = emote.randomEmotePool[UnityEngine.Random.Range(0, emote.randomEmotePool.Count)];
+            if (emote.emoteSyncGroup != null && emote.emoteSyncGroup.Count > 0)
+            {
+                if (emote.randomEmote)
+                    emote = emote.emoteSyncGroup[UnityEngine.Random.Range(0, emote.emoteSyncGroup.Count)];
+                else
+                    emote = emote.emoteSyncGroup[0];
+            }
 
-            //ForceSendAnimationUpdateLocal(emote);
+            // Playing an emote on top of the current emote will cycle emotes in the emote group
+            if (isPerformingEmote && performingEmote.emoteSyncGroup != null && performingEmote.emoteSyncGroup.Contains(emote))
+            {
+                int overrideEmoteId = performingEmote.emoteSyncGroup.IndexOf(performingEmote);
+                if (overrideEmoteId != -1)
+                {
+                    overrideEmoteId = (overrideEmoteId + 1) % performingEmote.emoteSyncGroup.Count;
+                    if (performingEmote.emoteSyncGroup[overrideEmoteId] != null)
+                        emote = performingEmote.emoteSyncGroup[overrideEmoteId];
+                }
+            }
+
             PerformEmote(emote);
             playerController.StartPerformingEmoteServerRpc();
             SyncPerformingEmoteManager.SendPerformingEmoteUpdateToServer(emote);
@@ -191,13 +200,33 @@ namespace TooManyEmotes
             if (!CanPerformEmote() || !emoteController.IsPerformingCustomEmote())
                 return;
 
-            //ForceSendAnimationUpdateLocal(emote, syncWithPlayer);
+            /*
+            short overrideEmoteId = -1;
+            if (emoteController.emoteSyncGroup != null)
+            {
+                emoteController.emoteSyncGroup.AddToEmoteSyncGroup(this);
+                emoteSyncGroup = emoteController.emoteSyncGroup;
+                if (!emoteController.performingEmote.randomEmote)
+                {
+                    overrideEmoteId = (short)emoteSyncGroup.syncGroup.IndexOf(this);
+                    if (overrideEmoteId != -1)
+                        overrideEmoteId %= (short)emoteController.performingEmote.emoteSyncGroup.Count;
+                }
+            }
+            */
             SyncWithEmoteController(emoteController);
-            playerController.StartPerformingEmoteServerRpc();
-            SyncPerformingEmoteManager.SendSyncEmoteUpdateToServer(emoteController);
-            timeSinceStartingEmote = 0;
-            playerController.performingEmote = true;
-            originalAnimator.SetInteger("emoteNumber", 1);
+            if (performingEmote != null)
+            {
+                playerController.StartPerformingEmoteServerRpc();
+
+                short overrideEmoteId = -1;
+                if (performingEmote.inEmoteSyncGroup)
+                    overrideEmoteId = (short)performingEmote.emoteSyncGroup.IndexOf(performingEmote);
+                SyncPerformingEmoteManager.SendSyncEmoteUpdateToServer(emoteController, overrideEmoteId);
+                timeSinceStartingEmote = 0;
+                playerController.performingEmote = true;
+                originalAnimator.SetInteger("emoteNumber", 1);
+            }
         }
 
 
@@ -219,12 +248,12 @@ namespace TooManyEmotes
         }
 
 
-        public override void PerformEmote(UnlockableEmote emote, AnimationClip overrideAnimationClip = null, float playAtTimeNormalized = 0)
+        public override bool PerformEmote(UnlockableEmote emote, int overrideEmoteId = -1)
         {
             if (playerController == null || (isLocalPlayer && (ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled)))
-                return;
+                return false;
 
-            base.PerformEmote(emote, overrideAnimationClip, playAtTimeNormalized);
+            bool success = base.PerformEmote(emote);
             if (isPerformingEmote)
             {
                 playerController.performingEmote = true;
@@ -232,6 +261,24 @@ namespace TooManyEmotes
                 if (isLocalPlayer)
                     ThirdPersonEmoteController.OnStartCustomEmoteLocal();
             }
+            return success;
+        }
+
+
+        public override bool SyncWithEmoteController(EmoteController emoteController, int overrideEmoteId = -1)
+        {
+            if (playerController == null || (isLocalPlayer && (ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled)))
+                return false;
+
+            bool success = base.SyncWithEmoteController(emoteController, overrideEmoteId);
+            if (isPerformingEmote)
+            {
+                playerController.performingEmote = true;
+                originalAnimator.SetInteger("emoteNumber", 0);
+                if (isLocalPlayer)
+                    ThirdPersonEmoteController.OnStartCustomEmoteLocal();
+            }
+            return success;
         }
 
 
@@ -242,6 +289,14 @@ namespace TooManyEmotes
 
             base.StopPerformingEmote();
             if (isLocalPlayer)
+                StartCoroutine(StopEmoteCameraEndOfFrame());
+        }
+
+
+        IEnumerator StopEmoteCameraEndOfFrame()
+        {
+            yield return new WaitForEndOfFrame();
+            if (!isPerformingEmote)
                 ThirdPersonEmoteController.OnStopCustomEmoteLocal();
         }
 

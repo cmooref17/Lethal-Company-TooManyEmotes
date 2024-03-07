@@ -10,9 +10,11 @@ using System.Runtime.Remoting.Contexts;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
+using TooManyEmotes.Audio;
 using TooManyEmotes.Compatibility;
 using TooManyEmotes.Config;
 using TooManyEmotes.Patches;
+using TooManyEmotes.Props;
 using Unity.Netcode;
 using UnityEditor.Analytics;
 using UnityEngine;
@@ -22,6 +24,7 @@ using UnityEngine.Animations.Rigging;
 namespace TooManyEmotes
 {
     [HarmonyPatch]
+    [DefaultExecutionOrder(-2)]
     public class EmoteController : MonoBehaviour
     {
         public static Dictionary<GameObject, EmoteController> allEmoteControllers = new Dictionary<GameObject, EmoteController>();
@@ -30,64 +33,68 @@ namespace TooManyEmotes
         public ulong emoteControllerId { get { return GetEmoteControllerId(); } }
         public string emoteControllerName { get { return GetEmoteControllerName(); } }
 
-
         public Transform metarig;
-        protected Vector3 originalMetarigLocalPosition = Vector3.zero;
-        public Animator originalAnimator;
-        public Transform humanoidSkeleton;
+        //protected Vector3 originalMetarigLocalPosition = Vector3.zero;
+        //public Animator originalAnimator;
 
+        public Transform humanoidSkeleton;
         public Animator animator;
         public AnimatorOverrideController animatorController;
 
-        //public AudioSource audioSource;
-
-        protected bool isPerformingEmote = false;
+        public bool isPerformingEmote = false;
         public UnlockableEmote performingEmote;
-
-        public List<Transform> groundContactPoints = new List<Transform>();
-        public float normalizedTimeAnimation { get { return animator.GetCurrentAnimatorStateInfo(0).normalizedTime; } }
+        public float currentAnimationTimeNormalized { get { return animator.GetCurrentAnimatorStateInfo(0).normalizedTime; } }
+        public float currentAnimationTime { get { var animationClip = GetCurrentAnimationClip(); return animationClip != null ? animationClip.length * (currentAnimationTimeNormalized % 1) : 0; } }
+        public int currentStateHash { get { return animator.GetCurrentAnimatorStateInfo(0).shortNameHash; } }
+        public bool isLooping { get { return animator.GetBool("loop"); } set { animator.SetBool("loop", value); } }
+        public bool isAnimatorInLoopingState { get { return animator.GetCurrentAnimatorStateInfo(0).IsName("emote_loop"); } }
 
         protected Dictionary<Transform, Transform> boneMap;
+        public List<Transform> groundContactPoints = new List<Transform>();
 
-        public bool isSimpleEmoteController { get { return GetType() == typeof(EmoteController); } }
+        public Transform propsParent;
+        public List<PropObject> emotingProps = new List<PropObject>();
 
+        public Transform ikLeftHand;
+        public Transform ikRightHand;
+        public Transform ikLeftFoot;
+        public Transform ikRightFoot;
+        public Transform ikHead;
+
+        public bool isSimpleEmoteController { get { return false; } }// { get { return GetType() == typeof(EmoteController); } }
+
+        public EmoteSyncGroup emoteSyncGroup;
+        public int emoteSyncId { get { return emoteSyncGroup != null ? emoteSyncGroup.syncId : -1; } }
+
+        public EmoteAudioSource personalEmoteAudioSource;
 
 
         protected virtual void Awake()
         {
-            if (Plugin.humanoidSkeletonPrefab == null || Plugin.humanoidAnimatorController == null || Plugin.humanoidAvatar == null)
+            if (initialized) return;
+            Initialize();
+        }
+
+
+        public virtual void Initialize(string sourceRootBoneName = "metarig")
+        {
+            if (initialized || Plugin.humanoidSkeletonPrefab == null || Plugin.humanoidAnimatorController == null || Plugin.humanoidAvatar == null)
                 return;
 
             try
             {
-                if (originalAnimator == null)
-                {
-                    foreach (var findAnimator in GetComponentsInChildren<Animator>())
-                    {
-                        if (findAnimator.name == "metarig")
-                        {
-                            originalAnimator = findAnimator;
-                            break;
-                        }
-                    }
-                }
-                if (originalAnimator == null)
-                {
-                    Debug.LogError("Failed to find animator component in children. Make sure you place this component on one of the parents of this character's metarig.");
-                    return;
-                }
+                metarig = FindChildRecursive(sourceRootBoneName, transform);
 
-                metarig = originalAnimator.transform;
-                Debug.Assert(metarig.parent != null);
-
-                originalMetarigLocalPosition = metarig.localPosition;
                 humanoidSkeleton = GameObject.Instantiate(Plugin.humanoidSkeletonPrefab, metarig.parent).transform;
                 humanoidSkeleton.name = "HumanoidSkeleton";
 
                 humanoidSkeleton.SetSiblingIndex(metarig.GetSiblingIndex() + 1);
 
-                animator = humanoidSkeleton.GetComponentInChildren<Animator>();
+                animator = humanoidSkeleton.GetComponent<Animator>();
                 Debug.Assert(animator != null);
+
+                var ikHandler = animator.gameObject.AddComponent<OnAnimatorIKHandler>();
+                ikHandler.SetParentEmoteController(this);
 
                 animatorController = new AnimatorOverrideController(Plugin.humanoidAnimatorController);
                 animator.runtimeAnimatorController = animatorController;
@@ -95,11 +102,25 @@ namespace TooManyEmotes
                 humanoidSkeleton.SetLocalPositionAndRotation(metarig.localPosition + Vector3.down * 0.025f, Quaternion.identity);
                 humanoidSkeleton.localScale = metarig.localScale;
 
-                allEmoteControllers.Add(gameObject, this);
-                initialized = true;
+                if (!isSimpleEmoteController)
+                {
+                    allEmoteControllers.Add(gameObject, this);
+                    personalEmoteAudioSource = humanoidSkeleton.gameObject.AddComponent<EmoteAudioSource>();
+                }
 
-                //audioSource = gameObject.AddComponent<AudioSource>();
-                //audioSource.dopplerLevel = 0;
+                if (propsParent == null)
+                {
+                    propsParent = transform.Find("props");
+                    if (propsParent == null)
+                    {
+                        propsParent = new GameObject("props").transform;
+                        propsParent.parent = humanoidSkeleton;
+                        propsParent.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+                        propsParent.localScale = Vector3.one;
+                    }
+                }
+
+                initialized = true;
             }
             catch (Exception e)
             {
@@ -113,11 +134,15 @@ namespace TooManyEmotes
             if (!initialized)
                 return;
 
-            if (!isSimpleEmoteController)
-                CreateBoneMap();
-            else
-                Debug.LogWarning("Using the base emote controller. Remember that when doing this, the bonemap will need to be built manually.");
+            if (boneMap == null)
+            {
+                if (!isSimpleEmoteController)
+                    CreateBoneMap();
+                else
+                    Debug.LogWarning("Using the base emote controller. Remember that when doing this, the bonemap will need to be built manually.");
+            }
 
+            FindIkBones();
             //AddGroundContactPoints();
         }
 
@@ -127,13 +152,15 @@ namespace TooManyEmotes
 
         protected virtual void OnDisable()
         {
-            if (initialized && isPerformingEmote)
+            if (isPerformingEmote)
                 StopPerformingEmote();
         }
 
 
         protected virtual void OnDestroy()
         {
+            if (isPerformingEmote)
+                StopPerformingEmote();
             allEmoteControllers?.Remove(gameObject);
         }
 
@@ -153,10 +180,7 @@ namespace TooManyEmotes
             if (isPerformingEmote)
             {
                 if (CheckIfShouldStopEmoting())
-                {
-                    Plugin.LogWarning("OnCheckIfShouldStopEmoting. Stopping emote. " + name + " NormTime: " + normalizedTimeAnimation);
                     StopPerformingEmote();
-                }
             }
 
             if (animator == null || animatorController == null || boneMap == null || !isPerformingEmote)
@@ -168,14 +192,15 @@ namespace TooManyEmotes
 
         protected virtual void TranslateAnimation()
         {
-            if (boneMap == null || performingEmote == null || boneMap.Count <= 0)
+            if (performingEmote == null || boneMap == null || boneMap.Count <= 0)
                 return;
-
 
             foreach (var pair in boneMap)
             {
                 var sourceBone = pair.Key;
                 var targetBone = pair.Value;
+
+                if (sourceBone == null || targetBone == null) continue;
 
                 targetBone.transform.position = sourceBone.transform.position;
                 targetBone.transform.rotation = sourceBone.transform.rotation;
@@ -188,19 +213,7 @@ namespace TooManyEmotes
         {
             if (isPerformingEmote)
             {
-                return performingEmote == null || (!performingEmote.loopable && !performingEmote.isPose && normalizedTimeAnimation >= 1);
-                /*
-                if (performingEmote == null || (!performingEmote.loopable && !performingEmote.isPose && normalizedTimeAnimation >= 1))
-                {
-                    if (performingEmote == null)
-                        Plugin.LogWarning("Stopping emote. Loaded emote is null. Ignore this message.");
-                    else if (!performingEmote.loopable && !performingEmote.isPose && normalizedTimeAnimation >= 1)
-                        Plugin.LogWarning("Stopping emote. Emote has ended at time: " + normalizedTimeAnimation + " Loopable: " + performingEmote.loopable + " IsPose: " + performingEmote.isPose + " Ignore this message.");
-                    else
-                        Plugin.LogWarning("Why are we stopping the emote? Ignore this message.");
-                    return true;
-                }
-                */
+                return performingEmote == null || (!performingEmote.loopable && !performingEmote.isPose && currentAnimationTimeNormalized >= 1);
             }
             return false;
         }
@@ -222,78 +235,208 @@ namespace TooManyEmotes
         public virtual bool IsPerformingCustomEmote() { return isPerformingEmote && performingEmote != null; }
 
 
-        public virtual bool CanPerformEmote() => animator != null && animator.enabled;
+        public virtual bool CanPerformEmote() => initialized && animator != null && animator.enabled;
 
 
-        public virtual void PerformEmote(UnlockableEmote emote, AnimationClip overrideAnimationClip = null, float playAtTimeNormalized = 0)
+        public virtual bool PerformEmote(UnlockableEmote emote, int overrideEmoteId = -1)
         {
             if (!initialized || !CanPerformEmote())
-                return;
+                return false;
 
-            AnimationClip animationClip = emote.animationClip;
-            if (overrideAnimationClip != null)
-            {
-                if (emote == null)
-                {
-                    Debug.LogError("Failed to perform emote with overrideAnimationClip while passed emote is null.");
-                    return;
-                }
-                if (!emote.ClipIsInEmote(overrideAnimationClip))
-                {
-                    Debug.LogError("Failed to perform emote where overrideAnimationClip is not the start or loop clip of the passed emote. Clip: " + overrideAnimationClip.name + " Emote: " + emote.emoteName);
-                    return;
-                }
-                animationClip = overrideAnimationClip;
-            }
-
-            playAtTimeNormalized %= 1;
             if (!isSimpleEmoteController)
-                Plugin.Log("[" + name + "] Performing emote: " + emote.emoteName + (animationClip == overrideAnimationClip ? " OverrideClip: " + animationClip.name : "") + (playAtTimeNormalized > 0 ? " PlayAtTime: " + playAtTimeNormalized : ""));
-            animator.avatar = emote.humanoidAnimation ? Plugin.humanoidAvatar : null;
+                Plugin.Log("[" + emoteControllerName + "] Performing emote: " + emote.emoteName);
+
+            if (isPerformingEmote)
+                StopPerformingEmote();
+
+            if (emote.emoteSyncGroup != null)
+            {
+                if (overrideEmoteId >= 0 && overrideEmoteId < emote.emoteSyncGroup.Count && emote.emoteSyncGroup[overrideEmoteId] != null)
+                    emote = emote.emoteSyncGroup[overrideEmoteId];
+                else if (emote.randomEmote)
+                {
+                    int randomIndex = UnityEngine.Random.Range(0, emote.emoteSyncGroup.Count);
+                    var syncEmote = emote.emoteSyncGroup[randomIndex];
+                    if (syncEmote != null)
+                        emote = syncEmote;
+                }
+            }
 
             animatorController["emote"] = emote.animationClip;
             if (emote.transitionsToClip != null)
                 animatorController["emote_loop"] = emote.transitionsToClip;
 
-            //if (!isSimpleEmoteController) Plugin.LogWarning("EMOTE: " + emote.emoteName + " SET EMOTE CLIP: " + animatorController["emote"].name + " SET LOOP CLIP: " + (animatorController["emote_loop"] != null ? animatorController["emote_loop"].name : "NULL"));
-
             animator.SetBool("loop", emote.transitionsToClip != null);
-            animator.Play(animationClip == emote.transitionsToClip ? "emote_loop" : "emote", 0, playAtTimeNormalized);
+            animator.Play("emote", 0, 0);
+            animator.Update(0);
 
             performingEmote = emote;
             isPerformingEmote = true;
-        }
 
+            Plugin.Log("Performing emote: " + (performingEmote == null ? "NULL" : performingEmote.emoteName));
 
-        public void PerformEmoteDelayed(UnlockableEmote emote, float delayForSeconds, AnimationClip overrideAnimationClip = null, float playAtTimeNormalized = 0)
-        {
-            IEnumerator PerformAfterDelay()
-            {
-                yield return new WaitForSeconds(delayForSeconds);
-                if (CanPerformEmote())
-                    PerformEmote(emote, overrideAnimationClip, playAtTimeNormalized);
-            }
-            StartCoroutine(PerformAfterDelay());
-        }
+            // Emote on props (if they exist)
+            PerformPropEmotes();
 
-
-        public void SyncWithEmoteController(EmoteController emoteController)
-        {
-            if (emoteController == null || !emoteController.IsPerformingCustomEmote())
-                return;
+            // Create emote sync group and try to play emote audio
             if (!isSimpleEmoteController)
-                Plugin.Log("[" + name + "] Attempting to sync with emote controller: " + emoteController.name + " Emote: " + emoteController.performingEmote.emoteName + " PlayEmoteAtTimeNormalized: " + (emoteController.normalizedTimeAnimation % 1));
-            PerformEmote(emoteController.performingEmote, emoteController.GetCurrentAnimationClip(), emoteController.normalizedTimeAnimation);
+                CreateEmoteSyncGroup();
+
+            return true;
+        }
+
+
+        public virtual bool SyncWithEmoteController(EmoteController emoteController, int overrideEmoteId = -1)
+        {
+            if (!initialized || !CanPerformEmote() || emoteController == null || !emoteController.IsPerformingCustomEmote())
+                return false;
+
+            if (!isSimpleEmoteController)
+                Plugin.Log("[" + emoteControllerName + "] Attempting to sync with emote controller: " + emoteController.name + " Emote: " + emoteController.performingEmote.emoteName + " PlayEmoteAtTimeNormalized: " + (emoteController.currentAnimationTimeNormalized % 1));
+
+            if (isPerformingEmote)
+            {
+                //Plugin.LogWarning("Syncing with emote controller while performing emote already. Ignore this.");
+                //if (performingEmote != null) Plugin.LogWarning("Emote: " + performingEmote.emoteName);
+                StopPerformingEmote();
+            }
+
+            var syncGroup = emoteController.emoteSyncGroup;
+
+            if (syncGroup == null)
+                Plugin.LogWarning("[" + emoteControllerName + "] Attempted to sync with emote controller who is not a part of an emote sync group. Continuing anyways.");
+
+            var emote = emoteController.performingEmote;
+            if (emote.emoteSyncGroup != null)
+            {
+                if (overrideEmoteId >= 0 && overrideEmoteId < emote.emoteSyncGroup.Count && emote.emoteSyncGroup[overrideEmoteId] != null)
+                    emote = emote.emoteSyncGroup[overrideEmoteId];
+                else if (emote.randomEmote)
+                {
+                    int randomIndex = UnityEngine.Random.Range(0, emote.emoteSyncGroup.Count);
+                    var syncEmote = emote.emoteSyncGroup[randomIndex];
+                    if (syncEmote != null)
+                        emote = syncEmote;
+                }
+                else
+                {
+                    bool setEmote = false;
+                    foreach (var syncEmote in emote.emoteSyncGroup)
+                    {
+                        if (!syncGroup.leadEmoteControllerByEmote.ContainsKey(syncEmote) || syncGroup.leadEmoteControllerByEmote[emote] == null)
+                        {
+                            emote = syncEmote;
+                            setEmote = true;
+                            break;
+                        }
+                    }
+                    if (!setEmote)
+                    {
+                        int index = emote.emoteSyncGroup.IndexOf(emote);
+                        if (index >= 0)
+                        {
+                            index = (index + 1) % emote.emoteSyncGroup.Count;
+                            emote = emote.emoteSyncGroup[index];
+                        }
+                    }
+                }
+            }
+
+            var animationClip = emoteController.GetCurrentAnimationClip();
+            if (!emote.ClipIsInEmote(animationClip))
+            {
+                Plugin.LogError("[" + emoteControllerName + "] Attempted to sync with emote controller whose animation clip is not a part of their performing emote? Emote: " + emoteController.performingEmote + " AnimationClip: " + animationClip.name);
+                return false;
+            }
+
+            animatorController["emote"] = emote.animationClip;
+            if (emote.transitionsToClip != null)
+                animatorController["emote_loop"] = emote.transitionsToClip;
+
+            float playAtTimeNormalized = emoteController.currentAnimationTimeNormalized % 1;
+            animator.SetBool("loop", emote.transitionsToClip != null);
+            animator.Play(animationClip == emote.transitionsToClip ? "emote_loop" : "emote", 0, playAtTimeNormalized);
+            animator.Update(0);
+
+            performingEmote = emote;
+            isPerformingEmote = true;
+
+            // Emote on props (if they exist)
+            PerformPropEmotes();
+
+            // Create emote sync group and try to play emote audio
+            if (!isSimpleEmoteController && emoteController.emoteSyncGroup != null)
+                AddToEmoteSyncGroup(emoteController.emoteSyncGroup);
+
+            return true;
+        }
+
+
+        protected void PerformPropEmotes()
+        {
+            if (propsParent != null && performingEmote.propNamesInEmote != null)
+                LoadEmoteProps();
+            if (emotingProps != null)
+            {
+                foreach (var prop in emotingProps)
+                    prop.SyncWithEmoteController(this);
+            }
+        }
+
+
+        protected void LoadEmoteProps()
+        {
+            if (performingEmote.propNamesInEmote == null)
+                return;
+
+            UnloadEmoteProps();
+
+            foreach (string propName in performingEmote.propNamesInEmote)
+            {
+                var propObject = EmotePropManager.LoadEmoteProp(propName);
+                propObject.SetPropLayer(6);
+                emotingProps.Add(propObject);
+                propObject.transform.parent = propsParent;
+                propObject.transform.localPosition = Vector3.zero;
+                propObject.transform.localRotation = Quaternion.identity;
+            }
+        }
+
+
+        protected void UnloadEmoteProps()
+        {
+            if (emotingProps != null)
+            {
+                foreach (var prop in emotingProps)
+                {
+                    prop.transform.parent = EmotePropManager.propPoolParent;
+                    prop.active = false;
+                }
+                emotingProps.Clear();
+            }
         }
 
 
         public virtual void StopPerformingEmote()
         {
-            if (!isSimpleEmoteController)
-                Plugin.Log(string.Format("[" + name + "] Stopping emote."));
+            if (!initialized)
+                return;
+
             isPerformingEmote = false;
-            metarig.localPosition = new Vector3(metarig.localPosition.x, 0, metarig.localPosition.z);
-            //audioSource.Stop();
+            if (!isSimpleEmoteController)
+                Plugin.Log(string.Format("[" + emoteControllerName + "] Stopping emote."));
+
+            animatorController["emote"] = null;
+            animatorController["emote_loop"] = null;
+
+            RemoveFromEmoteSyncGroup();
+            UnloadEmoteProps();
+
+            if (ikLeftHand != null) ikLeftHand.localPosition = Vector3.zero;
+            if (ikRightHand != null) ikRightHand.localPosition = Vector3.zero;
+            if (ikLeftFoot != null) ikLeftFoot.localPosition = Vector3.zero;
+            if (ikRightFoot != null) ikRightFoot.localPosition = Vector3.zero;
+            if (ikHead != null) ikHead.localPosition = Vector3.zero;
         }
 
 
@@ -313,7 +456,71 @@ namespace TooManyEmotes
         protected virtual void CreateBoneMap() { }
 
 
+        public void CreateBoneMap(List<string> sourceBoneNames, List<string> targetBoneNames = null)
+        {
+            boneMap = BoneMapper.CreateBoneMap(humanoidSkeleton, metarig, sourceBoneNames, targetBoneNames);
+        }
+
+
+        protected virtual void FindIkBones()
+        {
+            var rootIkBone = FindChildRecursive("root_ik");
+            if (rootIkBone == null)
+            {
+                Plugin.LogError("Failed to find root ik bone called \"root_ik\" in humanoid skeleton: " + emoteControllerName);
+                return;
+            }
+
+            ikLeftHand = rootIkBone.Find("hand_ik_l");
+            ikRightHand = rootIkBone.Find("hand_ik_r");
+            ikLeftFoot = rootIkBone.Find("foot_ik_l");
+            ikRightFoot = rootIkBone.Find("foot_ik_r");
+            ikHead = rootIkBone.Find("head_ik");
+        }
+
+
+        protected virtual Transform FindChildRecursive(string objectName, Transform root = null)
+        {
+            if (root == null)
+                root = humanoidSkeleton;
+
+            if (root.name == objectName)
+                return root;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                var child = root.GetChild(i);
+                var bone = FindChildRecursive(objectName, child);
+                if (bone != null)
+                    return bone;
+            }
+            return null;
+        }
+
+
         protected virtual ulong GetEmoteControllerId() => 0;
         protected virtual string GetEmoteControllerName() => name;
+
+
+        protected void CreateEmoteSyncGroup()
+        {
+            emoteSyncGroup = EmoteSyncGroup.CreateEmoteSyncGroup(this);
+        }
+
+        
+        protected void AddToEmoteSyncGroup(EmoteSyncGroup emoteSyncGroup)
+        {
+            Plugin.Log("Adding to emote sync group with id: " + emoteSyncGroup.syncId);
+            emoteSyncGroup.AddToEmoteSyncGroup(this);
+            this.emoteSyncGroup = emoteSyncGroup;
+        }
+
+
+        protected void RemoveFromEmoteSyncGroup()
+        {
+            if (emoteSyncGroup != null)
+                emoteSyncGroup.RemoveFromEmoteSyncGroup(this);
+            emoteSyncGroup = null;
+        }
     }
 }

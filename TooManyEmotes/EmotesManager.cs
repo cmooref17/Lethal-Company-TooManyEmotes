@@ -11,7 +11,6 @@ using System.IO;
 using BepInEx;
 using UnityEngine.InputSystem;
 using UnityEngine.Animations.Rigging;
-using UnityEditor;
 using System.Security.Cryptography;
 using System.Collections;
 using Unity.Netcode;
@@ -51,7 +50,6 @@ namespace TooManyEmotes
             allEmotesTier2 = new List<UnlockableEmote>();
             allEmotesTier3 = new List<UnlockableEmote>();
 
-            var randomEmotePools = new Dictionary<string, List<UnlockableEmote>>();
             var syncEmoteGroups = new Dictionary<string, List<UnlockableEmote>>();
 
             for (int i = 0; i < Plugin.customAnimationClips.Count; i++)
@@ -66,59 +64,118 @@ namespace TooManyEmotes
                     rarity = 0
                 };
 
-                emote.rarity = Plugin.animationClipsTier1.Contains(clip) ? 1 :
+                emote.rarity = 
+                    Plugin.animationClipsTier1.Contains(clip) ? 1 :
                     Plugin.animationClipsTier2.Contains(clip) ? 2 :
                     Plugin.animationClipsTier3.Contains(clip) ? 3 : 0;
+
+                if (Plugin.complementaryAnimationClips.Contains(clip))
+                    emote.complementary = true;
+
 
                 if (emote.emoteName.Contains("_start") && !emote.emoteName.Contains("_start_"))
                 {
                     string emoteLoopName = emote.emoteName.Replace("_start", "_loop");
                     var emoteLoop = Plugin.customAnimationClipsLoopDict[emoteLoopName];
-                    emote.transitionsToClip = emoteLoop;
-                    emote.emoteName = emote.emoteName.Replace("_start", "");
+                    if (emoteLoop != null)
+                    {
+                        emote.transitionsToClip = emoteLoop;
+                        emote.emoteName = emote.emoteName.Replace("_start", "");
+                        emote.animationClip.name = emote.emoteName + "_start";
+                        emote.transitionsToClip.name = emote.emoteName + "_loop";
+                    }
                 }
-                if (emote.emoteName.Contains("_pose"))
+                else if (emote.emoteName.Contains("_pose"))
                 {
-                    emote.emoteName = emote.emoteName.Replace("_pose", "");
                     emote.isPose = true;
+                    emote.emoteName = emote.emoteName.Replace("_pose", "");
+                    emote.animationClip.name = emote.emoteName;
                 }
-                if (emote.emoteName.Contains("_sync"))
+
+
+                // Set emote sync group (if exists)
+                if (emote.emoteName.Contains("."))
                 {
-                    emote.emoteSyncGroupName = emote.emoteName.Substring(0, emote.emoteName.IndexOf("_sync"));
-                    emote.emoteName = emote.emoteName.Replace("_sync", "");
+                    var args = emote.emoteName.Split('.');
+                    if (args.Length > 0 && args[0].Length > 0)
+                    {
+                        if (args.Length > 3)
+                        {
+                            Plugin.LogError("Error parsing emote name: " + emote.emoteName + ". Correct format: \"emote_group.optional_arg.emote_name\"");
+                            continue;
+                        }
+                        emote.emoteSyncGroupName = args[0];
+                        emote.emoteName = emote.emoteSyncGroupName + "." + args[args.Length - 1];
+                        emote.displayName = emote.emoteSyncGroupName;
 
-                    int index = emote.emoteSyncGroupName.IndexOf("_");
-                    if (index >= 0)
-                        emote.emoteSyncGroupName = emote.emoteSyncGroupName.Substring(index + 1, emote.emoteSyncGroupName.Length - index - 1);
-                    if (syncEmoteGroups.TryGetValue(emote.emoteSyncGroupName, out var syncGroup))
-                    {
-                        if (!syncGroup.Contains(emote))
-                            syncGroup.Add(emote);
+                        if (emote.transitionsToClip == null)
+                            emote.animationClip.name = emote.emoteName;
+                        else
+                        {
+                            emote.animationClip.name = emote.emoteName + "_start";
+                            emote.transitionsToClip.name = emote.emoteName + "_loop";
+
+                        }
+                        if (!syncEmoteGroups.TryGetValue(emote.emoteSyncGroupName, out emote.emoteSyncGroup))
+                        {
+                            emote.emoteSyncGroup = new List<UnlockableEmote>();
+                            syncEmoteGroups.Add(emote.emoteSyncGroupName, emote.emoteSyncGroup);
+                        }
+
+                        // Are the emotes in the group ordered?
+                        if (args.Length == 3 && args[1].ToLower().Contains("layer_"))
+                        {
+                            clip.name = clip.name.Replace("." + args[1], "");
+                            if (emote.transitionsToClip != null)
+                                emote.transitionsToClip.name = emote.transitionsToClip.name.Replace("." + args[1], "");
+                            if (int.TryParse(args[1].Substring(6), out int layerNumber))
+                            {
+                                emote.purchasable = layerNumber == 0;
+                                while (emote.emoteSyncGroup.Count <= layerNumber)
+                                    emote.emoteSyncGroup.Add(null);
+                                emote.emoteSyncGroup[layerNumber] = emote;
+                            }
+                            else
+                            {
+                                Plugin.LogError("Failed to parse emote layer number in arg: " + args[1] + ". Emote will not be added.");
+                                continue;
+                                //emote.emoteSyncGroup.Add(emote);
+                                //emote.purchasable = emote.emoteSyncGroup.Count == 1;
+                            }
+                        }
+                        else
+                        {
+                            emote.emoteSyncGroup.Add(emote);
+                            emote.purchasable = emote.emoteSyncGroup.Count == 1;
+                            if (args.Length == 3 && args[1].ToLower() == "random")
+                            {
+                                emote.randomEmote = true;
+                                clip.name = clip.name.Replace("." + args[1], "");
+                                if (emote.transitionsToClip != null)
+                                    emote.transitionsToClip.name = emote.transitionsToClip.name.Replace("." + args[1], "");
+                            }
+                        }
                     }
-                    else
-                    {
-                        syncGroup = new List<UnlockableEmote>() { emote };
-                        syncEmoteGroups.Add(emote.emoteSyncGroupName, syncGroup);
-                    }
-                    emote.emoteSyncGroup = syncGroup;
                 }
-                if (emote.emoteName.Contains("_random"))
+
+                if (emote.emoteName.Contains("_start") && !emote.emoteName.Contains("_start_"))
                 {
-                    emote.randomEmotePoolName = emote.emoteName.Substring(0, emote.emoteName.IndexOf("_random"));
-                    if (!randomEmotePools.ContainsKey(emote.randomEmotePoolName))
-                        randomEmotePools.Add(emote.randomEmotePoolName, new List<UnlockableEmote> { emote });
-                    else
+                    string emoteLoopName = emote.emoteName.Replace("_start", "_loop");
+                    var emoteLoop = Plugin.customAnimationClipsLoopDict[emoteLoopName];
+                    if (emoteLoop != null)
                     {
-                        emote.purchasable = false;
-                        randomEmotePools[emote.randomEmotePoolName].Add(emote);
+                        emote.transitionsToClip = emoteLoop;
+                        emote.emoteName = emote.emoteName.Replace("_start", "");
+                        emote.animationClip.name = emote.emoteName + "_start";
+                        emote.transitionsToClip.name = emote.emoteName + "_loop";
                     }
-                    emote.randomEmotePool = randomEmotePools[emote.randomEmotePoolName];
-
-                    emote.emoteName = emote.emoteName.Replace("_random", "");
-                    emote.displayName = emote.randomEmotePoolName;
                 }
-
-                //if (AudioManager.AudioExists(emote.emoteName)) { emote.LoadAudioClip(); }
+                else if (emote.emoteName.Contains("_pose"))
+                {
+                    emote.isPose = true;
+                    emote.emoteName = emote.emoteName.Replace("_pose", "");
+                    emote.animationClip.name = emote.emoteName;
+                }
 
                 if (emote.transitionsToClip != null || emote.animationClip.isLooping || emote.isPose || emote.emoteSyncGroup != null)
                     emote.canSyncEmote = true;

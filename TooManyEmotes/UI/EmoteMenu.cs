@@ -25,8 +25,9 @@ using TooManyEmotes.Input;
 using UnityEngine.Rendering.HighDefinition;
 using System.Linq.Expressions;
 using TooManyEmotes.Compatibility;
+using TooManyEmotes.Audio;
 
-namespace TooManyEmotes
+namespace TooManyEmotes.UI
 {
     [HarmonyPatch]
     public static class EmoteMenuManager
@@ -37,18 +38,9 @@ namespace TooManyEmotes
         public static RectTransform menuTransform;
         public static CanvasGroup canvasGroup;
         public static RawImage renderTextureImageUI;
+        public static RenderTexture renderTexture;
         public static TextMeshPro swapPageText;
         public static TextMeshPro currentEmoteText;
-
-        public static RenderTexture renderTexture;
-        public static Camera renderingCamera;
-
-        public static GameObject previewPlayerObject;
-        public static SkinnedMeshRenderer previewPlayerMesh;
-        public static Animator previewPlayerAnimator;
-        public static AnimatorOverrideController previewPlayerAnimatorController;
-        public static int playerLayer = LayerMask.NameToLayer("Player");
-        public static int playerLayerMask { get { return 1 << playerLayer; } }
 
         public static float hoveredAlpha = 0.75f;
         public static float unhoveredAlpha = 0.75f;
@@ -59,7 +51,7 @@ namespace TooManyEmotes
         public static int hoveredEmoteIndex { get { return hoveredEmoteUIIndex >= 0 ? hoveredEmoteUIIndex + 8 * currentPage : -1; } }
         public static int currentPage = 0;
         public static int numPages { get { return currentLoadoutEmotesList != null ? Mathf.Max((currentLoadoutEmotesList.Count - 1) / emoteUIElementsList.Count, 0) + 1 : 0; } }
-        public static UnlockableEmote previewingEmote { get { return currentLoadoutEmotesList != null && hoveredEmoteIndex >= 0 && hoveredEmoteIndex < currentLoadoutEmotesList.Count ? currentLoadoutEmotesList[hoveredEmoteIndex] : null; } }
+        public static UnlockableEmote previewingEmote { get { return currentLoadoutEmotesList != null && hoveredEmoteIndex >= 0 && hoveredEmoteIndex < currentLoadoutEmotesList.Count ? (currentLoadoutEmotesList[hoveredEmoteIndex].inEmoteSyncGroup ? currentLoadoutEmotesList[hoveredEmoteIndex].emoteSyncGroup[0] : currentLoadoutEmotesList[hoveredEmoteIndex]) : null; } }
 
         public static List<UnlockableEmote> currentLoadoutEmotesList { get { return emoteLoadouts != null && currentLoadoutIndex >= 0 && currentLoadoutIndex < emoteLoadouts.Count ? emoteLoadouts[currentLoadoutIndex] : null; } }
 
@@ -75,6 +67,10 @@ namespace TooManyEmotes
         public static bool usingController { get { return StartOfRound.Instance.localPlayerUsingController; } }
         static bool firstTimeOpeningMenu;
 
+        static Toggle muteEmoteToggle;
+        static Slider emoteVolumeSlider;
+        static bool updatedAudioPreferences = false;
+
 
         [HarmonyPatch(typeof(HUDManager), "Start")]
         [HarmonyPostfix]
@@ -83,17 +79,25 @@ namespace TooManyEmotes
             if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled || Plugin.radialMenuPrefab == null)
                 return;
 
+            AnimationPreviewer.enabled = false;
             firstTimeOpeningMenu = true;
             menuGameObject = GameObject.Instantiate(Plugin.radialMenuPrefab, __instance.HUDContainer.transform.parent);
             menuGameObject.transform.SetAsLastSibling();
             menuGameObject.name = "EmotesRadialMenu";
             menuTransform = menuGameObject.GetComponent<RectTransform>();
             renderTextureImageUI = menuGameObject.GetComponentInChildren<RawImage>();
-            Transform emoteUIElementsParent = menuTransform.Find("RadialMenuUI/RadialElements").transform;
-            swapPageText = menuTransform.Find("RadialMenuUI/RadialBase/SwapPageText").GetComponent<TextMeshPro>();
-            currentEmoteText = menuTransform.Find("RadialMenuUI/RadialBase/CurrentEmoteText").GetComponent<TextMeshPro>();
+
+            renderTexture = new RenderTexture(1024, 1024, 24);
+            renderTexture.format = RenderTextureFormat.ARGB32;
+            renderTexture.graphicsFormat = UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_UNorm;
+            renderTexture.depthStencilFormat = UnityEngine.Experimental.Rendering.GraphicsFormat.D24_UNorm_S8_UInt;
+
+            Transform emoteUIElementsParent = menuTransform.Find("MenuUI/RadialMenu/RadialElements").transform;
+            swapPageText = menuTransform.Find("MenuUI/RadialMenu/RadialBase/SwapPageText").GetComponent<TextMeshPro>();
+            currentEmoteText = menuTransform.Find("MenuUI/RadialMenu/RadialBase/CurrentEmoteText").GetComponent<TextMeshPro>();
             currentEmoteText.text = "";
             emoteUIElementsList = new List<EmoteUIElement>();
+
 
             controlTipLines = new TextMeshProUGUI[HUDManager.Instance.controlTipLines.Length];
 
@@ -126,9 +130,12 @@ namespace TooManyEmotes
 
             }
 
+            Transform emoteLoadoutsUIParent = menuTransform.Find("MenuUI/EmoteLoadouts").transform;
+            Transform additionalUIParent = menuTransform.Find("MenuUI/AdditionalUI").transform;
+            emoteLoadoutsUIParent.gameObject.AddComponent<AdditionalPanelUI>();
+            additionalUIParent.gameObject.AddComponent<AdditionalPanelUI>();
+
             EmoteLoadoutUIElement.uiCount = 0;
-            Transform emoteLoadoutsUIParent = menuTransform.Find("RadialMenuUI/EmoteLoadouts").transform;
-            emoteLoadoutsUIParent.gameObject.AddComponent<EmoteLoadoutUIContainer>();
             emoteLoadoutUIElementsList = new List<EmoteLoadoutUIElement>();
             emoteLoadoutUIElementsList.Add(emoteLoadoutsUIParent.GetChild(0).gameObject.AddComponent<EmoteLoadoutUIElement>());
             emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent));
@@ -164,7 +171,15 @@ namespace TooManyEmotes
             if (currentLoadoutIndex < 0 || currentLoadoutIndex >= emoteLoadouts.Count)
                 currentLoadoutIndex = emoteLoadouts.Count - 1;
 
-            InitializeAnimationRenderer();
+            muteEmoteToggle = additionalUIParent.Find("MasterMutePanel")?.GetComponentInChildren<Toggle>();
+            muteEmoteToggle.onValueChanged.AddListener(delegate { OnUpdateToggleMuteEmote(muteEmoteToggle); });
+            emoteVolumeSlider = additionalUIParent.Find("AudioVolumePanel")?.GetComponentInChildren<Slider>();
+            emoteVolumeSlider.onValueChanged.AddListener(delegate { OnUpdateEmoteVolume(emoteVolumeSlider); });
+
+            muteEmoteToggle.isOn = AudioManager.muteEmoteAudio;
+            emoteVolumeSlider.value = Mathf.Clamp(AudioManager.emoteVolumeMultiplier, 0, emoteVolumeSlider.maxValue);
+
+            AnimationPreviewer.InitializeAnimationRenderer();
             menuGameObject.SetActive(false);
         }
 
@@ -173,10 +188,10 @@ namespace TooManyEmotes
         [HarmonyPostfix]
         public static void GetInput()
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled || previewPlayerAnimatorController == null || !isMenuOpen)
+            if (!isMenuOpen || ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled)
                 return;
 
-            if (EmoteLoadoutUIContainer.hovered || hoveredLoadoutUIIndex != -1)
+            if (AdditionalPanelUI.hovered || hoveredLoadoutUIIndex != -1)
             {
                 if (hoveredEmoteUIIndex != -1)
                     OnHoveredNewElement(-1);
@@ -241,7 +256,16 @@ namespace TooManyEmotes
             if (index != -1)
                 emoteUIElementsList[index].OnHover(true);
             hoveredEmoteUIIndex = index;
-            SetPreviewAnimation(hoveredEmoteIndex);
+
+            AnimationPreviewer.SetPreviewAnimation(previewingEmote);
+            if (previewingEmote != null)
+            {
+                currentEmoteText.text = previewingEmote.displayNameColorCoded + (EmotesManager.allFavoriteEmotes.Contains(previewingEmote.emoteName) ? " *" : "");
+            }
+            else
+            {
+                currentEmoteText.text = "";
+            }
         }
 
 
@@ -331,48 +355,6 @@ namespace TooManyEmotes
         }
 
 
-        public static void SetPreviewAnimation(int emoteIndex)
-        {
-            if (emoteIndex >= 0 && emoteIndex < currentLoadoutEmotesList.Count && currentLoadoutEmotesList[emoteIndex] != null)
-            {
-                UnlockableEmote emote = currentLoadoutEmotesList[emoteIndex];
-                previewPlayerAnimator.avatar = emote.humanoidAnimation ? Plugin.humanoidAvatar : null;
-                previewPlayerObject.SetActive(true);
-                renderingCamera.enabled = true;
-
-                previewPlayerAnimator.SetBool("loop", emote.transitionsToClip != null);
-                previewPlayerAnimatorController["emote"] = emote.animationClip;
-
-                if (emote.transitionsToClip != null)
-                    previewPlayerAnimatorController["emote_loop"] = emote.transitionsToClip;
-
-                previewPlayerAnimator.Play("emote", 0, 0);
-
-                currentEmoteText.text = emote.displayNameColorCoded + (EmotesManager.allFavoriteEmotes.Contains(emote.emoteName) ? " *" : "");
-            }
-            else
-            {
-                previewPlayerAnimatorController["emote"] = null;
-                previewPlayerAnimatorController["emote_loop"] = null;
-                previewPlayerObject.SetActive(false);
-                currentEmoteText.text = "";
-                DisableRenderCameraNextFrame();
-            }
-        }
-
-
-        public static void DisableRenderCameraNextFrame()
-        {
-            IEnumerator DisableRenderCameraNextFrameCoroutine()
-            {
-                yield return null;
-                renderingCamera.enabled = false;
-            }
-
-            HUDManager.Instance.StartCoroutine(DisableRenderCameraNextFrameCoroutine());
-        }
-
-
         public static void SetCurrentEmoteLoadout(int loadoutIndex)
         {
             if (currentLoadoutIndex == loadoutIndex)
@@ -388,7 +370,11 @@ namespace TooManyEmotes
             if (!isMenuOpen || previewingEmote == null)
                 return;
 
-            string emoteName = previewingEmote.emoteName;
+            var emote = previewingEmote;
+            if (previewingEmote.emoteSyncGroup != null && previewingEmote.emoteSyncGroup.Count > 0)
+                emote = previewingEmote.emoteSyncGroup[0];
+
+            string emoteName = emote.emoteName;
             if (EmotesManager.allFavoriteEmotes.Contains(emoteName))
                 EmotesManager.allFavoriteEmotes.Remove(emoteName);
             else
@@ -418,11 +404,12 @@ namespace TooManyEmotes
                 SetCurrentEmoteLoadout(emoteLoadouts[0].Count > 0 ? 0 : currentLoadoutIndex);
                 firstTimeOpeningMenu = false;
             }
+            updatedAudioPreferences = false;
             menuGameObject.SetActive(true);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             quickMenuManager.isMenuOpen = true;
-            previewPlayerMesh.material = localPlayerController.thisPlayerModel.material;
+            AnimationPreviewer.UpdatePlayerSuit();
             currentThumbstickPosition = Vector2.zero;
 
             foreach (var controlTipLine in HUDManager.Instance.controlTipLines)
@@ -441,6 +428,14 @@ namespace TooManyEmotes
             menuGameObject.SetActive(false);
             quickMenuManager.CloseQuickMenu();
             OnHoveredNewLoadoutElement(-1);
+            AnimationPreviewer.SetPreviewAnimation(null);
+            AdditionalPanelUI.hovered = false;
+            
+            if (updatedAudioPreferences)
+            {
+                AudioManager.SavePreferences();
+                updatedAudioPreferences = false;
+            }
 
             foreach (var controlTipLine in HUDManager.Instance.controlTipLines)
                 controlTipLine.enabled = true;
@@ -449,154 +444,31 @@ namespace TooManyEmotes
 
         public static bool CanOpenEmoteMenu()
         {
-            if ((quickMenuManager.isMenuOpen && !isMenuOpen) || previewPlayerObject == null)
+            if (quickMenuManager.isMenuOpen && !isMenuOpen)
                 return false;
-            if (localPlayerController.isPlayerDead || localPlayerController.inTerminalMenu || localPlayerController.isTypingChat || localPlayerController.isPlayerDead || localPlayerController.inSpecialInteractAnimation || localPlayerController.isGrabbingObjectAnimation || localPlayerController.inShockingMinigame || localPlayerController.isClimbingLadder || localPlayerController.isSinking || localPlayerController.inAnimationWithEnemy != null || CentipedePatcher.IsCentipedeLatchedOntoLocalPlayer())
+            if (localPlayerController.isPlayerDead || localPlayerController.inTerminalMenu || localPlayerController.isTypingChat || localPlayerController.inSpecialInteractAnimation || localPlayerController.isGrabbingObjectAnimation || localPlayerController.inShockingMinigame || localPlayerController.isClimbingLadder || localPlayerController.isSinking)
+                return false;
+            if (localPlayerController.inAnimationWithEnemy != null || CentipedePatcher.IsCentipedeLatchedOntoLocalPlayer())
                 return false;
             return true;
         }
 
 
-        static void InitializeAnimationRenderer()
+        public static void OnUpdateToggleMuteEmote(Toggle toggle)
         {
-            renderingCamera = new GameObject("AnimationRenderingCamera").AddComponent<Camera>();
-            GameObject.Destroy(renderingCamera.GetComponent<AudioListener>());
-            renderingCamera.cullingMask = playerLayerMask;
-            renderingCamera.clearFlags = CameraClearFlags.SolidColor;
-            renderingCamera.cameraType = CameraType.Preview;
-            renderingCamera.backgroundColor = new Color(0.1f, 0.1f, 0.1f, 0);
-            // Most of this was to try and get transparency working, but it was being stubborn. Still keeping it though
-            renderingCamera.allowHDR = false;
-            renderingCamera.allowMSAA = false;
-            renderingCamera.farClipPlane = 5;
-            renderTexture = new RenderTexture(1024, 1024, 24);
-            renderTexture.format = RenderTextureFormat.ARGB32;
-            renderTexture.graphicsFormat = UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_UNorm;
-            renderTexture.depthStencilFormat = UnityEngine.Experimental.Rendering.GraphicsFormat.D24_UNorm_S8_UInt;
-            renderingCamera.targetTexture = renderTexture;
-            renderingCamera.transform.position = Vector3.down * 1000;
-            renderTextureImageUI.texture = renderTexture;
-
-            Light spotlight = new GameObject("Spotlight").AddComponent<Light>();
-            spotlight.type = LightType.Spot;
-            spotlight.transform.position = renderingCamera.transform.position;
-            spotlight.transform.parent = renderingCamera.transform;
-            spotlight.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-            spotlight.intensity = 50;
-            spotlight.range = 40;
-            spotlight.innerSpotAngle = 100;
-            spotlight.spotAngle = 120;
-            spotlight.gameObject.layer = playerLayer;
-
-            DisableRenderCameraNextFrame();
+            updatedAudioPreferences = true;
+            AudioManager.muteEmoteAudio = toggle.isOn;
+            foreach (var emoteAudioSource in EmoteAudioSource.allEmoteAudioSources)
+                emoteAudioSource.UpdateVolume();
         }
 
 
-        [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
-        [HarmonyPostfix]
-        public static void InitializePlayerCloneRenderObject(PlayerControllerB __instance)
+        public static void OnUpdateEmoteVolume(Slider volumeSlider)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled)
-                return;
-
-            IEnumerator InitPlayerCloneAfterSpawnAnimation()
-            {
-                yield return new WaitForSeconds(2);
-                previewPlayerObject = GameObject.Instantiate(__instance.gameObject, renderingCamera.transform);
-                previewPlayerObject.name = "PreviewPlayerAnimationObject";
-                GameObject modelGameObject = previewPlayerObject.transform.Find("ScavengerModel").gameObject;
-                GameObject metarigGameObject = modelGameObject.transform.Find("metarig").gameObject;
-                metarigGameObject.transform.localRotation = Quaternion.identity;
-                PlayerControllerB copyPlayerController = previewPlayerObject.GetComponentInChildren<PlayerControllerB>();
-                copyPlayerController.thisPlayerModel.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-
-                previewPlayerMesh = copyPlayerController.thisPlayerModel;
-                GameObject.DestroyImmediate(modelGameObject.GetComponentInChildren<LODGroup>());
-                GameObject.DestroyImmediate(metarigGameObject.GetComponentInChildren<RigBuilder>());
-                GameObject.DestroyImmediate(metarigGameObject.GetComponentInChildren<GraphicRaycaster>());
-                GameObject.DestroyImmediate(metarigGameObject.GetComponentInChildren<TMP_Text>());
-                GameObject.DestroyImmediate(copyPlayerController.playerBodyAnimator);
-                GameObject.DestroyImmediate(previewPlayerObject.GetComponent<NfgoPlayer>());
-
-                // It's brute force, but w/e
-                foreach (Transform child in previewPlayerObject.transform)
-                    if (child.name != "ScavengerModel")
-                        GameObject.Destroy(child.gameObject);
-
-                foreach (Transform child in modelGameObject.transform)
-                    if (child.name != "LOD1" && child.name != "metarig")
-                        GameObject.Destroy(child.gameObject);
-
-                foreach (Transform child in metarigGameObject.transform)
-                    if (child.name != "spine")
-                        GameObject.Destroy(child.gameObject);
-
-                List<Component> destroyComponents = new List<Component>(previewPlayerObject.GetComponentsInChildren<HDAdditionalLightData>());
-                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<HDAdditionalCameraData>());
-                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioReverbFilter>());
-                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<OccludeAudio>());
-                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioLowPassFilter>());
-                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioHighPassFilter>());
-                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioChorusFilter>());
-                foreach (var component in destroyComponents)
-                    GameObject.DestroyImmediate(component);
-
-                foreach (Component component in previewPlayerObject.GetComponentsInChildren<Component>())
-                {
-                    if (component is Transform || component is SkinnedMeshRenderer || component is MeshFilter || component is Animator)
-                        continue;
-                    try { GameObject.DestroyImmediate(component); }
-                    catch { Plugin.LogError("Failed to destroy component of type: " + component.GetType().ToString() + " on animation previewer object."); }
-                }
-
-                //var humanoidSkeleton = GameObject.Instantiate(Plugin.humanoidSkeletonPrefab, modelGameObject.transform).transform;
-                //humanoidSkeleton.name = "HumanoidSkeleton";
-                //humanoidSkeleton.localScale = Vector3.one * 0.5f;
-                previewPlayerAnimator = modelGameObject.AddComponent<Animator>();
-                previewPlayerAnimator.avatar = Plugin.humanoidAvatar;
-                previewPlayerAnimatorController = new AnimatorOverrideController(Plugin.humanoidAnimatorController);
-                previewPlayerAnimator.runtimeAnimatorController = previewPlayerAnimatorController;
-                previewPlayerAnimator.SetBool("loop", false);
-                //previewPlayerAnimator.SetBool("force_loop_all_emotes", true);
-                previewPlayerAnimator.Play("emote", 0, 0);
-
-                /*
-                var boneMap = BoneMapper.CreateBoneMap(humanoidSkeleton, metarigGameObject.transform, EmoteControllerPlayer.sourceBoneNames);
-                if (boneMap != null)
-                {
-                    foreach (var pair in boneMap)
-                    {
-                        if (pair.Key != null && pair.Value != null)
-                        {
-                            pair.Value.parent = pair.Key.parent;
-                            pair.Value.position = pair.Key.transform.position;
-                            pair.Value.rotation = pair.Key.transform.rotation;
-                            pair.Value.localScale = pair.Key.transform.localScale;
-                        }
-                    }
-                    foreach (var bone in boneMap.Keys)
-                        GameObject.Destroy(bone.gameObject);
-                }
-                */
-
-                previewPlayerObject.transform.position = renderingCamera.transform.position + renderingCamera.transform.forward * 2.8f + Vector3.down * 1.35f;
-                previewPlayerObject.transform.LookAt(new Vector3(renderingCamera.transform.position.x, previewPlayerObject.transform.position.y, renderingCamera.transform.position.z));
-                SetObjectLayerRecursive(previewPlayerObject, playerLayer);
-            }
-
-            if (Plugin.radialMenuPrefab == null)
-                return;
-
-            __instance.StartCoroutine(InitPlayerCloneAfterSpawnAnimation());
-        }
-
-
-        static void SetObjectLayerRecursive(GameObject obj, int layer)
-        {
-            if (obj == null) return;
-            obj.layer = layer;
-            for (int i = 0; i < obj.transform.childCount; i++)
-                SetObjectLayerRecursive(obj.transform.GetChild(i)?.gameObject, layer);
+            updatedAudioPreferences = true;
+            AudioManager.emoteVolumeMultiplier = Mathf.Clamp(volumeSlider.value, 0, 2);
+            foreach (var emoteAudioSource in EmoteAudioSource.allEmoteAudioSources)
+                emoteAudioSource.UpdateVolume();
         }
 
 
@@ -748,7 +620,7 @@ namespace TooManyEmotes
 
 
     // Prevent selecting emote ui elements when mouse is between loadout ui elements (temporary)
-    public class EmoteLoadoutUIContainer : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    public class AdditionalPanelUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         public static bool hovered = false;
 

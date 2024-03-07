@@ -18,7 +18,7 @@ using TooManyEmotes.Props;
 
 namespace TooManyEmotes
 {
-    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "1.9.4")]
+    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "2.0.0")]
     [BepInDependency("com.rune580.LethalCompanyInputUtils", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("me.swipez.melonloader.morecompany", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
@@ -36,11 +36,9 @@ namespace TooManyEmotes
         public static List<AnimationClip> animationClipsTier1;
         public static List<AnimationClip> animationClipsTier2;
         public static List<AnimationClip> animationClipsTier3;
-
-        public static AnimationClip idleClip;
+        public static List<AnimationClip> animationClipsSpecial;
 
         public static GameObject radialMenuPrefab;
-        public static RuntimeAnimatorController previewAnimatorController;
 
         public static RuntimeAnimatorController humanoidAnimatorController;
         public static Avatar humanoidAvatar;
@@ -48,7 +46,7 @@ namespace TooManyEmotes
 
         public static HashSet<AudioClip> emoteAudioClips;
         public static HashSet<GameObject> emotePropPrefabs;
-        public static HashSet<RuntimeAnimatorController> emotePropAnimatorControllers;
+        //public static HashSet<RuntimeAnimatorController> emotePropAnimatorControllers;
 
 
         void Awake()
@@ -65,12 +63,16 @@ namespace TooManyEmotes
             LoadMiscAnimationAssets();
             LoadRadialMenuAsset();
 
-            //LoadEmotePropAssets();
-            //AudioManager.LoadAudioAssets();
+            AudioManager.LoadAudioAssets();
+            LoadEmotePropAssets();
 
             EmotesManager.BuildEmotesList();
-            //EmotePropManager.BuildEmotePropList();
-            //AudioManager.BuildAudioClipList();
+            AudioManager.BuildAudioClipList();
+            EmotePropManager.BuildEmotePropList();
+
+            AdditionalEmoteData.SetAdditionalEmoteData();
+            AdditionalEmoteData.SetAdditionalPropData();
+            AdditionalEmoteData.SetAdditionalMusicData();
 
             this._harmony = new Harmony("TooManyEmotes");
             PatchAll();
@@ -89,6 +91,8 @@ namespace TooManyEmotes
             animationClipsTier1 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_1"));
             animationClipsTier2 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_2"));
             animationClipsTier3 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_3"));
+            animationClipsSpecial = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_special"));
+            complementaryAnimationClips.AddRange(animationClipsSpecial); // for now
 
             customAnimationClipsHash.UnionWith(complementaryAnimationClips);
             customAnimationClipsHash.UnionWith(animationClipsTier0);
@@ -98,7 +102,6 @@ namespace TooManyEmotes
 
             foreach (var clip in customAnimationClipsHash)
             {
-                if (clip.name.StartsWith("fn_")) clip.name = clip.name.Replace("fn_", "");
                 if (clip.name.EndsWith("_loop"))
                 {
                     if (customAnimationClipsLoopDict.ContainsKey(clip.name))
@@ -149,12 +152,14 @@ namespace TooManyEmotes
                 if (animator == null)
                     animator = humanoidSkeletonPrefab.AddComponent<Animator>();
 
+                if (humanoidAvatar)
+                    animator.avatar = humanoidAvatar;
 
-                if (humanoidAnimatorController == null)
+                if (!humanoidAnimatorController)
                     LogError("Failed to load humanoid animator controller from asset bundle: misc");
-                if (humanoidAvatar == null)
+                if (!humanoidAvatar)
                     LogError("Failed to load humanoid avatar from asset bundle: misc");
-                if (humanoidSkeletonPrefab == null)
+                if (!humanoidSkeletonPrefab)
                     LogError("Failed to load humanoid skeleton prefab from asset bundle: misc");
             }
             catch
@@ -168,15 +173,17 @@ namespace TooManyEmotes
         {
             try
             {
+                emotePropPrefabs = new HashSet<GameObject>();
                 string propsAssetBundlePath = Path.Combine(Path.GetDirectoryName(instance.Info.Location), "Assets/props");
                 AssetBundle prefabAssetBundle = AssetBundle.LoadFromFile(propsAssetBundlePath);
                 var prefabs = prefabAssetBundle.LoadAllAssets<GameObject>();
                 foreach (var prefab in prefabs)
                     emotePropPrefabs.Add(prefab);
+                Log("Loaded " + emotePropPrefabs.Count + " emote props.");
             }
-            catch
+            catch (Exception e)
             {
-                LogError("Failed to load emote props Asset Bundle.");
+                LogError("Failed to load emote props Asset Bundle. " + e);
             }
         }
 
@@ -188,7 +195,6 @@ namespace TooManyEmotes
                 string assetsPath = Path.Combine(Path.GetDirectoryName(instance.Info.Location), "Assets/radial_menu");
                 AssetBundle assetBundle = AssetBundle.LoadFromFile(assetsPath);
                 radialMenuPrefab = assetBundle.LoadAsset<GameObject>("RadialMenu");
-                previewAnimatorController = assetBundle.LoadAsset<RuntimeAnimatorController>("PreviewAnimatorController");
                 Log("Successfully loaded radial menu asset.");
             }
             catch

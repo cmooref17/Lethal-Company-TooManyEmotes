@@ -71,6 +71,14 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<string> emoteNameColorTier2;
         public static ConfigEntry<string> emoteNameColorTier3;
 
+        public static ConfigEntry<bool> disableBoomboxRequirement;
+        public static ConfigEntry<float> baseEmoteAudioVolume;
+        public static ConfigEntry<float> emoteAudioMaxVolume;
+        public static ConfigEntry<float> emoteAudioIncreasePerPlayerSyncing;
+        public static ConfigEntry<float> emoteAudioMinDistance;
+        public static ConfigEntry<float> emoteAudioMaxDistance;
+        //public static ConfigEntry<bool> scaleEmoteAudioWithBoombox;
+
         public static Dictionary<string, ConfigEntryBase> currentConfigEntries = new Dictionary<string, ConfigEntryBase>();
         public static List<string> configSections = new List<string>();
 
@@ -134,6 +142,14 @@ namespace TooManyEmotes.Config
             emoteNameColorTier1 = AddConfigEntry("Accessibility", "EmoteNameColorRare", "#2828FF", "The color of the [rare] emote name in the terminal.");
             emoteNameColorTier2 = AddConfigEntry("Accessibility", "EmoteNameColorEpic", "#AA00EE", "The color of the [epic] emote name in the terminal.");
             emoteNameColorTier3 = AddConfigEntry("Accessibility", "EmoteNameColorLegendary", "#FF2222", "The color of the [legendary] emote name in the terminal.");
+
+            disableBoomboxRequirement = AddConfigEntry("Emote Audio", "DisableBoomboxRequirement", false, "If set to true, emote audio that normally requires a nearby boombox will be played from your character instead.");
+            baseEmoteAudioVolume = AddConfigEntry("Emote Audio", "BaseEmoteAudioVolume", 0.25f, "The base emote audio volume. The volume slider in the emote menu will be based off of this value.");
+            emoteAudioMaxVolume = AddConfigEntry("Emote Audio", "MaxEmoteAudioVolume", 0.8f, "The max volume that emote audio will reach. Emote audio volume may dynamically change by increasing the number of players syncing an emote, or adjusting the volume slider in the emote menu. This setting will not affect emote audio volume, aside from preventing the volume from going higher than this value.");
+            emoteAudioIncreasePerPlayerSyncing = AddConfigEntry("Emote Audio", "VolumeGainPerPlayerSyncingEmote", 0.05f, "By how much emote audio volume will increase by per player syncing with that emote.");
+            emoteAudioMinDistance = AddConfigEntry("Emote Audio", "EmoteAudioMinDistance", 15f, "The range from an emote audio source at which the volume will start to fade.");
+            emoteAudioMaxDistance = AddConfigEntry("Emote Audio", "EmoteAudioMaxDistance", 30f, "The range from an emote audio source at which the audio can no longer be heard.");
+            //scaleEmoteAudioWithBoombox = AddConfigEntry("Emote Audio", "ScaleEmoteAudioVolumeWithBaseBoombox", true, "If true, emote audio that plays from a boombox will be scaled with the in-game's boombox volume. This may help with compatibility with mods that allow changing the boombox volume.");
 
             // fix weights
             float totalChances = rotationChanceEmoteTier0.Value;

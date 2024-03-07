@@ -157,7 +157,12 @@
   <ItemGroup>
     <Compile Include="AdditionalEmoteData.cs" />
     <Compile Include="Audio\AudioManager.cs" />
+    <Compile Include="Audio\BoomboxManager.cs" />
+    <Compile Include="Audio\EmoteAudioSource.cs" />
+    <Compile Include="Audio\EmoteBoombox.cs" />
     <Compile Include="BoneMapper.cs" />
+    <Compile Include="EmoteControllers\OnAnimatorIKHandler.cs" />
+    <Compile Include="EmoteSyncGroup.cs" />
     <Compile Include="Networking\SyncPerformingEmoteManager.cs" />
     <Compile Include="Patches\BoomboxMusicPlayer.cs" />
     <Compile Include="Patches\CentipedePatcher.cs" />
@@ -169,9 +174,10 @@
     <Compile Include="EmoteControllers\EmoteControllerPlayer.cs" />
     <Compile Include="EmoteControllers\EmoteController.cs" />
     <Compile Include="EmoteGifts.cs" />
-    <Compile Include="EmoteMenu.cs" />
+    <Compile Include="Test.cs" />
+    <Compile Include="UI\AnimationPreviewer.cs" />
+    <Compile Include="UI\EmoteMenu.cs" />
     <Compile Include="Patches\DressGirlVisibilityPatcher.cs" />
-    <Compile Include="Props\PropAnimationData.cs" />
     <Compile Include="Props\EmotePropManager.cs" />
     <Compile Include="Patches\LocomotionEmotePatcher.cs" />
     <Compile Include="Compatibility\InputUtils_Compat.cs" />

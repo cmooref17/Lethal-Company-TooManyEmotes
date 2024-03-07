@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine.InputSystem;
 using TooManyEmotes.Config;
 using TooManyEmotes.Input;
 using TooManyEmotes.Patches;
 using TooManyEmotes.Networking;
-using UnityEngine.InputSystem;
+using TooManyEmotes.UI;
 
 namespace TooManyEmotes.Input
 {
@@ -68,19 +69,7 @@ namespace TooManyEmotes.Input
                 return "";
 
             int bindingIndex = usingController ? 1 : 0;
-            string displayName = inputAction.bindings[bindingIndex].path;
-            if (displayName == "")
-                displayName = inputAction.bindings[bindingIndex].overridePath;
-
-            if (displayName.Length <= 1)
-                return "";
-
-            displayName = displayName.ToLower();
-            int replaceIndex = displayName.IndexOf(">/");
-            displayName = replaceIndex >= 0 ? displayName.Substring(replaceIndex + 2) : displayName;
-
-            if (displayName.Contains("not-bound"))
-                return "";
+            string displayName = inputAction.bindings[bindingIndex].effectivePath;
 
             return GetKeybindDisplayName(displayName);
         }
