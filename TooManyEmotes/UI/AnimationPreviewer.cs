@@ -30,8 +30,9 @@ namespace TooManyEmotes.UI
 
         public static EmoteController simpleEmoteController;
 
-        public static int playerLayer = LayerMask.NameToLayer("Player");
-        public static int playerLayerMask { get { return 1 << playerLayer; } }
+        public static int renderLayer = 23; // EnemiesNotRendered
+        public static int propRenderLayer = 3; // Props
+        public static int renderLayerMask { get { return (1 << renderLayer) | (1 << propRenderLayer); } }
 
         public static GameObject previewBoombox;
 
@@ -45,6 +46,9 @@ namespace TooManyEmotes.UI
 
         public static void SetPreviewAnimation(UnlockableEmote emote)
         {
+            if (!enabled || !previewPlayerObject || !simpleEmoteController)
+                return;
+
             if (enabled && emote != null)
             {
                 previewPlayerObject.SetActive(true);
@@ -87,12 +91,13 @@ namespace TooManyEmotes.UI
         [HarmonyPostfix]
         public static void InitializePlayerCloneRenderObject(PlayerControllerB __instance)
         {
-            if (!enabled || ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled)
+            if (!enabled || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
 
             IEnumerator InitPlayerCloneAfterSpawnAnimation()
             {
                 yield return new WaitForSeconds(2);
+
                 previewPlayerObject = GameObject.Instantiate(__instance.gameObject, renderingCamera.transform);
                 previewPlayerObject.name = "PreviewPlayerAnimationObject";
                 previewPlayerObject.transform.localPosition = new Vector3(0, -1.25f, 3);
@@ -104,12 +109,12 @@ namespace TooManyEmotes.UI
                 copyPlayerController.thisPlayerModel.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
 
                 previewPlayerMesh = copyPlayerController.thisPlayerModel;
-                GameObject.DestroyImmediate(modelGameObject.GetComponentInChildren<LODGroup>());
-                GameObject.DestroyImmediate(metarigGameObject.GetComponentInChildren<RigBuilder>());
-                GameObject.DestroyImmediate(metarigGameObject.GetComponentInChildren<GraphicRaycaster>());
-                GameObject.DestroyImmediate(metarigGameObject.GetComponentInChildren<TMP_Text>());
-                GameObject.DestroyImmediate(copyPlayerController.playerBodyAnimator);
-                GameObject.DestroyImmediate(previewPlayerObject.GetComponent<NfgoPlayer>());
+                GameObject.Destroy(modelGameObject.GetComponentInChildren<LODGroup>());
+                GameObject.Destroy(metarigGameObject.GetComponentInChildren<RigBuilder>());
+                GameObject.Destroy(metarigGameObject.GetComponentInChildren<GraphicRaycaster>());
+                GameObject.Destroy(metarigGameObject.GetComponentInChildren<TMP_Text>());
+                GameObject.Destroy(copyPlayerController.playerBodyAnimator);
+                GameObject.Destroy(previewPlayerObject.GetComponent<NfgoPlayer>());
 
                 // It's brute force, but w/e
                 foreach (Transform child in previewPlayerObject.transform)
@@ -124,6 +129,7 @@ namespace TooManyEmotes.UI
                     if (child.name != "spine")
                         GameObject.Destroy(child.gameObject);
 
+                /*
                 List<Component> destroyComponents = new List<Component>(previewPlayerObject.GetComponentsInChildren<HDAdditionalLightData>());
                 destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<HDAdditionalCameraData>());
                 destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioReverbFilter>());
@@ -131,16 +137,33 @@ namespace TooManyEmotes.UI
                 destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioLowPassFilter>());
                 destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioHighPassFilter>());
                 destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioChorusFilter>());
-                foreach (var component in destroyComponents)
-                    GameObject.DestroyImmediate(component);
-
-                foreach (Component component in previewPlayerObject.GetComponentsInChildren<Component>())
+                */
+                List<Component> destroyComponents = new List<Component>(previewPlayerObject.GetComponentsInChildren<Component>());
+                int numDestroyed = -1;
+                while (destroyComponents != null && destroyComponents.Count > 0 && numDestroyed != 0)
                 {
-                    if (component is Transform || component is SkinnedMeshRenderer || component is MeshFilter || component is Animator)
-                        continue;
-                    try { GameObject.DestroyImmediate(component); }
-                    catch { Plugin.LogError("Failed to destroy component of type: " + component.GetType().ToString() + " on animation previewer object."); }
+                    numDestroyed = 0;
+                    List<Component> reDestroy = new List<Component>();
+                    foreach (var component in destroyComponents)
+                    {
+                        if (component is Transform || component is SkinnedMeshRenderer || component is MeshFilter || component is Animator)
+                            continue;
+
+                        try
+                        {
+                            GameObject.Destroy(component);
+                            numDestroyed++;
+                        }
+                        catch
+                        {
+                            reDestroy.Add(component);
+                        }
+                    }
+                    destroyComponents = reDestroy;
                 }
+
+                foreach (var component in destroyComponents)
+                    Plugin.LogError("Failed to destroy component of type: " + component.GetType().ToString() + " on animation previewer object.");
 
                 simpleEmoteController = previewPlayerObject.AddComponent<EmoteController>();
                 simpleEmoteController.Initialize();
@@ -163,17 +186,17 @@ namespace TooManyEmotes.UI
                     previewBoombox.transform.localPosition = new Vector3(-1, 0.2f, -0.5f);
                     previewBoombox.transform.localEulerAngles = new Vector3(0, 40, 90);
 
-                    GameObject.DestroyImmediate(previewBoombox.GetComponentInChildren<GrabbableObject>());
-                    GameObject.DestroyImmediate(previewBoombox.GetComponentInChildren<NetworkObject>());
-                    GameObject.DestroyImmediate(previewBoombox.GetComponentInChildren<OccludeAudio>());
+                    GameObject.Destroy(previewBoombox.GetComponentInChildren<GrabbableObject>());
+                    GameObject.Destroy(previewBoombox.GetComponentInChildren<NetworkObject>());
+                    GameObject.Destroy(previewBoombox.GetComponentInChildren<OccludeAudio>());
                     foreach (var component in previewBoombox.GetComponentsInChildren<Component>())
                     {
                         if (!(component is Transform || component is Renderer || component is MeshFilter))
-                            GameObject.DestroyImmediate(component);
+                            GameObject.Destroy(component);
                     }
                 }
                 
-                SetObjectLayerRecursive(previewPlayerObject, playerLayer);
+                SetObjectLayerRecursive(previewPlayerObject, renderLayer);
             }
 
             if (Plugin.radialMenuPrefab == null)
@@ -183,9 +206,9 @@ namespace TooManyEmotes.UI
         }
 
 
-        static void SetObjectLayerRecursive(GameObject obj, int layer)
+        private static void SetObjectLayerRecursive(GameObject obj, int layer)
         {
-            if (obj == null) return;
+            if (!obj) return;
             obj.layer = layer;
             for (int i = 0; i < obj.transform.childCount; i++)
                 SetObjectLayerRecursive(obj.transform.GetChild(i)?.gameObject, layer);
@@ -194,9 +217,12 @@ namespace TooManyEmotes.UI
 
         public static void InitializeAnimationRenderer()
         {
+            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
+                return;
+
             renderingCamera = new GameObject("AnimationRenderingCamera").AddComponent<Camera>();
             GameObject.Destroy(renderingCamera.GetComponent<AudioListener>());
-            renderingCamera.cullingMask = playerLayerMask;
+            renderingCamera.cullingMask = renderLayerMask;
             renderingCamera.clearFlags = CameraClearFlags.SolidColor;
             renderingCamera.cameraType = CameraType.Preview;
             renderingCamera.backgroundColor = new Color(0.1f, 0.1f, 0.1f, 0);
@@ -216,7 +242,7 @@ namespace TooManyEmotes.UI
             spotlight.range = 40;
             spotlight.innerSpotAngle = 100;
             spotlight.spotAngle = 120;
-            spotlight.gameObject.layer = playerLayer;
+            spotlight.gameObject.layer = renderLayer;
 
             DisableRenderCameraNextFrame();
             enabled = true;

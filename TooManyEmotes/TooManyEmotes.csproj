@@ -9,9 +9,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>TooManyEmotes</RootNamespace>
     <AssemblyName>TooManyEmotes</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -44,8 +45,9 @@
     <Reference Include="BepInEx">
       <HintPath>..\..\..\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\core\BepInEx.dll</HintPath>
     </Reference>
-    <Reference Include="LCVR">
-      <HintPath>D:\Downloads\DaXcess-LethalCompanyVR-1.1.9\BepInEx\plugins\LCVR\LCVR.dll</HintPath>
+    <Reference Include="LCVR, Version=1.1.9.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>D:\Downloads\LCVR.dll</HintPath>
     </Reference>
     <Reference Include="LethalCompanyInputUtils">
       <HintPath>..\..\..\..\..\Downloads\Rune580-LethalCompany_InputUtils-0.4.4\LethalCompanyInputUtils\LethalCompanyInputUtils.dll</HintPath>
@@ -157,16 +159,16 @@
   <ItemGroup>
     <Compile Include="AdditionalEmoteData.cs" />
     <Compile Include="Audio\AudioManager.cs" />
-    <Compile Include="Audio\BoomboxManager.cs" />
+    <Compile Include="Audio\EmoteAudioPlayerManager.cs" />
     <Compile Include="Audio\EmoteAudioSource.cs" />
-    <Compile Include="Audio\EmoteBoombox.cs" />
+    <Compile Include="Audio\EmoteAudioPlayer.cs" />
     <Compile Include="BoneMapper.cs" />
+    <Compile Include="Compatibility\HelmetCameras_Patcher.cs" />
     <Compile Include="EmoteControllers\OnAnimatorIKHandler.cs" />
     <Compile Include="EmoteSyncGroup.cs" />
     <Compile Include="Networking\SyncPerformingEmoteManager.cs" />
-    <Compile Include="Patches\BoomboxMusicPlayer.cs" />
     <Compile Include="Patches\CentipedePatcher.cs" />
-    <Compile Include="Compatibility\LCVR_Patcher.cs" />
+    <Compile Include="Compatibility\LCVR_Compat.cs" />
     <Compile Include="Compatibility\MirrorDecor_Patcher.cs" />
     <Compile Include="Compatibility\MoreCompany_Patcher.cs" />
     <Compile Include="Networking\ConfigSync.cs" />
@@ -174,7 +176,8 @@
     <Compile Include="EmoteControllers\EmoteControllerPlayer.cs" />
     <Compile Include="EmoteControllers\EmoteController.cs" />
     <Compile Include="EmoteGifts.cs" />
-    <Compile Include="Test.cs" />
+    <Compile Include="Props\EmotePropData.cs" />
+    <Compile Include="Props\GrabbablePropObject.cs" />
     <Compile Include="UI\AnimationPreviewer.cs" />
     <Compile Include="UI\EmoteMenu.cs" />
     <Compile Include="Patches\DressGirlVisibilityPatcher.cs" />

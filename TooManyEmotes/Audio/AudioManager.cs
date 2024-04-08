@@ -14,16 +14,23 @@ namespace TooManyEmotes.Audio
     public static class AudioManager
     {
         public static AssetBundle audioAssetBundle;
-        public static HashSet<string> audioAssetNames = new HashSet<string>();
+        public static AssetBundle dmcaAudioAssetBundle;
+        //public static HashSet<string> audioAssetNames = new HashSet<string>();
+        //public static HashSet<string> audioAssetNamesDmcaFree = new HashSet<string>();
 
-        public static HashSet<AudioClip> loadedAudioClips = new HashSet<AudioClip>();
-        public static Dictionary<string, AudioClip> loadedAudioClipsDict = new Dictionary<string, AudioClip>();
+        static HashSet<AudioClip> loadedAudioClips = new HashSet<AudioClip>();
+        static HashSet<AudioClip> loadedAudioClipsDmca = new HashSet<AudioClip>();
+        static HashSet<AudioClip> loadedAudioClipsDmcaFree = new HashSet<AudioClip>();
 
-        //public readonly static string audioFileExtension = ".ogg";
-
-        public static bool AudioExists(string audioName) => loadedAudioClipsDict.ContainsKey(audioName); //audioAssetNames != null && audioAssetNames.Contains(audioName);
+        static Dictionary<string, AudioClip> audioClipsDictDmcaFree = new Dictionary<string, AudioClip>();
+        static Dictionary<string, AudioClip> audioClipsDictDmca = new Dictionary<string, AudioClip>();
+        //public static Dictionary<string, AudioClip> loadedAudioClipsDict { get { return dmcaFreeMode ? dmcaAudioClips : dmcaFreeAudioClips; } }
+        
+        public static bool AudioExists(string audioName) => (audioClipsDictDmcaFree != null && audioClipsDictDmcaFree.ContainsKey(audioName)) || (audioClipsDictDmca != null && audioClipsDictDmca.ContainsKey(audioName));
 
         public static bool muteEmoteAudio = false;
+        public static bool emoteOnlyMode = false;
+        public static bool dmcaFreeMode = false;
         public static float emoteVolumeMultiplier = 1;
 
 
@@ -40,6 +47,8 @@ namespace TooManyEmotes.Audio
         {
             ES3.Save("TooManyEmotes.MuteEmoteAudio", muteEmoteAudio);
             ES3.Save("TooManyEmotes.EmoteAudioVolume", emoteVolumeMultiplier);
+            ES3.Save("TooManyEmotes.EmoteOnlyMode", emoteOnlyMode);
+            ES3.Save("TooManyEmotes.DmcaFreeMode", dmcaFreeMode);
         }
 
 
@@ -47,6 +56,8 @@ namespace TooManyEmotes.Audio
         {
             muteEmoteAudio = ES3.Load("TooManyEmotes.MuteEmoteAudio", false);
             emoteVolumeMultiplier = ES3.Load("TooManyEmotes.EmoteAudioVolume", 1.0f);
+            emoteOnlyMode = ES3.Load("TooManyEmotes.EmoteOnlyMode", false);
+            dmcaFreeMode = ES3.Load("TooManyEmotes.DmcaFreeMode", false);
         }
 
 
@@ -95,40 +106,67 @@ namespace TooManyEmotes.Audio
             {
                 string assetsPath = Path.Combine(Path.GetDirectoryName(Plugin.instance.Info.Location), "Assets/compressed_audio");
                 audioAssetBundle = AssetBundle.LoadFromFile(assetsPath);
-                audioAssetNames.UnionWith(audioAssetBundle.GetAllAssetNames());
+                //audioAssetNames.UnionWith(audioAssetBundle.GetAllAssetNames());
             }
             catch
             {
                 Plugin.LogWarning("Failed to load emotes audio asset bundle: compressed_audio.");
             }
-        }
 
-
-        public static bool LoadAllAudioClips()
-        {
-            if (audioAssetBundle == null)
-            {
-                Plugin.LogError("Cannot load audio clips with a null Asset Bundle. Did the Asset Bundle fail to load?");
-                return false;
-            }
             try
             {
-                loadedAudioClips.UnionWith(audioAssetBundle.LoadAllAssets<AudioClip>());
-                Plugin.Log("Loading " + loadedAudioClips.Count + " audio clips.");
-                foreach (var clip in loadedAudioClips)
-                {
-                    if (!loadedAudioClipsDict.ContainsKey(clip.name))
-                    {
-                        loadedAudioClipsDict[clip.name] = clip;
-                    }
-                }
+                string assetsPath = Path.Combine(Path.GetDirectoryName(Plugin.instance.Info.Location), "Assets/compressed_audio_dmca");
+                dmcaAudioAssetBundle = AssetBundle.LoadFromFile(assetsPath);
+                //audioAssetNamesDmcaFree.UnionWith(dmcaAudioAssetBundle.GetAllAssetNames());
+                //audioAssetNames.UnionWith(dmcaAudioAssetBundle.GetAllAssetNames());
             }
             catch
             {
-                Plugin.LogError("Failed to load all emote audio clips from asset bundle.");
-                return false;
+                Plugin.LogWarning("Failed to load emotes audio asset bundle: compressed_audio_dmca.");
             }
-            return true;
+        }
+
+
+        public static void LoadAllAudioClips()
+        {
+            if (audioAssetBundle == null)
+                Plugin.LogError("Cannot load audio clips with a null Asset Bundle. Did the Asset Bundle fail to load?");
+            else
+            {
+                try
+                {
+                    loadedAudioClipsDmcaFree = new HashSet<AudioClip>(audioAssetBundle.LoadAllAssets<AudioClip>());
+                    loadedAudioClips.UnionWith(loadedAudioClipsDmcaFree);
+
+                    Plugin.Log("Loading " + loadedAudioClipsDmcaFree.Count + " dmca-free audio clips.");
+                    foreach (var clip in loadedAudioClipsDmcaFree)
+                    {
+                        if (!audioClipsDictDmcaFree.ContainsKey(clip.name))
+                            audioClipsDictDmcaFree[clip.name] = clip;
+                    }
+                }
+                catch { Plugin.LogError("Failed to load dmca-free emote audio clips from asset bundle."); }
+            }
+
+
+            if (dmcaAudioAssetBundle == null)
+                Plugin.LogError("Cannot load dmca audio clips with a null Asset Bundle. Did the Asset Bundle fail to load?");
+            else
+            {
+                try
+                {
+                    loadedAudioClipsDmca = new HashSet<AudioClip>(dmcaAudioAssetBundle.LoadAllAssets<AudioClip>());
+                    loadedAudioClips.UnionWith(loadedAudioClipsDmca);
+
+                    Plugin.Log("Loading " + loadedAudioClipsDmca.Count+ " dmca audio clips.");
+                    foreach (var clip in loadedAudioClipsDmca)
+                    {
+                        if (!audioClipsDictDmca.ContainsKey(clip.name))
+                            audioClipsDictDmca[clip.name] = clip;
+                    }
+                }
+                catch { Plugin.LogError("Failed to load dmca emote audio clips from asset bundle."); }
+            }
         }
 
 
@@ -139,37 +177,54 @@ namespace TooManyEmotes.Audio
                 Plugin.LogError("Cannot load audio clip: " + clipName + " with a null Asset Bundle. Did the Asset Bundle fail to load?");
                 return null;
             }
-            if (!audioAssetNames.Contains(clipName))
+            /*
+            if (!audioAssetNames.Contains(clipName) && !audioAssetNamesDmcaFree.Contains(clipName))
             {
                 Plugin.LogError("Failed to load emote audio clip. Clip does not exist in the list of valid audio clip names. Clip: " + clipName);
                 return null;
             }
+            */
 
-            AudioClip audioClip;
-            if (loadedAudioClipsDict.TryGetValue(clipName, out audioClip))
-                return audioClip;
 
-            try
+            if (!dmcaFreeMode)
             {
-                audioClip = audioAssetBundle.LoadAsset<AudioClip>(clipName);
-                loadedAudioClips.Add(audioClip);
-                loadedAudioClipsDict.Add(clipName, audioClip);
-                Plugin.Log("Cached audio clip: " + clipName);
+                if (audioClipsDictDmca.TryGetValue(clipName, out var dmcaAudioClip))
+                    return dmcaAudioClip;
+
+                dmcaAudioClip = dmcaAudioAssetBundle.LoadAsset<AudioClip>(clipName);
+                if (dmcaAudioClip != null)
+                {
+                    loadedAudioClips.Add(dmcaAudioClip);
+                    loadedAudioClipsDmca.Add(dmcaAudioClip);
+                    audioClipsDictDmca.Add(clipName, dmcaAudioClip);
+                    //Plugin.Log("Cached audio clip: " + clipName);
+                    return dmcaAudioClip;
+                }
             }
-            catch
+            if (audioClipsDictDmcaFree.TryGetValue(clipName, out var dmcaFreeAudioClip))
+                return dmcaFreeAudioClip;
+
+            dmcaFreeAudioClip = audioAssetBundle.LoadAsset<AudioClip>(clipName);
+            if (dmcaFreeAudioClip != null)
             {
-                Plugin.LogError("Failed to load audio clip from asset bundle. Clip: " + clipName);
-                return null;
+                loadedAudioClips.Add(dmcaFreeAudioClip);
+                loadedAudioClipsDmcaFree.Add(dmcaFreeAudioClip);
+                audioClipsDictDmcaFree.Add(clipName, dmcaFreeAudioClip);
+                //Plugin.Log("Cached audio clip: " + clipName);
+                return dmcaFreeAudioClip;
             }
 
-            return audioClip;
+            return null;
         }
 
+        public static bool IsClipDMCA(AudioClip audioClip) => loadedAudioClipsDmca.Contains(audioClip);
+        //public static bool HasDmcaFreeAudio(UnlockableEmote emote) => emote != null && ((emote.animationClip != null && audioAssetNamesDmcaFree.Contains(emote.animationClip.name)) || (emote.transitionsToClip != null && audioAssetNamesDmcaFree.Contains(emote.transitionsToClip.name)));
 
         public static void ClearAudioClipCache()
         {
             loadedAudioClips?.Clear();
-            loadedAudioClipsDict?.Clear();
+            audioClipsDictDmca?.Clear();
+            audioClipsDictDmcaFree?.Clear();
 
             if (EmotesManager.allUnlockableEmotes != null)
             {

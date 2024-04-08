@@ -30,7 +30,7 @@ namespace TooManyEmotes.Patches
         public static void Init(StartOfRound __instance)
         {
             if (!NetworkManager.Singleton.IsServer)
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnMaskedEnemyEmoteClientRpc", OnMaskedEnemyEmoteClientRpc);
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.OnMaskedEnemyEmoteClientRpc", OnMaskedEnemyEmoteClientRpc);
         }
 
 
@@ -156,7 +156,7 @@ namespace TooManyEmotes.Patches
             var writer = new FastBufferWriter(sizeof(ulong) + sizeof(int), Allocator.Temp);
             writer.WriteValueSafe(emoteController.maskedEnemy.NetworkObjectId);
             writer.WriteValueSafe(emoteId);
-            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes-OnMaskedEnemyEmoteClientRpc", writer);
+            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes.OnMaskedEnemyEmoteClientRpc", writer);
         }
 
 

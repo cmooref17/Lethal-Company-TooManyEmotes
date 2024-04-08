@@ -88,9 +88,9 @@ namespace TooManyEmotes
         }
 
 
-        public override bool PerformEmote(UnlockableEmote emote, int overrideEmoteId = -1)
+        public override bool PerformEmote(UnlockableEmote emote, int overrideEmoteId = -1, bool doNotTriggerAudio = false)
         {
-            bool success = base.PerformEmote(emote);
+            bool success = base.PerformEmote(emote, overrideEmoteId, doNotTriggerAudio);
             if (isPerformingEmote)
             {
                 emoteCount++;

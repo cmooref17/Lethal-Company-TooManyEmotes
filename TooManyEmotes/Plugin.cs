@@ -18,7 +18,7 @@ using TooManyEmotes.Props;
 
 namespace TooManyEmotes
 {
-    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "2.0.0")]
+    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "2.0.11")]
     [BepInDependency("com.rune580.LethalCompanyInputUtils", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("me.swipez.melonloader.morecompany", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
@@ -44,8 +44,7 @@ namespace TooManyEmotes
         public static Avatar humanoidAvatar;
         public static GameObject humanoidSkeletonPrefab;
 
-        public static HashSet<AudioClip> emoteAudioClips;
-        public static HashSet<GameObject> emotePropPrefabs;
+
         //public static HashSet<RuntimeAnimatorController> emotePropAnimatorControllers;
 
 
@@ -56,15 +55,12 @@ namespace TooManyEmotes
             ConfigSettings.BindConfigSettings();
             Keybinds.InitKeybinds();
 
-            if (IsModLoaded("io.daxcess.lcvr"))
-                LCVR_Patcher.CheckIfVRIsEnabled();
-
             LoadEmoteAssets();
             LoadMiscAnimationAssets();
             LoadRadialMenuAsset();
 
             AudioManager.LoadAudioAssets();
-            LoadEmotePropAssets();
+            EmotePropManager.LoadPropAssets();
 
             EmotesManager.BuildEmotesList();
             AudioManager.BuildAudioClipList();
@@ -165,25 +161,6 @@ namespace TooManyEmotes
             catch
             {
                 LogError("Failed to load misc Asset Bundle.");
-            }
-        }
-
-
-        static void LoadEmotePropAssets()
-        {
-            try
-            {
-                emotePropPrefabs = new HashSet<GameObject>();
-                string propsAssetBundlePath = Path.Combine(Path.GetDirectoryName(instance.Info.Location), "Assets/props");
-                AssetBundle prefabAssetBundle = AssetBundle.LoadFromFile(propsAssetBundlePath);
-                var prefabs = prefabAssetBundle.LoadAllAssets<GameObject>();
-                foreach (var prefab in prefabs)
-                    emotePropPrefabs.Add(prefab);
-                Log("Loaded " + emotePropPrefabs.Count + " emote props.");
-            }
-            catch (Exception e)
-            {
-                LogError("Failed to load emote props Asset Bundle. " + e);
             }
         }
 

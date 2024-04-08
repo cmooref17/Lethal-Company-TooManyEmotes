@@ -11,7 +11,7 @@ using UnityEngine.Rendering;
 namespace TooManyEmotes.Compatibility
 {
     [HarmonyPatch]
-    public static class MirrorDecorPatcher
+    public static class MirrorDecor_Patcher
     {
         public static bool Enabled = false;
 

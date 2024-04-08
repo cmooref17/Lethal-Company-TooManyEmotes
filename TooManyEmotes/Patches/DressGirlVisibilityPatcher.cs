@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TooManyEmotes.Config;
 using UnityEngine;
 
 namespace TooManyEmotes.Patches
@@ -15,7 +16,7 @@ namespace TooManyEmotes.Patches
         [HarmonyPostfix]
         public static void HideGirlMesh(bool enable, EnemyAI __instance, bool overrideDoNotSet = false)
         {
-            if (!(__instance is DressGirlAI))
+            if (!ConfigSettings.enableGirlPatch.Value || !(__instance is DressGirlAI))
                 return;
 
             foreach (var renderer in __instance.skinnedMeshRenderers)

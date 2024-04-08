@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TooManyEmotes.Audio;
 using TooManyEmotes.Networking;
 using TooManyEmotes.Patches;
 using Unity.Netcode;
@@ -17,24 +18,24 @@ namespace TooManyEmotes
         public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
         public static string localPlayerUsername { get { return GameNetworkManager.Instance.username; } }
 
-        public static List<UnlockableEmote> unlockedEmotes = new List<UnlockableEmote>();
-        public static List<UnlockableEmote> unlockedEmotesTier0 = new List<UnlockableEmote>();
-        public static List<UnlockableEmote> unlockedEmotesTier1 = new List<UnlockableEmote>();
-        public static List<UnlockableEmote> unlockedEmotesTier2 = new List<UnlockableEmote>();
-        public static List<UnlockableEmote> unlockedEmotesTier3 = new List<UnlockableEmote>();
-
-        public static Dictionary<string, List<UnlockableEmote>> unlockedEmotesByPlayer = new Dictionary<string, List<UnlockableEmote>>();
-        public static List<UnlockableEmote> unlockedFavoriteEmotes = new List<UnlockableEmote>();
-
+        internal static List<UnlockableEmote> unlockedEmotes = new List<UnlockableEmote>();
+        internal static List<UnlockableEmote> unlockedEmotesTier0 = new List<UnlockableEmote>();
+        internal static List<UnlockableEmote> unlockedEmotesTier1 = new List<UnlockableEmote>();
+        internal static List<UnlockableEmote> unlockedEmotesTier2 = new List<UnlockableEmote>();
+        internal static List<UnlockableEmote> unlockedEmotesTier3 = new List<UnlockableEmote>();
+        
+        internal static Dictionary<string, List<UnlockableEmote>> unlockedEmotesByPlayer = new Dictionary<string, List<UnlockableEmote>>();
+        internal static List<UnlockableEmote> unlockedFavoriteEmotes = new List<UnlockableEmote>();
 
 
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
         [HarmonyPostfix]
         public static void ResetGameValues()
         {
-            EmoteController.allEmoteControllers.Clear();
-            EmoteControllerPlayer.allPlayerEmoteControllers.Clear();
-            EmoteControllerMaskedEnemy.allMaskedEnemyEmoteControllers.Clear();
+            EmoteController.allEmoteControllers?.Clear();
+            EmoteControllerPlayer.allPlayerEmoteControllers?.Clear();
+            EmoteControllerMaskedEnemy.allMaskedEnemyEmoteControllers?.Clear();
+            EmoteAudioSource.allEmoteAudioSources?.Clear();
         }
 
 
@@ -44,6 +45,7 @@ namespace TooManyEmotes
         {
             if (!NetworkManager.Singleton.IsServer)
                 return;
+
             if (!unlockedEmotesByPlayer.ContainsKey(StartOfRound.Instance.localPlayerController.playerUsername))
             {
                 unlockedEmotesByPlayer.Add(StartOfRound.Instance.localPlayerController.playerUsername, unlockedEmotes);
@@ -53,7 +55,7 @@ namespace TooManyEmotes
             {
                 foreach (var emote in unlockedEmotesByPlayer[StartOfRound.Instance.localPlayerController.playerUsername])
                 {
-                    if (!unlockedEmotes.Contains(emote))
+                    if (!IsEmoteUnlocked(emote))
                         unlockedEmotes.Add(emote);
                 }
                 unlockedEmotesByPlayer[StartOfRound.Instance.localPlayerController.playerUsername] = unlockedEmotes;
@@ -93,14 +95,18 @@ namespace TooManyEmotes
         }
 
 
-        public static void ResetProgressLocal()
+        public static void ResetProgressLocal(bool forceResetAll = false)
         {
-            Plugin.Log("Resetting progression.");
-            ResetEmotesLocal();
-            TerminalPatcher.currentEmoteCredits = ConfigSync.instance.syncStartingEmoteCredits;
-            var usernames = new List<string>(TerminalPatcher.currentEmoteCreditsByPlayer.Keys);
-            foreach (string username in usernames)
-                TerminalPatcher.currentEmoteCreditsByPlayer[username] = ConfigSync.instance.syncStartingEmoteCredits;
+            Plugin.Log("Resetting progress.");
+            if (!ConfigSync.instance.syncPersistentUnlocks || forceResetAll)
+                ResetEmotesLocal();
+            if (!ConfigSync.instance.syncPersistentEmoteCredits || forceResetAll)
+            {
+                TerminalPatcher.currentEmoteCredits = ConfigSync.instance.syncStartingEmoteCredits;
+                var usernames = new List<string>(TerminalPatcher.currentEmoteCreditsByPlayer.Keys);
+                foreach (string username in usernames)
+                    TerminalPatcher.currentEmoteCreditsByPlayer[username] = ConfigSync.instance.syncStartingEmoteCredits;
+            }
             TerminalPatcher.emoteStoreSeed = 0;
         }
 
@@ -133,9 +139,32 @@ namespace TooManyEmotes
         }
 
 
+        public static bool IsEmoteUnlocked(string emoteName)
+        {
+            if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote))
+                return IsEmoteUnlocked(emote);
+            return false;
+        }
+
+
+        public static bool IsEmoteUnlocked(UnlockableEmote emote)
+        {
+            if (emote == null)
+                return false;
+
+            if (emote.emoteSyncGroup != null && emote.emoteSyncGroup.Count > 0)
+            {
+                foreach (var otherEmote in emote.emoteSyncGroup)
+                {
+                    if (unlockedEmotes.Contains(otherEmote))
+                        return true;
+                }
+            }
+            return unlockedEmotes.Contains(emote);
+        }
+
+
         public static List<UnlockableEmote> GetUnlockedEmotes(PlayerControllerB playerController) => GetUnlockedEmotes(playerController != null ? playerController.playerUsername : "");
-
-
         public static List<UnlockableEmote> GetUnlockedEmotes(string playerUsername)
         {
             if (unlockedEmotesByPlayer.TryGetValue(playerUsername, out var unlockedEmotes))
@@ -160,6 +189,8 @@ namespace TooManyEmotes
                 return;
 
             // Check if one of the emotes in the sync group is already unlocked
+            if (IsEmoteUnlocked(emote))
+                return;
             if (emote.emoteSyncGroup != null)
             {
                 foreach (var syncEmote in emote.emoteSyncGroup)
@@ -216,26 +247,19 @@ namespace TooManyEmotes
             unlockedFavoriteEmotes.Clear();
             foreach (string emoteName in EmotesManager.allFavoriteEmotes)
             {
-                if (EmotesManager.allUnlockableEmotesDict.ContainsKey(emoteName))
+                if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote))
                 {
-                    var emote = EmotesManager.allUnlockableEmotesDict[emoteName];
-                    if (emote != null)
-                    {
-                        if (emote.emoteSyncGroup != null && emote.emoteSyncGroup.Count > 0)
-                            emote = emote.emoteSyncGroup[0];
-                        if (unlockedEmotes.Contains(emote))
-                            unlockedFavoriteEmotes.Add(emote);
-                    }
+                    if (emote.emoteSyncGroup != null && emote.emoteSyncGroup.Count > 0)
+                        emote = emote.emoteSyncGroup[0];
+                    if (IsEmoteUnlocked(emote))
+                        unlockedFavoriteEmotes.Add(emote);
                 }
                 //else Plugin.LogWarning("Error loading favorited emote. Emote does not exist. The emote has likely been temporarily removed in this update.");
             }
         }
 
 
-        public static void SortUnlockedEmotes()
-        {
-            unlockedEmotes = unlockedEmotes.OrderBy(item => item.rarity).ThenBy(item => item.emoteName).ToList();
-        }
+        public static void SortUnlockedEmotes() => unlockedEmotes = unlockedEmotes.OrderBy(item => item.rarity).ThenBy(item => item.emoteName).ToList();
 
 
         public static bool TryGetPlayerByClientId(ulong clientId, out PlayerControllerB playerController)

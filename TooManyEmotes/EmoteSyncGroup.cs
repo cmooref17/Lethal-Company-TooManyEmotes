@@ -28,17 +28,16 @@ namespace TooManyEmotes
 
         public float timeStartedEmote;
         public UnlockableEmote performingEmote;
-        //public EmoteAudioSource currentEmoteAudioSource;
         public bool useAudio = true;
-        public EmoteBoombox currentBoombox;
+        public EmoteAudioPlayer currentAudioPlayer;
 
 
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         public static void Init()
         {
             currentEmoteSyncId = 0;
-            allEmoteSyncGroups.Clear();
+            allEmoteSyncGroups?.Clear();
         }
 
 
@@ -62,19 +61,27 @@ namespace TooManyEmotes
                 if (!performingEmote.isBoomboxAudio)
                 {
                     currentEmoteAudioSources = new Dictionary<UnlockableEmote, EmoteAudioSource>();
-                    currentEmoteAudioSources[performingEmote] = emoteController.personalEmoteAudioSource;
-                    emoteController.personalEmoteAudioSource.PlayEmoteAudio(emoteController.performingEmote);
-                    emoteController.personalEmoteAudioSource.AddToEmoteSyncGroup(this);
-                    emoteController.personalEmoteAudioSource.UpdateVolume();
+                    if (emoteController.personalEmoteAudioSource == null)
+                    {
+                        this.useAudio = false;
+                        Plugin.LogError("Attempted to perform emote with personal audio source, which is null.");
+                    }
+                    else
+                    {
+                        currentEmoteAudioSources[performingEmote] = emoteController.personalEmoteAudioSource;
+                        emoteController.personalEmoteAudioSource.SyncWithEmoteControllerAudio(emoteController);
+                        emoteController.personalEmoteAudioSource.AddToEmoteSyncGroup(this);
+                    }
                 }
                 else
                 {
-                    var newBoombox = BoomboxManager.GetNearestAvailableBoombox(emoteController.transform);
-                    if (newBoombox != null)
-                        AssignBoombox(newBoombox);
+                    var newAudioPlayer = EmoteAudioPlayerManager.GetNearestEmoteAudioPlayer(emoteController.transform);
+                    if (newAudioPlayer != null && newAudioPlayer.CanPlayMusic())
+                        AssignExternalAudioPlayer(newAudioPlayer);
                     else
                         Plugin.LogWarning("Performing emote with no music. No available boomboxes found nearby. Don't worry. Everything will be okay.");
                 }
+                UpdateAudioVolume();
             }
             allEmoteSyncGroups[syncId] = this;
             timeStartedEmote = Time.time;
@@ -99,11 +106,11 @@ namespace TooManyEmotes
                             emoteController.personalEmoteAudioSource.AddToEmoteSyncGroup(this);
                         }
                     }
-                    else if (currentBoombox == null)
+                    else if (currentAudioPlayer == null)
                     {
-                        var newBoombox = BoomboxManager.GetNearestAvailableBoombox(emoteController.transform);
-                        if (newBoombox != null)
-                            AssignBoombox(newBoombox);
+                        var newAudioPlayer = EmoteAudioPlayerManager.GetNearestEmoteAudioPlayer(emoteController.transform);
+                        if (newAudioPlayer != null && newAudioPlayer.CanPlayMusic())
+                            AssignExternalAudioPlayer(newAudioPlayer);
                     }
                     UpdateAudioVolume();
                 }
@@ -144,8 +151,8 @@ namespace TooManyEmotes
                 {
                     if (currentEmoteAudioSources.ContainsValue(emoteController.personalEmoteAudioSource))
                     {
-                        emoteController.personalEmoteAudioSource.RemoveFromEmoteSyncGroup();
                         emoteController.personalEmoteAudioSource.StopAudio();
+                        emoteController.personalEmoteAudioSource.RemoveFromEmoteSyncGroup();
 
                         var emote = currentEmoteAudioSources.FirstOrDefault(x => x.Value == emoteController.personalEmoteAudioSource).Key;
                         currentEmoteAudioSources.Remove(emote);
@@ -155,10 +162,11 @@ namespace TooManyEmotes
                             // Replace emote audio source for that emote if possible
                             foreach (var otherEmoteController in syncGroup)
                             {
-                                if (otherEmoteController == null || otherEmoteController.performingEmote == null)
+                                if (otherEmoteController == null || otherEmoteController.performingEmote == null || otherEmoteController == emoteController)
                                     continue;
+
                                 var emoteAudioSource = otherEmoteController.personalEmoteAudioSource;
-                                if (otherEmoteController.performingEmote == emote && emoteAudioSource != null && !emoteAudioSource.isPlayingAudio)
+                                if (otherEmoteController.performingEmote == emote && emoteAudioSource != null && emoteAudioSource.CanPlayMusic())
                                 {
                                     currentEmoteAudioSources[emote] = emoteAudioSource;
                                     emoteAudioSource.SyncWithEmoteControllerAudio(otherEmoteController);
@@ -188,10 +196,10 @@ namespace TooManyEmotes
                 }
                 currentEmoteAudioSources = null;
             }
-            if (currentBoombox != null)
+            if (currentAudioPlayer != null)
             {
-                currentBoombox.StopAudio();
-                currentBoombox.RemoveFromEmoteSyncGroup();
+                currentAudioPlayer.StopAudio();
+                currentAudioPlayer.RemoveFromEmoteSyncGroup();
             }
             allEmoteSyncGroups.Remove(syncId);
             syncGroup = null;
@@ -209,27 +217,27 @@ namespace TooManyEmotes
                         emoteAudioSource.UpdateVolume();
                 }
             }
-            if (currentBoombox != null)
-                currentBoombox.UpdateVolume();
+            if (currentAudioPlayer != null)
+                currentAudioPlayer.UpdateVolume();
         }
 
 
-        public void AssignBoombox(EmoteBoombox boombox)
+        public void AssignExternalAudioPlayer(EmoteAudioPlayer audioPlayer)
         {
-            if (currentBoombox != null)
+            if (currentAudioPlayer != null)
             {
-                currentBoombox.StopAudio();
-                currentBoombox.RemoveFromEmoteSyncGroup();
-                currentBoombox = null;
+                currentAudioPlayer.StopAudio();
+                currentAudioPlayer.RemoveFromEmoteSyncGroup();
+                currentAudioPlayer = null;
             }
-            if (performingEmote.hasAudio && performingEmote.isBoomboxAudio)
+            if (useAudio && performingEmote.hasAudio && performingEmote.isBoomboxAudio)
             {
-                currentBoombox = boombox;
-                if (currentBoombox != null)
+                currentAudioPlayer = audioPlayer;
+                if (currentAudioPlayer != null)
                 {
-                    currentBoombox.SyncWithEmoteControllerAudio(leadEmoteController);
-                    currentBoombox.AddToEmoteSyncGroup(this);
-                    currentBoombox.UpdateVolume();
+                    currentAudioPlayer.SyncWithEmoteControllerAudio(leadEmoteController);
+                    currentAudioPlayer.AddToEmoteSyncGroup(this);
+                    currentAudioPlayer.UpdateVolume();
                 }
             }
         }

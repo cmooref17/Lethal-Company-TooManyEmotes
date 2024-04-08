@@ -213,7 +213,7 @@ namespace TooManyEmotes.Input
         static void OnPressOpenEmoteMenu(InputAction.CallbackContext context)
         {
             //Plugin.Log("Starting opening emote menu...");
-            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value)
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
 
             if (!EmoteMenuManager.isMenuOpen)
@@ -257,8 +257,11 @@ namespace TooManyEmotes.Input
 
         public static void PerformEmoteLocal(InputAction.CallbackContext context)
         {
+            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
+                return;
             if (EmoteMenuManager.hoveredEmoteIndex < 0 || EmoteMenuManager.hoveredEmoteIndex >= EmoteMenuManager.currentLoadoutEmotesList.Count || ConfigSettings.disableEmotesForSelf.Value || EmoteControllerPlayer.emoteControllerLocal == null)
                 return;
+
             UnlockableEmote emote = EmoteMenuManager.currentLoadoutEmotesList[EmoteMenuManager.hoveredEmoteIndex];
             if (emote != null)
                 EmoteControllerPlayer.emoteControllerLocal.TryPerformingEmoteLocal(emote);
@@ -307,7 +310,7 @@ namespace TooManyEmotes.Input
 
         public static void OnUpdateRotatePlayerEmoteModifier(InputAction.CallbackContext context)
         {
-            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || ConfigSync.instance.syncEnableMovingWhileEmoting)
+            if (localPlayerController == null || ConfigSync.instance.syncEnableMovingWhileEmoting || !EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote())
                 return;
             
             if (context.performed)
@@ -324,8 +327,9 @@ namespace TooManyEmotes.Input
 
         public static void OnReloadPlayerModel(InputAction.CallbackContext context)
         {
-            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || !context.performed)
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled || !context.performed)
                 return;
+
             Plugin.Log("Reloading local player model.");
             ThirdPersonEmoteController.ReloadPlayerModel(localPlayerController);
         }

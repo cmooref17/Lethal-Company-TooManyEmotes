@@ -13,46 +13,45 @@ using UnityEngine;
 namespace TooManyEmotes.Compatibility
 {
     [HarmonyPatch]
-    public static class MoreCompanyPatcher
+    internal static class MoreCompany_Patcher
     {
-        public static bool Enabled = false;
-        public static bool appliedPatch = false;
-        public static List<GameObject> cosmeticInstances = new List<GameObject>();
-        public static bool appliedCosmetics = false;
+        public static bool Enabled { get { return Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany"); } }
+
 
         [HarmonyPatch(typeof(HUDManager), "AddPlayerChatMessageClientRpc")]
         [HarmonyPrefix]
-        public static void ApplyPatch()
+        private static void ApplyPatch(HUDManager __instance)
         {
-            if (Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany"))
+            // Not client exec stage
+            if ((int)Traverse.Create(__instance).Field("__rpc_exec_stage").GetValue() != 2)
+                return;
+
+            if (Enabled)
             {
-                Enabled = true;
                 if (!Plugin.IsModLoaded("com.potatoepet.AdvancedCompany"))
-                    MoreCompanyPatch();
+                    Patch();
             }
         }
 
 
         // seperate method without inlining to avoid throwing errors on chat message
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void MoreCompanyPatch()
+        private static void Patch()
         {
             CosmeticApplication val = UnityEngine.Object.FindObjectOfType<CosmeticApplication>();
             if (CosmeticRegistry.locallySelectedCosmetics.Count <= 0 || val.spawnedCosmetics.Count > 0)
-            {
                 return;
-            }
+
             Plugin.Log("Applying MoreCompany Cosmetics patch.");
-            appliedCosmetics = true;
+
             foreach (string locallySelectedCosmetic in CosmeticRegistry.locallySelectedCosmetics)
-            {
                 val.ApplyCosmetic(locallySelectedCosmetic, true);
-            }
+
             foreach (CosmeticInstance spawnedCosmetic in val.spawnedCosmetics)
             {
-                Transform transform = ((Component)spawnedCosmetic).transform;
+                Transform transform = spawnedCosmetic.transform;
                 transform.localScale *= 0.38f;
-                SetAllChildrenLayer(((Component)spawnedCosmetic).transform, 23);
+                SetAllChildrenLayer(spawnedCosmetic.transform, 23);
             }
         }
 

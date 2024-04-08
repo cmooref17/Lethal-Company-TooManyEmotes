@@ -14,6 +14,8 @@ using TooManyEmotes.Patches;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using TooManyEmotes.Audio;
+using TooManyEmotes.Props;
 
 namespace TooManyEmotes.Networking
 {
@@ -27,9 +29,12 @@ namespace TooManyEmotes.Networking
 
         public bool syncUnlockEverything;
         public bool syncShareEverything;
+        public bool syncPersistentUnlocks;
+        public bool syncPersistentEmoteCredits;
         public bool syncSyncUnsharedEmotes;
         public bool syncEnableMovingWhileEmoting;
         public bool syncDisableRaritySystem;
+        public bool syncEnableGrabbableEmoteProps;
 
         public int syncStartingEmoteCredits;
         public float syncAddEmoteCreditsMultiplier;
@@ -56,8 +61,11 @@ namespace TooManyEmotes.Networking
         public float syncMaskedEnemyEmoteRandomDurationMin;
         public float syncMaskedEnemyEmoteRandomDurationMax;
 
+        public bool syncDisableAudioShipSpeaker;
+
         public static Vector2 syncMaskedEnemyEmoteRandomDelay;
         public static Vector2 syncMaskedEnemyEmoteRandomDuration;
+
 
         public static HashSet<ulong> syncedClients;
 
@@ -65,10 +73,14 @@ namespace TooManyEmotes.Networking
         public ConfigSync()
         {
             syncUnlockEverything = ConfigSettings.unlockEverything.Value;
-            syncShareEverything = ConfigSettings.shareEverything.Value;
+            syncShareEverything = syncUnlockEverything || ConfigSettings.shareEverything.Value;
+            syncPersistentUnlocks = ConfigSettings.persistentUnlocks.Value;
+            syncPersistentEmoteCredits = syncPersistentUnlocks && ConfigSettings.persistentEmoteCredits.Value;
             syncSyncUnsharedEmotes = ConfigSettings.syncUnsharedEmotes.Value;
             syncEnableMovingWhileEmoting = ConfigSettings.enableMovingWhileEmoting.Value;
             syncDisableRaritySystem = ConfigSettings.disableRaritySystem.Value;
+
+            syncEnableGrabbableEmoteProps = ConfigSettings.enableGrabbableEmoteProps.Value;
 
             syncStartingEmoteCredits = ConfigSettings.startingEmoteCredits.Value;
             syncAddEmoteCreditsMultiplier = ConfigSettings.addEmoteCreditsMultiplier.Value;
@@ -95,8 +107,13 @@ namespace TooManyEmotes.Networking
             syncMaskedEnemyEmoteRandomDurationMin = syncMaskedEnemyEmoteRandomDuration.x;
             syncMaskedEnemyEmoteRandomDurationMax = syncMaskedEnemyEmoteRandomDuration.y;
 
+            syncDisableAudioShipSpeaker = ConfigSettings.disableAudioShipSpeaker.Value;
+
             if (syncUnlockEverything)
+            {
                 syncShareEverything = true;
+                syncPersistentUnlocks = false;
+            }
             //syncNumMysteryEmotesStoreRotation = ConfigSettings.numMysteryEmotesStoreRotation.Value;
 
             if (ConfigSettings.disableRaritySystem.Value)
@@ -137,7 +154,6 @@ namespace TooManyEmotes.Networking
         }
 
 
-
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
         [HarmonyPostfix]
         public static void ResetValues()
@@ -158,19 +174,20 @@ namespace TooManyEmotes.Networking
             if (NetworkManager.Singleton.IsServer)
             {
                 syncedClients = new HashSet<ulong>();
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestConfigSyncServerRpc", OnRequestConfigSyncServerRpc);
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.OnRequestConfigSyncServerRpc", OnRequestConfigSyncServerRpc);
                 if (instance.syncUnlockEverything)
                 {
                     foreach (var emote in EmotesManager.allUnlockableEmotes)
                         SessionManager.UnlockEmoteLocal(emote);
                 }
+                OnSynced();
             }
             else
             {
                 // Unlock all emotes until synced with host
                 foreach (var emote in EmotesManager.allUnlockableEmotes)
                     SessionManager.UnlockEmoteLocal(emote);
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestConfigSyncClientRpc", OnRequestConfigSyncClientRpc);
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.OnRequestConfigSyncClientRpc", OnRequestConfigSyncClientRpc);
                 RequestConfigSync();
             }
         }
@@ -182,16 +199,18 @@ namespace TooManyEmotes.Networking
             {
                 Plugin.Log("Requesting config sync from server");
                 var writer = new FastBufferWriter(0, Allocator.Temp);
-                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnRequestConfigSyncServerRpc", NetworkManager.ServerClientId, writer);
+                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes.OnRequestConfigSyncServerRpc", NetworkManager.ServerClientId, writer);
                 return;
             }
             Plugin.LogError("Failed to send unlocked emote update to server.");
         }
 
 
-        private static void OnRequestConfigSyncServerRpc(ulong clientId, FastBufferReader reader) {
+        private static void OnRequestConfigSyncServerRpc(ulong clientId, FastBufferReader reader)
+        {
             if (!NetworkManager.Singleton.IsServer)
                 return;
+
             Plugin.Log("Receiving config sync request from client: " + clientId);
             syncedClients.Add(clientId);
             SyncManager.syncedClients.Remove(clientId);
@@ -199,7 +218,7 @@ namespace TooManyEmotes.Networking
             var writer = new FastBufferWriter(sizeof(int) + bytes.Length, Allocator.Temp);
             writer.WriteValueSafe(bytes.Length);
             writer.WriteBytesSafe(bytes);
-            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnRequestConfigSyncClientRpc", clientId, writer);
+            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes.OnRequestConfigSyncClientRpc", clientId, writer);
         }
 
 
@@ -216,26 +235,38 @@ namespace TooManyEmotes.Networking
                 byte[] bytes = new byte[dataLength];
                 reader.ReadBytesSafe(ref bytes, dataLength);
                 instance = DeserializeFromByteArray(bytes);
-                if (instance.syncUnlockEverything)
-                    instance.syncShareEverything = true;
                 syncMaskedEnemyEmoteRandomDelay = new Vector2(instance.syncMaskedEnemyEmoteRandomDelayMin, instance.syncMaskedEnemyEmoteRandomDelayMax);
                 syncMaskedEnemyEmoteRandomDuration = new Vector2(instance.syncMaskedEnemyEmoteRandomDurationMin, instance.syncMaskedEnemyEmoteRandomDurationMax);
-                isSynced = true;
+
+                OnSynced();
 
                 if (EmotesManager.allUnlockableEmotes != null && SessionManager.unlockedEmotes != null)
                 {
-                    SessionManager.ResetProgressLocal();
+                    SessionManager.ResetProgressLocal(true);
                     if (instance.syncUnlockEverything)
                         SessionManager.UnlockEmotesLocal(EmotesManager.allUnlockableEmotes);
                     else
                         SessionManager.UnlockEmotesLocal(EmotesManager.complementaryEmotes);
                     SessionManager.UpdateUnlockedFavoriteEmotes();
                 }
+                isSynced = true;
                 return;
             }
             Plugin.LogError("Error receiving sync from server.");
         }
 
+
+        private static void OnSynced()
+        {
+            isSynced = true;
+            if (!instance.syncDisableAudioShipSpeaker)
+                EmoteAudioPlayerManager.InitializeShipSpeakerAudioPlayer();
+
+            if (instance.syncEnableGrabbableEmoteProps)
+                EmotePropManager.AddGrabbableEmotePropsMoons();
+            else
+                EmotePropManager.RemoveGrabbableEmotePropsMoons(); // Should be unnecessary, but just in case
+        }
 
 
         public static byte[] SerializeConfigToByteArray(ConfigSync config)

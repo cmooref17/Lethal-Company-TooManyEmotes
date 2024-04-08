@@ -36,14 +36,14 @@ namespace TooManyEmotes.Networking
             if (NetworkManager.Singleton.IsServer)
             {
                 syncedClients = new HashSet<ulong>();
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestSyncServerRpc", OnRequestSyncServerRpc);
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnUnlockEmoteServerRpc", OnUnlockEmoteServerRpc);
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.OnRequestSyncServerRpc", OnRequestSyncServerRpc);
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.OnUnlockEmoteServerRpc", OnUnlockEmoteServerRpc);
             }
             else
             {
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRequestSyncClientRpc", OnRequestSyncClientRpc);
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnUnlockEmoteClientRpc", OnUnlockEmoteClientRpc);
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnRotateEmotesClientRpc", RotateEmoteSelectionClientRpc);
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.OnRequestSyncClientRpc", OnRequestSyncClientRpc);
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.OnUnlockEmoteClientRpc", OnUnlockEmoteClientRpc);
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.OnRotateEmotesClientRpc", RotateEmoteSelectionClientRpc);
             }
         }
 
@@ -66,7 +66,7 @@ namespace TooManyEmotes.Networking
                 return;
             Plugin.Log("Sending sync request to server.");
             var writer = new FastBufferWriter(0, Allocator.Temp);
-            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnRequestSyncServerRpc", NetworkManager.ServerClientId, writer);
+            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes.OnRequestSyncServerRpc", NetworkManager.ServerClientId, writer);
         }
 
 
@@ -132,7 +132,7 @@ namespace TooManyEmotes.Networking
             writer.WriteValueSafe(unlockedEmotes.Count);
             for (int i = 0; i < unlockedEmotes.Count; i++)
                 writer.WriteValueSafe(unlockedEmotes[i].emoteId);
-            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnRequestSyncClientRpc", clientId, writer);
+            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes.OnRequestSyncClientRpc", clientId, writer);
         }
 
 
@@ -188,7 +188,7 @@ namespace TooManyEmotes.Networking
             writer.WriteValue(newEmoteCredits);
             writer.WriteValue(1); // one emote unlocked
             writer.WriteValue(emoteId);
-            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnUnlockEmoteServerRpc", NetworkManager.ServerClientId, writer);
+            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes.OnUnlockEmoteServerRpc", NetworkManager.ServerClientId, writer);
         }
 
 
@@ -200,7 +200,7 @@ namespace TooManyEmotes.Networking
             writer.WriteValue(SessionManager.unlockedEmotes.Count);
             foreach (var emote in SessionManager.unlockedEmotes)
                 writer.WriteValue(emote.emoteId);
-            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes-OnUnlockEmoteServerRpc", NetworkManager.ServerClientId, writer);
+            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes.OnUnlockEmoteServerRpc", NetworkManager.ServerClientId, writer);
         }
 
 
@@ -249,7 +249,7 @@ namespace TooManyEmotes.Networking
                         SessionManager.UnlockEmoteLocal(emoteId);
                 }
                 //if (ConfigSync.instance.syncShareEverything)
-                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes-OnUnlockEmoteClientRpc", writer);
+                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes.OnUnlockEmoteClientRpc", writer);
                 return;
             }
             Plugin.LogError("Failed to receive unlocked emote updates from client. Expected updates: " + numEmotes);
@@ -307,7 +307,7 @@ namespace TooManyEmotes.Networking
             TerminalPatcher.RotateNewEmoteSelection();
             var writer = new FastBufferWriter(sizeof(int), Allocator.Temp);
             writer.WriteValue(TerminalPatcher.emoteStoreSeed);
-            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes-OnRotateEmotesClientRpc", writer);
+            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes.OnRotateEmotesClientRpc", writer);
         }
 
 

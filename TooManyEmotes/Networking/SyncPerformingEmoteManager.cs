@@ -34,14 +34,15 @@ namespace TooManyEmotes.Networking
         }
 
 
-        public static void SendPerformingEmoteUpdateToServer(UnlockableEmote emote)
+        public static void SendPerformingEmoteUpdateToServer(UnlockableEmote emote, bool doNotTriggerAudio = false)
         {
             if (!NetworkManager.Singleton.IsClient || emote == null)
                 return;
 
             Plugin.Log("Sending performing emote update to server. Emote: " + emote.emoteName + " EmoteId: " + emote.emoteId);
-            var writer = new FastBufferWriter(sizeof(int), Allocator.Temp);
+            var writer = new FastBufferWriter(sizeof(int) + sizeof(bool), Allocator.Temp);
             writer.WriteValue(emote.emoteId);
+            writer.WriteValue(doNotTriggerAudio);
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes.PerformEmoteServerRpc", NetworkManager.ServerClientId, writer);
         }
 
@@ -71,18 +72,18 @@ namespace TooManyEmotes.Networking
             }
 
             reader.ReadValue(out int emoteId);
-
             if (emoteId < 0 || emoteId >= EmotesManager.allUnlockableEmotes.Count)
             {
                 Plugin.LogWarning("Could not handle performing emote request from client with id: " + clientId + ". Invalid emote id: " + emoteId + " AllUnlockableEmoteListSize: " + EmotesManager.allUnlockableEmotes.Count);
                 return;
             }
 
+            reader.ReadValue(out bool doNotTriggerAudio);
             var emote = EmotesManager.allUnlockableEmotes[emoteId];
             Plugin.Log("Receiving performing emote update from client: " + clientId + " Emote: " + emote.emoteName);
             if (NetworkManager.Singleton.IsClient && emoteController != EmoteControllerPlayer.emoteControllerLocal)
-                emoteController.PerformEmote(emote);
-            ServerSendPerformingEmoteUpdateToClients(emoteController, emote);
+                emoteController.PerformEmote(emote, doNotTriggerAudio: doNotTriggerAudio);
+            ServerSendPerformingEmoteUpdateToClients(emoteController, emote, doNotTriggerAudio);
         }
 
 
@@ -121,7 +122,7 @@ namespace TooManyEmotes.Networking
         }
 
 
-        public static void ServerSendPerformingEmoteUpdateToClients(EmoteController emoteController, UnlockableEmote emote)
+        public static void ServerSendPerformingEmoteUpdateToClients(EmoteController emoteController, UnlockableEmote emote, bool doNotTriggerAudio = false)
         {
             if (!NetworkManager.Singleton.IsServer)
             {
@@ -132,9 +133,10 @@ namespace TooManyEmotes.Networking
             if (emoteController == null || emote == null)
                 return;
 
-            var writer = new FastBufferWriter(sizeof(ulong) + sizeof(int), Allocator.Temp);
+            var writer = new FastBufferWriter(sizeof(ulong) + sizeof(int) + sizeof(bool), Allocator.Temp);
             writer.WriteValue(emoteController.emoteControllerId);
             writer.WriteValue(emote.emoteId);
+            writer.WriteValue(doNotTriggerAudio);
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes.PerformEmoteClientRpc", writer);
         }
 
@@ -177,16 +179,16 @@ namespace TooManyEmotes.Networking
             }
 
             reader.ReadValue(out int emoteId);
-
             if (emoteId < 0 || emoteId >= EmotesManager.allUnlockableEmotes.Count)
             {
                 Plugin.LogWarning("Could not handle performing emote request from server for emote controller with id: " + emoteControllerId + ". Invalid emote id: " + emoteId + " AllUnlockableEmoteListSize: " + EmotesManager.allUnlockableEmotes.Count);
                 return;
             }
 
+            reader.ReadValue(out bool doNotTriggerAudio);
             var emote = EmotesManager.allUnlockableEmotes[emoteId];
             Plugin.Log("Receiving performing emote update from server for emote controller with id: " + emoteControllerId + " Emote: " + emote.emoteName);
-            emoteController.PerformEmote(emote);
+            emoteController.PerformEmote(emote, doNotTriggerAudio: doNotTriggerAudio);
         }
 
 

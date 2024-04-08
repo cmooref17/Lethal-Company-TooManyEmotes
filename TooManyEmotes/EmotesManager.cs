@@ -36,6 +36,8 @@ namespace TooManyEmotes
         public static List<UnlockableEmote> allEmotesTier2;
         public static List<UnlockableEmote> allEmotesTier3;
 
+        //public static Dictionary<GameObject, List<UnlockableEmote>> emotesByProp = new Dictionary<GameObject, List<UnlockableEmote>>();
+
 
         public static void BuildEmotesList()
         {
@@ -139,8 +141,6 @@ namespace TooManyEmotes
                             {
                                 Plugin.LogError("Failed to parse emote layer number in arg: " + args[1] + ". Emote will not be added.");
                                 continue;
-                                //emote.emoteSyncGroup.Add(emote);
-                                //emote.purchasable = emote.emoteSyncGroup.Count == 1;
                             }
                         }
                         else

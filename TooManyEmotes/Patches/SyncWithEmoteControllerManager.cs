@@ -25,7 +25,7 @@ namespace TooManyEmotes.Patches
         [HarmonyPostfix]
         public static void CheckIfLookingAtSyncableEmoteController(PlayerControllerB __instance)
         {
-            if (__instance != localPlayerController || EmoteControllerPlayer.emoteControllerLocal == null || ConfigSettings.disableEmotesForSelf.Value || Compatibility.LCVR_Patcher.Enabled)
+            if (__instance != localPlayerController || EmoteControllerPlayer.emoteControllerLocal == null || ConfigSettings.disableEmotesForSelf.Value || Compatibility.LCVR_Compat.LoadedAndEnabled)
                 return;
 
             if (localPlayerController.cursorTip.text.Contains("Sync emote"))
@@ -59,7 +59,7 @@ namespace TooManyEmotes.Patches
             if (__instance != localPlayerController || !context.performed)
                 return true;
 
-            if (EmoteControllerPlayer.emoteControllerLocal != null && lookingAtSyncableEmoteController != null && !ConfigSettings.disableEmotesForSelf.Value && !Compatibility.LCVR_Patcher.Enabled && !__instance.isPlayerDead)
+            if (EmoteControllerPlayer.emoteControllerLocal != null && lookingAtSyncableEmoteController != null && !ConfigSettings.disableEmotesForSelf.Value && !Compatibility.LCVR_Compat.LoadedAndEnabled && !__instance.isPlayerDead)
             {
                 bool canSync = CanSyncWithEmoteController(EmoteControllerPlayer.emoteControllerLocal, lookingAtSyncableEmoteController);
                 if (canSync)
@@ -77,7 +77,7 @@ namespace TooManyEmotes.Patches
 
         public static bool CanSyncWithEmoteController(EmoteController sourceEmoteController, EmoteController syncWithEmoteController)
         {
-            if (sourceEmoteController == EmoteControllerPlayer.emoteControllerLocal && (ConfigSettings.disableEmotesForSelf.Value || Compatibility.LCVR_Patcher.Enabled))
+            if (sourceEmoteController == EmoteControllerPlayer.emoteControllerLocal && (ConfigSettings.disableEmotesForSelf.Value || Compatibility.LCVR_Compat.LoadedAndEnabled))
             {
                 return false;
             }

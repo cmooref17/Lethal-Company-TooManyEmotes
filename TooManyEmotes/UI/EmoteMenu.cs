@@ -65,22 +65,51 @@ namespace TooManyEmotes.UI
         public static Vector2 currentThumbstickPosition = Vector2.zero;
         public static TextMeshProUGUI[] controlTipLines;
         public static bool usingController { get { return StartOfRound.Instance.localPlayerUsingController; } }
-        static bool firstTimeOpeningMenu;
-
-        static Toggle muteEmoteToggle;
-        static Slider emoteVolumeSlider;
-        static bool updatedAudioPreferences = false;
+        private static bool firstTimeOpeningMenu;
+        
+        private static Toggle muteEmoteToggle;
+        private static Toggle emoteOnlyModeToggle;
+        private static Toggle enableDmcaFreeToggle;
+        private static Toggle enableFirstPersonEmoteToggle;
+        private static Slider emoteVolumeSlider;
+        
+        private static bool currentMuteSetting = false;
+        private static bool currentEmoteOnlyMode = false;
+        private static bool currentDmcaFreeSetting = false;
+        private static bool currentFirstPersonSetting = false;
+        private static float currentVolumeSetting = 1;
+        
+        private static List<UnlockableEmote> allUnlockedEmotesFiltered = new List<UnlockableEmote>();
+        
+        private static GameObject togglePanelComplementary;
+        private static GameObject togglePanel0;
+        private static GameObject togglePanel1;
+        private static GameObject togglePanel2;
+        private static GameObject togglePanel3;
+        
+        private static Toggle hideEmotesComplementaryToggle;
+        private static Toggle hideEmotes0Toggle;
+        private static Toggle hideEmotes1Toggle;
+        private static Toggle hideEmotes2Toggle;
+        private static Toggle hideEmotes3Toggle;
 
 
         [HarmonyPatch(typeof(HUDManager), "Start")]
         [HarmonyPostfix]
         public static void InitializeUI(HUDManager __instance)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled || Plugin.radialMenuPrefab == null)
+            if (Plugin.radialMenuPrefab == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
 
             AnimationPreviewer.enabled = false;
             firstTimeOpeningMenu = true;
+
+            hoveredEmoteUIIndex = -1;
+            currentPage = 0;
+            currentLoadoutIndex = -1;
+            hoveredLoadoutUIIndex = -1;
+            currentThumbstickPosition = Vector2.zero;
+
             menuGameObject = GameObject.Instantiate(Plugin.radialMenuPrefab, __instance.HUDContainer.transform.parent);
             menuGameObject.transform.SetAsLastSibling();
             menuGameObject.name = "EmotesRadialMenu";
@@ -97,7 +126,6 @@ namespace TooManyEmotes.UI
             currentEmoteText = menuTransform.Find("MenuUI/RadialMenu/RadialBase/CurrentEmoteText").GetComponent<TextMeshPro>();
             currentEmoteText.text = "";
             emoteUIElementsList = new List<EmoteUIElement>();
-
 
             controlTipLines = new TextMeshProUGUI[HUDManager.Instance.controlTipLines.Length];
 
@@ -131,9 +159,7 @@ namespace TooManyEmotes.UI
             }
 
             Transform emoteLoadoutsUIParent = menuTransform.Find("MenuUI/EmoteLoadouts").transform;
-            Transform additionalUIParent = menuTransform.Find("MenuUI/AdditionalUI").transform;
             emoteLoadoutsUIParent.gameObject.AddComponent<AdditionalPanelUI>();
-            additionalUIParent.gameObject.AddComponent<AdditionalPanelUI>();
 
             EmoteLoadoutUIElement.uiCount = 0;
             emoteLoadoutUIElementsList = new List<EmoteLoadoutUIElement>();
@@ -156,7 +182,6 @@ namespace TooManyEmotes.UI
             emoteLoadoutUIElementsList[5].loadoutName = "Complementary";
             emoteLoadoutUIElementsList[6].loadoutName = "All";
 
-            SaveManager.LoadFavoritedEmotes();
             emoteLoadouts = new List<List<UnlockableEmote>>()
             {
                 SessionManager.unlockedFavoriteEmotes,
@@ -165,19 +190,63 @@ namespace TooManyEmotes.UI
                 SessionManager.unlockedEmotesTier1,
                 SessionManager.unlockedEmotesTier0,
                 EmotesManager.complementaryEmotes,
-                SessionManager.unlockedEmotes
+                allUnlockedEmotesFiltered
             };
 
             if (currentLoadoutIndex < 0 || currentLoadoutIndex >= emoteLoadouts.Count)
                 currentLoadoutIndex = emoteLoadouts.Count - 1;
 
+            Transform additionalUIParent = menuTransform.Find("MenuUI/AdditionalUI").transform;
+            additionalUIParent.gameObject.AddComponent<AdditionalPanelUI>();
+
             muteEmoteToggle = additionalUIParent.Find("MasterMutePanel")?.GetComponentInChildren<Toggle>();
+            muteEmoteToggle.isOn = AudioManager.muteEmoteAudio;
             muteEmoteToggle.onValueChanged.AddListener(delegate { OnUpdateToggleMuteEmote(muteEmoteToggle); });
+            currentMuteSetting = muteEmoteToggle.isOn;
+
+            emoteOnlyModeToggle = additionalUIParent.Find("EmoteOnlyModePanel")?.GetComponentInChildren<Toggle>();
+            emoteOnlyModeToggle.isOn = AudioManager.emoteOnlyMode;
+            emoteOnlyModeToggle.onValueChanged.AddListener(delegate { OnUpdateToggleEmoteOnlyMode(emoteOnlyModeToggle); });
+            currentEmoteOnlyMode = emoteOnlyModeToggle.isOn;
+
+            enableDmcaFreeToggle = additionalUIParent.Find("DmcaFreePanel")?.GetComponentInChildren<Toggle>();
+            enableDmcaFreeToggle.isOn = AudioManager.dmcaFreeMode;
+            enableDmcaFreeToggle.onValueChanged.AddListener(delegate { OnUpdateToggleDmcaFreeMode(enableDmcaFreeToggle); });
+            currentDmcaFreeSetting = enableDmcaFreeToggle.isOn;
+
+            ThirdPersonEmoteController.LoadPreferences();
+            enableFirstPersonEmoteToggle = additionalUIParent.Find("FirstPersonEmotesPanel")?.GetComponentInChildren<Toggle>();
+            enableFirstPersonEmoteToggle.isOn = ThirdPersonEmoteController.firstPersonEmotesEnabled;
+            enableFirstPersonEmoteToggle.onValueChanged.AddListener(delegate { OnUpdateToggleFirstPerson(enableFirstPersonEmoteToggle); });
+            currentFirstPersonSetting = enableFirstPersonEmoteToggle.isOn;
+
             emoteVolumeSlider = additionalUIParent.Find("AudioVolumePanel")?.GetComponentInChildren<Slider>();
+            emoteVolumeSlider.value = AudioManager.emoteVolumeMultiplier;
             emoteVolumeSlider.onValueChanged.AddListener(delegate { OnUpdateEmoteVolume(emoteVolumeSlider); });
+            currentVolumeSetting = emoteVolumeSlider.value;
 
             muteEmoteToggle.isOn = AudioManager.muteEmoteAudio;
             emoteVolumeSlider.value = Mathf.Clamp(AudioManager.emoteVolumeMultiplier, 0, emoteVolumeSlider.maxValue);
+
+            togglePanelComplementary = additionalUIParent.Find("HideEmotesComplementary").gameObject;
+            togglePanel0 = additionalUIParent.Find("HideEmotes0").gameObject;
+            togglePanel1 = additionalUIParent.Find("HideEmotes1").gameObject;
+            togglePanel2 = additionalUIParent.Find("HideEmotes2").gameObject;
+            togglePanel3 = additionalUIParent.Find("HideEmotes3").gameObject;
+
+            hideEmotesComplementaryToggle = togglePanelComplementary?.GetComponentInChildren<Toggle>();
+            hideEmotes0Toggle = togglePanel0?.GetComponentInChildren<Toggle>();
+            hideEmotes1Toggle = togglePanel1?.GetComponentInChildren<Toggle>();
+            hideEmotes2Toggle = togglePanel2?.GetComponentInChildren<Toggle>();
+            hideEmotes3Toggle = togglePanel3?.GetComponentInChildren<Toggle>();
+
+            hideEmotesComplementaryToggle?.onValueChanged.AddListener(delegate { OnUpdateFilteredEmotes(); });
+            hideEmotes0Toggle?.onValueChanged.AddListener(delegate { OnUpdateFilteredEmotes(); });
+            hideEmotes1Toggle?.onValueChanged.AddListener(delegate { OnUpdateFilteredEmotes(); });
+            hideEmotes2Toggle?.onValueChanged.AddListener(delegate { OnUpdateFilteredEmotes(); });
+            hideEmotes3Toggle?.onValueChanged.AddListener(delegate { OnUpdateFilteredEmotes(); });
+
+            LoadFilterPreferences();
 
             AnimationPreviewer.InitializeAnimationRenderer();
             menuGameObject.SetActive(false);
@@ -188,7 +257,7 @@ namespace TooManyEmotes.UI
         [HarmonyPostfix]
         public static void GetInput()
         {
-            if (!isMenuOpen || ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled)
+            if (!isMenuOpen || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
 
             if (AdditionalPanelUI.hovered || hoveredLoadoutUIIndex != -1)
@@ -224,7 +293,7 @@ namespace TooManyEmotes.UI
 
         public static void OnUpdateThumbStickAngle(InputAction.CallbackContext context)
         {
-            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled || !context.performed || ConfigSync.instance.syncEnableMovingWhileEmoting || !isMenuOpen)
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled || !context.performed || !isMenuOpen)
                 return;
 
             currentThumbstickPosition = context.ReadValue<Vector2>();
@@ -232,7 +301,7 @@ namespace TooManyEmotes.UI
             StartOfRound.Instance.localPlayerUsingController = true;
             if (currentThumbstickPosition == Vector2.zero && previewingEmote != null)
             {
-                localPlayerController.PerformEmote(context, -(previewingEmote.emoteId + 1));
+                EmoteControllerPlayer.emoteControllerLocal.TryPerformingEmoteLocal(previewingEmote);
                 CloseEmoteMenu();
             }
         }
@@ -288,8 +357,6 @@ namespace TooManyEmotes.UI
 
         public static void UpdateControlTipLines()
         {
-            int bindingIndex = usingController ? 1 : 0;
-
             string prevPageKeybind = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.PrevEmotePageAction);
             string nextPageKeybind = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.NextEmotePageAction);
             string nextEmoteLoadoutUpKeybind = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.NextEmoteLoadoutUpAction);
@@ -315,6 +382,24 @@ namespace TooManyEmotes.UI
 
         public static void UpdateEmoteWheel()
         {
+            if (currentLoadoutEmotesList == allUnlockedEmotesFiltered)
+            {
+                SortFilteredEmotes();
+                togglePanelComplementary.SetActive(true);
+                togglePanel0.SetActive(true);
+                togglePanel1.SetActive(true);
+                togglePanel2.SetActive(true);
+                togglePanel3.SetActive(true);
+            }
+            else
+            {
+                togglePanelComplementary.SetActive(false);
+                togglePanel0.SetActive(false);
+                togglePanel1.SetActive(false);
+                togglePanel2.SetActive(false);
+                togglePanel3.SetActive(false);
+            }
+
             currentPage = Mathf.Clamp(currentPage, 0, numPages - 1);
             swapPageText.text = string.Format("Page [{0} / {1}]", currentPage + 1, numPages);
 
@@ -355,6 +440,28 @@ namespace TooManyEmotes.UI
         }
 
 
+        static void SortFilteredEmotes()
+        {
+            allUnlockedEmotesFiltered.Clear();
+            if (!hideEmotesComplementaryToggle.isOn)
+                allUnlockedEmotesFiltered.AddRange(EmotesManager.complementaryEmotes);
+            if (!hideEmotes0Toggle.isOn)
+                allUnlockedEmotesFiltered.AddRange(SessionManager.unlockedEmotesTier0);
+            if (!hideEmotes1Toggle.isOn)
+                allUnlockedEmotesFiltered.AddRange(SessionManager.unlockedEmotesTier1);
+            if (!hideEmotes2Toggle.isOn)
+                allUnlockedEmotesFiltered.AddRange(SessionManager.unlockedEmotesTier2);
+            if (!hideEmotes3Toggle.isOn)
+                allUnlockedEmotesFiltered.AddRange(SessionManager.unlockedEmotesTier3);
+
+            for (int i = SessionManager.unlockedFavoriteEmotes.Count - 1; i >= 0; i--)
+            {
+                if (!allUnlockedEmotesFiltered.Contains(SessionManager.unlockedFavoriteEmotes[i]))
+                    allUnlockedEmotesFiltered.Insert(0, SessionManager.unlockedFavoriteEmotes[i]);
+            }
+        }
+
+
         public static void SetCurrentEmoteLoadout(int loadoutIndex)
         {
             if (currentLoadoutIndex == loadoutIndex)
@@ -388,23 +495,21 @@ namespace TooManyEmotes.UI
         public static bool isMenuOpen { get { return menuGameObject != null && menuGameObject.activeSelf; } }
 
 
-        public static void ToggleEmoteMenu()
-        {
-            if (!isMenuOpen)
-                OpenEmoteMenu();
-            else
-                CloseEmoteMenu();
-        }
-
-
         public static void OpenEmoteMenu()
         {
+            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
+                return;
+
             if (firstTimeOpeningMenu)
             {
                 SetCurrentEmoteLoadout(emoteLoadouts[0].Count > 0 ? 0 : currentLoadoutIndex);
                 firstTimeOpeningMenu = false;
             }
-            updatedAudioPreferences = false;
+
+            currentMuteSetting = AudioManager.muteEmoteAudio;
+            currentDmcaFreeSetting = AudioManager.dmcaFreeMode;
+            currentVolumeSetting = AudioManager.emoteVolumeMultiplier;
+
             menuGameObject.SetActive(true);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -412,11 +517,14 @@ namespace TooManyEmotes.UI
             AnimationPreviewer.UpdatePlayerSuit();
             currentThumbstickPosition = Vector2.zero;
 
+
             foreach (var controlTipLine in HUDManager.Instance.controlTipLines)
                 controlTipLine.enabled = false;
 
             UpdateControlTipLines();
             UpdateEmoteWheel();
+            if (currentLoadoutEmotesList != allUnlockedEmotesFiltered) // UpdateEmoteWheel will do this
+                SortFilteredEmotes();
         }
 
 
@@ -430,12 +538,11 @@ namespace TooManyEmotes.UI
             OnHoveredNewLoadoutElement(-1);
             AnimationPreviewer.SetPreviewAnimation(null);
             AdditionalPanelUI.hovered = false;
+            SaveFilterPreferences();
+            ThirdPersonEmoteController.SavePreferences();
             
-            if (updatedAudioPreferences)
-            {
+            if (AudioManager.muteEmoteAudio != currentMuteSetting || AudioManager.dmcaFreeMode != currentDmcaFreeSetting || AudioManager.emoteVolumeMultiplier != currentVolumeSetting)
                 AudioManager.SavePreferences();
-                updatedAudioPreferences = false;
-            }
 
             foreach (var controlTipLine in HUDManager.Instance.controlTipLines)
                 controlTipLine.enabled = true;
@@ -445,6 +552,8 @@ namespace TooManyEmotes.UI
         public static bool CanOpenEmoteMenu()
         {
             if (quickMenuManager.isMenuOpen && !isMenuOpen)
+                return false;
+            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return false;
             if (localPlayerController.isPlayerDead || localPlayerController.inTerminalMenu || localPlayerController.isTypingChat || localPlayerController.inSpecialInteractAnimation || localPlayerController.isGrabbingObjectAnimation || localPlayerController.inShockingMinigame || localPlayerController.isClimbingLadder || localPlayerController.isSinking)
                 return false;
@@ -456,19 +565,71 @@ namespace TooManyEmotes.UI
 
         public static void OnUpdateToggleMuteEmote(Toggle toggle)
         {
-            updatedAudioPreferences = true;
             AudioManager.muteEmoteAudio = toggle.isOn;
             foreach (var emoteAudioSource in EmoteAudioSource.allEmoteAudioSources)
                 emoteAudioSource.UpdateVolume();
         }
 
 
+        public static void OnUpdateToggleEmoteOnlyMode(Toggle toggle)
+        {
+            AudioManager.emoteOnlyMode = toggle.isOn;
+        }
+
+
+        public static void OnUpdateToggleDmcaFreeMode(Toggle toggle)
+        {
+            AudioManager.dmcaFreeMode = toggle.isOn;
+            foreach (var emoteAudioSource in EmoteAudioSource.allEmoteAudioSources)
+                emoteAudioSource.RefreshAudio();
+        }
+
+        
+        public static void OnUpdateToggleFirstPerson(Toggle toggle)
+        {
+            ThirdPersonEmoteController.firstPersonEmotesEnabled = toggle.isOn;
+        }
+        
+
+
         public static void OnUpdateEmoteVolume(Slider volumeSlider)
         {
-            updatedAudioPreferences = true;
             AudioManager.emoteVolumeMultiplier = Mathf.Clamp(volumeSlider.value, 0, 2);
             foreach (var emoteAudioSource in EmoteAudioSource.allEmoteAudioSources)
                 emoteAudioSource.UpdateVolume();
+        }
+
+
+        public static void OnUpdateFilteredEmotes()
+        {
+            if (currentLoadoutEmotesList == allUnlockedEmotesFiltered)
+                UpdateEmoteWheel();
+        }
+
+
+        public static void SaveFilterPreferences()
+        {
+            ES3.Save("TooManyEmotes.HideEmotesComplementary", hideEmotesComplementaryToggle.isOn);
+            ES3.Save("TooManyEmotes.HideEmotes0", hideEmotes0Toggle.isOn);
+            ES3.Save("TooManyEmotes.HideEmotes1", hideEmotes1Toggle.isOn);
+            ES3.Save("TooManyEmotes.HideEmotes2", hideEmotes2Toggle.isOn);
+            ES3.Save("TooManyEmotes.HideEmotes3", hideEmotes3Toggle.isOn);
+        }
+
+
+        public static void LoadFilterPreferences()
+        {
+            ES3.DeleteKey("hideEmotesComplementary");
+            ES3.DeleteKey("hideEmotes0");
+            ES3.DeleteKey("hideEmotes1");
+            ES3.DeleteKey("hideEmotes2");
+            ES3.DeleteKey("hideEmotes3");
+
+            hideEmotesComplementaryToggle.isOn = ES3.Load("TooManyEmotes.HideEmotesComplementary", false);
+            hideEmotes0Toggle.isOn = ES3.Load("TooManyEmotes.HideEmotes0", false);
+            hideEmotes1Toggle.isOn = ES3.Load("TooManyEmotes.HideEmotes1", false);
+            hideEmotes2Toggle.isOn = ES3.Load("TooManyEmotes.HideEmotes2", false);
+            hideEmotes3Toggle.isOn = ES3.Load("TooManyEmotes.HideEmotes3", false);
         }
 
 
@@ -476,7 +637,7 @@ namespace TooManyEmotes.UI
         [HarmonyPrefix]
         public static bool OnScrollMouse(InputAction.CallbackContext context, PlayerControllerB __instance)
         {
-            if (!context.performed || __instance != localPlayerController || ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled || !isMenuOpen || usingController)
+            if (!context.performed || __instance != localPlayerController || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled || !isMenuOpen || usingController)
                 return true;
 
             if (isMenuOpen)
@@ -503,7 +664,7 @@ namespace TooManyEmotes.UI
         [HarmonyPrefix]
         public static bool PreventItemSecondaryUseInMenu(InputAction.CallbackContext context)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled)
+            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return true;
             return !isMenuOpen;
         }
@@ -513,7 +674,7 @@ namespace TooManyEmotes.UI
         [HarmonyPrefix]
         public static bool PreventItemTertiaryUseInMenu(InputAction.CallbackContext context)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled)
+            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return true;
             return !isMenuOpen;
         }
@@ -522,7 +683,7 @@ namespace TooManyEmotes.UI
         [HarmonyPrefix]
         public static bool PreventInteractInMenu(InputAction.CallbackContext context)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Patcher.Enabled)
+            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return true;
             return !isMenuOpen;
         }

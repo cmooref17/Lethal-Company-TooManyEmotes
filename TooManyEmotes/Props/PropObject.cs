@@ -35,6 +35,7 @@ namespace TooManyEmotes.Props
         {
             if (animator != null)
             {
+                animator.enabled = true;
                 animator.SetBool("loop", emoteController.isLooping);
                 animator.Play(emoteController.currentStateHash, 0, emoteController.currentAnimationTimeNormalized % 1);
             }
@@ -47,7 +48,7 @@ namespace TooManyEmotes.Props
         }
 
 
-        void SetPropLayerRecursive(GameObject obj, int layer)
+        private void SetPropLayerRecursive(GameObject obj, int layer)
         {
             obj.layer = layer;
             for (int i = 0; i < obj.transform.childCount; i++)

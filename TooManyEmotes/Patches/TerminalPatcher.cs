@@ -18,6 +18,7 @@ using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
 using DunGen;
 using Unity.Netcode;
+using TooManyEmotes.Compatibility;
 
 namespace TooManyEmotes.Patches
 {
@@ -32,6 +33,8 @@ namespace TooManyEmotes.Patches
         public static Dictionary<string, int> currentEmoteCreditsByPlayer;
 
         static string confirmEmoteOpeningText = "You have requested to order a new emote.";
+
+        static string[] ignoreTerminalKeywords = { "company", "moons", "help", "switch", "transmit", "store", "beastiary", "storage", "other", "scan", "ping", "view monitor" };
 
         public static UnlockableEmote purchasingEmote;
         public static bool initializedTerminalNodes = false;
@@ -106,10 +109,11 @@ namespace TooManyEmotes.Patches
             if (modifiedDisplayText.Length <= 0)
                 return;
 
-            if (modifiedDisplayText.Contains("[[[emoteUnlockablesSelectionList]]]") || (modifiedDisplayText.Contains("[[[") && modifiedDisplayText.Contains("]]]")))
+            string placeholderText = "[[[emoteUnlockablesSelectionList]]]";
+            if (modifiedDisplayText.Contains(placeholderText))
             {
-                int index0 = modifiedDisplayText.IndexOf("[[[");
-                int index1 = modifiedDisplayText.IndexOf("]]]") + 3;
+                int index0 = modifiedDisplayText.IndexOf(placeholderText);
+                int index1 = index0 + placeholderText.Length;
                 string textToReplace = modifiedDisplayText.Substring(index0, index1 - index0);
                 string replacementText = "";
                 if (ConfigSync.instance.syncUnlockEverything)
@@ -126,7 +130,7 @@ namespace TooManyEmotes.Patches
                         longestNameSize = Mathf.Max(longestNameSize, emote.displayName.Length);
                     foreach (var emote in emoteSelection)
                     {
-                        string priceText = SessionManager.unlockedEmotes.Contains(emote) ? "[Purchased]" : "$" + emote.price;
+                        string priceText = SessionManager.IsEmoteUnlocked(emote) ? "[Purchased]" : "$" + emote.price;
                         replacementText += string.Format("* {0}{1}   //   {2}\n", emote.displayNameColorCoded, new string(' ', longestNameSize - emote.displayName.Length), priceText);
                     }
                 }
@@ -142,6 +146,9 @@ namespace TooManyEmotes.Patches
         public static bool ParsePlayerSentence(ref TerminalNode __result, Terminal __instance)
         {
             if (__instance.screenText.text.Length <= 0)
+                return true;
+
+            if ((ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled) && !ConfigSync.instance.syncShareEverything)
                 return true;
 
             string input = __instance.screenText.text.Substring(__instance.screenText.text.Length - __instance.textAdded).ToLower();
@@ -167,7 +174,7 @@ namespace TooManyEmotes.Patches
             {
                 if ("confirm".StartsWith(input))
                 {
-                    if (SessionManager.unlockedEmotes.Contains(purchasingEmote))
+                    if (SessionManager.IsEmoteUnlocked(purchasingEmote))
                     {
                         Debug.Log("Attempted to confirm purchase on emote that was already unlocked. Emote: " + purchasingEmote.displayName);
                         __result = BuildTerminalNodeAlreadyUnlocked(purchasingEmote);
@@ -234,7 +241,7 @@ namespace TooManyEmotes.Patches
                     __result = BuildCustomTerminalNode("New emote credit balance: " + currentEmoteCredits + "\n\n", clearPreviousText: true);
                 }
 
-                else if (EmotesManager.allUnlockableEmotesDict.TryGetValue(input, out emote) && !SessionManager.unlockedEmotes.Contains(emote))
+                else if (EmotesManager.allUnlockableEmotesDict.TryGetValue(input, out emote) && !SessionManager.IsEmoteUnlocked(emote))
                 {
                     SyncManager.SendOnUnlockEmoteUpdate(emote.emoteId);
                 }
@@ -265,7 +272,7 @@ namespace TooManyEmotes.Patches
 
             if (emote != null)
             {
-                if (SessionManager.unlockedEmotes.Contains(emote))
+                if (SessionManager.IsEmoteUnlocked(emote))
                 {
                     Plugin.Log("Attempted to start purchase on emote that was already unlocked. Emote: " + emote.displayName);
                     __result = BuildTerminalNodeAlreadyUnlocked(emote);
@@ -369,7 +376,7 @@ namespace TooManyEmotes.Patches
             var notUnlocked = new List<UnlockableEmote>();
             foreach (var emote in emoteList)
             {
-                if (!SessionManager.unlockedEmotes.Contains(emote) && !emoteSelection.Contains(emote) && emote.purchasable)
+                if (!SessionManager.IsEmoteUnlocked(emote) && !emoteSelection.Contains(emote) && emote.purchasable)
                     notUnlocked.Add(emote);
             }
             if (notUnlocked.Count > 0)
@@ -518,17 +525,31 @@ namespace TooManyEmotes.Patches
         }
 
 
+        static bool IsAmbiguousKeyword(string keyword)
+        {
+            keyword = keyword.ToLower();
+            foreach (string ignoreKeyword in ignoreTerminalKeywords)
+            {
+                if (keyword.StartsWith(ignoreKeyword) || ignoreKeyword.StartsWith(keyword))
+                    return true;
+            }
+            return false;
+        }
+
+
         static UnlockableEmote TryGetEmote(string emoteNameInput, IEnumerable<UnlockableEmote> emoteList = null, bool reliable = false)
         {
             if (emoteList == null)
                 emoteList = EmotesManager.allUnlockableEmotes;
             UnlockableEmote getEmote = null;
+
             foreach (var emote in emoteList)
             {
                 string emoteName = emote.displayName.ToLower();
-                if (reliable)
+                bool ambiguousEmoteName = IsAmbiguousKeyword(emoteName);
+                if (reliable || ambiguousEmoteName)
                 {
-                    if (emoteNameInput == emoteName || (emoteNameInput.Length >= 4 && emoteName.StartsWith(emoteNameInput)))
+                    if (emoteNameInput == emoteName || (!ambiguousEmoteName && emoteNameInput.Length >= 4 && emoteName.StartsWith(emoteNameInput)))
                     {
                         if ((getEmote == null || emoteName.Length < getEmote.displayName.Length) && !"the company".StartsWith(emoteNameInput) && !"company".StartsWith(emoteNameInput))
                             getEmote = emote;

@@ -61,7 +61,7 @@ namespace TooManyEmotes
         public Transform ikRightFoot;
         public Transform ikHead;
 
-        public bool isSimpleEmoteController { get { return false; } }// { get { return GetType() == typeof(EmoteController); } }
+        public bool isSimpleEmoteController { get { return GetType() == typeof(EmoteController); } }
 
         public EmoteSyncGroup emoteSyncGroup;
         public int emoteSyncId { get { return emoteSyncGroup != null ? emoteSyncGroup.syncId : -1; } }
@@ -105,15 +105,19 @@ namespace TooManyEmotes
                 if (!isSimpleEmoteController)
                 {
                     allEmoteControllers.Add(gameObject, this);
-                    personalEmoteAudioSource = humanoidSkeleton.gameObject.AddComponent<EmoteAudioSource>();
+                    GameObject emoteAudioSourceObject = new GameObject("PersonalEmoteAudioSource");
+                    emoteAudioSourceObject.transform.parent = humanoidSkeleton;
+                    emoteAudioSourceObject.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+                    emoteAudioSourceObject.transform.localScale = Vector3.one;
+                    personalEmoteAudioSource = emoteAudioSourceObject.AddComponent<EmoteAudioSource>();
                 }
 
                 if (propsParent == null)
                 {
-                    propsParent = transform.Find("props");
+                    propsParent = transform.Find("EmoteProps");
                     if (propsParent == null)
                     {
-                        propsParent = new GameObject("props").transform;
+                        propsParent = new GameObject("EmoteProps").transform;
                         propsParent.parent = humanoidSkeleton;
                         propsParent.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                         propsParent.localScale = Vector3.one;
@@ -238,7 +242,7 @@ namespace TooManyEmotes
         public virtual bool CanPerformEmote() => initialized && animator != null && animator.enabled;
 
 
-        public virtual bool PerformEmote(UnlockableEmote emote, int overrideEmoteId = -1)
+        public virtual bool PerformEmote(UnlockableEmote emote, int overrideEmoteId = -1, bool doNotTriggerAudio = false)
         {
             if (!initialized || !CanPerformEmote())
                 return false;
@@ -273,14 +277,12 @@ namespace TooManyEmotes
             performingEmote = emote;
             isPerformingEmote = true;
 
-            Plugin.Log("Performing emote: " + (performingEmote == null ? "NULL" : performingEmote.emoteName));
-
             // Emote on props (if they exist)
             PerformPropEmotes();
 
             // Create emote sync group and try to play emote audio
             if (!isSimpleEmoteController)
-                CreateEmoteSyncGroup();
+                CreateEmoteSyncGroup(doNotTriggerAudio);
 
             return true;
         }
@@ -313,10 +315,17 @@ namespace TooManyEmotes
                     emote = emote.emoteSyncGroup[overrideEmoteId];
                 else if (emote.randomEmote)
                 {
-                    int randomIndex = UnityEngine.Random.Range(0, emote.emoteSyncGroup.Count);
-                    var syncEmote = emote.emoteSyncGroup[randomIndex];
-                    if (syncEmote != null)
-                        emote = syncEmote;
+                    if (emote.hasAudio && !emote.isBoomboxAudio)
+                    {
+                        emote = emoteController.performingEmote;
+                    }
+                    else
+                    {
+                        int randomIndex = UnityEngine.Random.Range(0, emote.emoteSyncGroup.Count);
+                        var syncEmote = emote.emoteSyncGroup[randomIndex];
+                        if (syncEmote != null)
+                            emote = syncEmote;
+                    }
                 }
                 else
                 {
@@ -403,6 +412,12 @@ namespace TooManyEmotes
         }
 
 
+        protected void StopPerformingEmoteOnProps()
+        {
+
+        }
+
+
         protected void UnloadEmoteProps()
         {
             if (emotingProps != null)
@@ -423,6 +438,7 @@ namespace TooManyEmotes
                 return;
 
             isPerformingEmote = false;
+
             if (!isSimpleEmoteController)
                 Plugin.Log(string.Format("[" + emoteControllerName + "] Stopping emote."));
 
@@ -502,9 +518,9 @@ namespace TooManyEmotes
         protected virtual string GetEmoteControllerName() => name;
 
 
-        protected void CreateEmoteSyncGroup()
+        protected void CreateEmoteSyncGroup(bool doNotTriggerAudio = false)
         {
-            emoteSyncGroup = EmoteSyncGroup.CreateEmoteSyncGroup(this);
+            emoteSyncGroup = EmoteSyncGroup.CreateEmoteSyncGroup(this, !doNotTriggerAudio);
         }
 
         

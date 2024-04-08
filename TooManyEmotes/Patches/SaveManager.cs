@@ -84,13 +84,14 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(StartOfRound), "LoadUnlockables")]
         [HarmonyPostfix]
-        public static void LoadUnlockedEmotes(StartOfRound __instance) {
+        public static void LoadUnlockedEmotes(StartOfRound __instance)
+        {
             if (!GameNetworkManager.Instance.isHostingGame)
                 return;
 
             Plugin.Log("[SaveManager] Loading game values.");
-
             SessionManager.ResetEmotesLocal();
+
             try
             {
                 string[] emoteNames = ES3.Load("TooManyEmotes.UnlockedEmotes", GameNetworkManager.Instance.currentSaveFileName, new string[0]);
@@ -100,8 +101,6 @@ namespace TooManyEmotes.Patches
                         SessionManager.UnlockEmoteLocal(emote);
                 }
                 TerminalPatcher.currentEmoteCredits = ES3.Load("TooManyEmotes.CurrentEmoteCredits", GameNetworkManager.Instance.currentSaveFileName, ConfigSync.instance.syncStartingEmoteCredits);
-
-
 
                 string[] usernames = ES3.Load("TooManyEmotes.UnlockedEmotes.PlayersList", GameNetworkManager.Instance.currentSaveFileName, new string[0]);
                 foreach (string username in usernames)

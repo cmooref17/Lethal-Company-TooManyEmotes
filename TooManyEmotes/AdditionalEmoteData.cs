@@ -1,14 +1,20 @@
-﻿using System;
+﻿using HarmonyLib;
+using System;
 using System.Collections.Generic;
+using System.IO.Ports;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TooManyEmotes.Audio;
 using TooManyEmotes.Props;
+using Unity.Netcode;
 using UnityEngine;
+using static UnityEditor.Progress;
+using static UnityEngine.Rendering.DebugUI;
 
 namespace TooManyEmotes
 {
+    [HarmonyPatch]
     public static class AdditionalEmoteData
     {
         public static void SetAdditionalEmoteData()
@@ -28,6 +34,9 @@ namespace TooManyEmotes
             AssignPropToEmote("fiddle_prop", "jug_band.fiddle");
             AssignPropToEmote("sexy_saxophone.sexy_sax.prop", "sexy_saxophone.sexy_sax");
             AssignPropToEmote("sexy_saxophone.epic_sax.prop", "sexy_saxophone.epic_sax");
+            AssignPropToEmote("trombone.prop", "sad_trombone");
+            AssignPropToEmote("old_chair.prop", "ma-ya-hi");
+            AssignPropToEmote("baseball_bat.prop", "miracle_trickshot");
         }
 
 
@@ -44,6 +53,10 @@ namespace TooManyEmotes
             SetEmoteDoesNotUseBoombox("jug_band.guitar");
             SetEmoteDoesNotUseBoombox("jug_band.banjo");
             SetEmoteDoesNotUseBoombox("jug_band.fiddle");
+            SetEmoteDoesNotUseBoombox("sad_trombone");
+            SetEmoteDoesNotUseBoombox("snake_summoner");
+            SetEmoteDoesNotUseBoombox("miracle_trickshot");
+            SetEmoteDoesNotUseBoombox("junk_food");
 
             //AssignMusicToEmote("smug_dance", "starlit_loop");
             AssignMusicToEmote("jug_band.jug", "jug_band.jug");
@@ -55,7 +68,7 @@ namespace TooManyEmotes
 
         public static void AssignPropToEmote(string propName, string emoteName)
         {
-            if (!EmotePropManager.propPrefabs.ContainsKey(propName))
+            if (!EmotePropManager.emotePropsDataDict.TryGetValue(propName, out var propPrefab))
             {
                 Plugin.LogWarning("Failed to assign prop: " + propName + " to emote. Prop does not exist!");
                 return;
@@ -65,10 +78,20 @@ namespace TooManyEmotes
                 Plugin.LogWarning("Failed to assign prop: " + propName + " to emote: " + emoteName + ". Emote does not exist!");
                 return;
             }
+            if (!EmotePropManager.emotePropsDataDict.TryGetValue(propName, out var propData))
+            {
+                Plugin.LogWarning("Failed to assign prop: " + propName + " to emote: " + emoteName + ". Prop data does not exist for: " + propName);
+                return;
+            }
 
             if (emote.propNamesInEmote == null)
                 emote.propNamesInEmote = new List<string>();
             emote.propNamesInEmote.Add(propName);
+
+            if (propData.parentEmotes == null)
+                propData.parentEmotes = new List<UnlockableEmote>();
+            if (!propData.parentEmotes.Contains(emote))
+                propData.parentEmotes.Add(emote);
         }
 
 
@@ -91,7 +114,7 @@ namespace TooManyEmotes
             if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote) && AudioManager.AudioExists(audioName))
             {
                 emote.overrideAudioClipName = audioName;
-                emote.overrideAudioClipLoopName = audioLoopName;
+                emote.overrideAudioLoopClipName = audioLoopName;
             }
         }
 

@@ -110,7 +110,7 @@ namespace TooManyEmotes.Patches
         {
             if (!NetworkManager.Singleton.IsServer)
             {
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes-OnSpawnEmoteGiftsClientRpc", OnSpawnEmoteGiftsClientRpc);
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.OnSpawnEmoteGiftsClientRpc", OnSpawnEmoteGiftsClientRpc);
             }
         }
 
@@ -283,7 +283,7 @@ namespace TooManyEmotes.Patches
                     Plugin.LogError("Error getting EmoteGift from NetworkObject.");
             }
 
-            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes-OnSpawnEmoteGiftsClientRpc", writer);
+            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes.OnSpawnEmoteGiftsClientRpc", writer);
         }
 
 

@@ -70,10 +70,8 @@ namespace TooManyEmotes.Patches
         public static void OnPlayerDC(int playerObjectNumber, ulong clientId, StartOfRound __instance)
         {
             PlayerControllerB playerController = __instance.allPlayerObjects[playerObjectNumber].GetComponent<PlayerControllerB>();
-            if (playerController == null)
-                return;
             if (playerController != null && EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(playerController, out var emoteController) && emoteController.IsPerformingCustomEmote())
-                emoteController.StopPerformingEmote();
+                emoteController.StopPerformingEmoteImmediately();
         }
 
 
@@ -81,9 +79,11 @@ namespace TooManyEmotes.Patches
         [HarmonyPrefix]
         public static void OnPlayerDeath(Vector3 bodyVelocity, PlayerControllerB __instance)
         {
-            Plugin.LogWarning("Player died while emoting. Heh... I mean, I hope this handles smoothly.");
-            if (__instance!= null && EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(__instance, out var emoteController) && emoteController.IsPerformingCustomEmote())
-                emoteController.StopPerformingEmote();
+            if (__instance != null && EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(__instance, out var emoteController) && emoteController.IsPerformingCustomEmote())
+            {
+                Plugin.LogWarning("Player died while emoting. Heh... I mean, I hope this handles smoothly.");
+                emoteController.StopPerformingEmoteImmediately();
+            }
         }
 
 
@@ -105,70 +105,6 @@ namespace TooManyEmotes.Patches
         }
 
 
-        /*
-        [HarmonyPatch(typeof(PlayerControllerB), "PerformEmote")]
-        [HarmonyPrefix]
-        public static bool PerformCustomEmoteLocalPrefix(InputAction.CallbackContext context, int emoteID, PlayerControllerB __instance)
-        {
-            if (ConfigSettings.disableEmotesForSelf.Value || __instance != localPlayerController)
-                return true;
-
-            var syncWithPlayerData = lookingAtPlayerSyncableEmote != null ? allPlayerData[lookingAtPlayerSyncableEmote] : null;
-
-            if (emoteID > 2)
-            {
-                //if (performingCustomEmoteLocal != null)
-                return !playerDataLocal.isPerformingEmote;
-            }
-            
-            if (emoteID < 0)
-            {
-                // Prevent the emote if performing an emote from another mod, such as MoreEmotes
-                if (localPlayerController.playerBodyAnimator.GetInteger("emoteNumber") > 2)
-                    return false;
-
-                if (CallCheckConditionsForEmote(localPlayerController))
-                {
-                    localPlayerController.performingEmote = true;
-                    localPlayerController.playerBodyAnimator.SetInteger("emoteNumber", 1);
-                    emoteID = Mathf.Abs(emoteID) - 1;
-                    var emote = StartOfRoundPatcher.allUnlockableEmotes[emoteID];
-                    if (emote != null)
-                    {
-                        if (emote.randomEmotePool != null && emote.randomEmotePool.Count >= 1)
-                        {
-                            int randomIndex = UnityEngine.Random.Range(0, emote.randomEmotePool.Count);
-                            var randomEmote = emote.randomEmotePool[randomIndex];
-                            if (randomEmote != null)
-                                emote = randomEmote;
-                        }
-                        PlayerControllerB syncWithPlayer = null;
-                        //if (syncingEmoteWithPlayer && lookingAtPlayerSyncableEmote != null && performingEmotes.TryGetValue(lookingAtPlayerSyncableEmote, out var syncEmote) && syncEmote.canSyncEmote)
-                        if (syncingEmoteWithPlayer && syncWithPlayerData?.performingEmote != null && syncWithPlayerData.performingEmote.canSyncEmote)
-                        {
-                            emote = syncWithPlayerData.performingEmote;
-                            syncWithPlayer = lookingAtPlayerSyncableEmote;
-                        }
-                        OnUpdateCustomEmote(emote.emoteId, localPlayerController, syncWithPlayer);
-                        ThirdPersonEmoteController.OnStartCustomEmoteLocal();
-                        ForceSendAnimationUpdateLocal(emote.emoteId);
-                    }
-                    return false;
-                }
-            }
-            if (playerDataLocal.isPerformingEmote)
-            {
-                OnUpdateCustomEmote(-1, localPlayerController);
-                ThirdPersonEmoteController.OnStopCustomEmoteLocal();
-                ForceSendAnimationUpdateLocal(-1);
-                return false;
-            }
-
-            return true;
-        }
-        */
-
-
         [HarmonyPatch(typeof(PlayerControllerB), "PerformEmote")]
         [HarmonyPrefix]
         public static void StopCustomEmoteOnDefaultEmote(InputAction.CallbackContext context, int emoteID)
@@ -179,64 +115,5 @@ namespace TooManyEmotes.Patches
                 emoteControllerLocal.StopPerformingEmote();
             }
         }
-
-
-        /*
-        [HarmonyPatch(typeof(PlayerControllerB), "UpdatePlayerAnimationClientRpc")]
-        [HarmonyPrefix]
-        public static void UpdatePlayerAnimationClientRpcPrefix(int animationState, ref float animationSpeed, PlayerControllerB __instance)
-        {
-            if (localPlayerController == null || __instance == localPlayerController)
-            {
-                Plugin.LogWarning("Return A");
-                return;
-            }
-
-            if ((NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost) && (int)Traverse.Create(__instance).Field("__rpc_exec_stage").GetValue() != 2)
-            {
-                Plugin.LogWarning("Return B");
-                return;
-            }
-
-            if (animationState != emoteStateHash)
-            {
-                Plugin.LogWarning("Return C: " + animationState);
-                return;
-            }
-
-            // Let's do some fun logic. Why do I do this?
-            if (!allEmoteControllers.TryGetValue(__instance.gameObject, out var emoteController))
-            {
-                Debug.Assert(false);
-                return;
-            }
-
-            int clientId = Mathf.RoundToInt(animationSpeed * 10000 % 1 * 100) - 1;
-            if (clientId >= 0 && SessionManager.TryGetPlayerByClientId((ulong)clientId, out var syncWithPlayer) && allEmoteControllers.TryGetValue(syncWithPlayer.gameObject, out var syncWithEmoteController))
-            {
-                Plugin.Log("Player syncing emote with another player. Player id syncing emote: " + __instance.actualClientId + " Syncing with player id: " + clientId);
-                emoteController.SyncWithEmoteController(syncWithEmoteController);
-                return;
-            }
-
-            int emoteId = Mathf.RoundToInt(animationSpeed * 10 % 1 * 1000) - 1;
-            animationSpeed = 1;
-            if (emoteId >= 0 && emoteId < EmotesManager.allUnlockableEmotes.Count)
-            {
-                Plugin.LogWarning("Update Perfroming emoteId: " + emoteId);
-                var emote = EmotesManager.allUnlockableEmotes[emoteId];
-                if (emote == null)
-                    Plugin.LogWarning("EMOTE NULL");
-                else
-                    Plugin.LogWarning("Emote not null");
-                emoteController.PerformEmote(emote);
-            }
-            else
-            {
-                Plugin.LogWarning("OnUpdatePlayerAnimation. Stopping emote.");
-                allEmoteControllers[__instance.gameObject].StopPerformingEmote();
-            }
-        }
-        */
     }
 }
