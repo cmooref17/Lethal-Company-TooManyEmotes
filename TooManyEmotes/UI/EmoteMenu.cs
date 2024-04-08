@@ -133,7 +133,7 @@ namespace TooManyEmotes.UI
             {
                 var newControlTipLine = GameObject.Instantiate(HUDManager.Instance.controlTipLines[i], HUDManager.Instance.controlTipLines[0].transform.parent);
                 newControlTipLine.transform.localScale = HUDManager.Instance.controlTipLines[0].transform.localScale;
-                newControlTipLine.transform.parent = menuTransform;
+                newControlTipLine.transform.SetParent(menuTransform);
                 newControlTipLine.transform.SetPositionAndRotation(HUDManager.Instance.controlTipLines[i].transform.position, HUDManager.Instance.controlTipLines[i].transform.rotation);
                 newControlTipLine.text = "";
                 newControlTipLine.overflowMode = TextOverflowModes.Overflow;

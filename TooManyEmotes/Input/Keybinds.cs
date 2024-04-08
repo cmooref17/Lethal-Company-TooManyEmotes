@@ -1,16 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Remoting.Contexts;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine.InputSystem;
-using UnityEditor;
 using UnityEngine;
-using UnityEditor.Animations;
-using System.Collections;
 using TooManyEmotes.Config;
 using TooManyEmotes.Patches;
 using TooManyEmotes.Networking;

@@ -84,12 +84,12 @@ namespace TooManyEmotes
                 if (spine4 != null)
                 {
                     cameraContainerTarget = new GameObject("CameraContainer_Target").transform;
-                    cameraContainerTarget.parent = spine4;
+                    cameraContainerTarget.SetParent(spine4);
                     cameraContainerTarget.localPosition = new Vector3(0, 0.22f, 0);
                     cameraContainerTarget.localEulerAngles = new Vector3(-3, 0, 0);
 
                     cameraContainerLerp = new GameObject("CameraContainer_Lerp").transform;
-                    cameraContainerLerp.parent = humanoidSkeleton;
+                    cameraContainerLerp.SetParent(humanoidSkeleton);
                     cameraContainerLerp.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                 }
 

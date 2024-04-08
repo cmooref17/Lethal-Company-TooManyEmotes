@@ -263,9 +263,9 @@ namespace TooManyEmotes.Networking
                 EmoteAudioPlayerManager.InitializeShipSpeakerAudioPlayer();
 
             if (instance.syncEnableGrabbableEmoteProps)
-                EmotePropManager.AddGrabbableEmotePropsMoons();
+                GrabbableEmotePropManager.AddGrabbableEmotePropsMoons();
             else
-                EmotePropManager.RemoveGrabbableEmotePropsMoons(); // Should be unnecessary, but just in case
+                GrabbableEmotePropManager.RemoveGrabbableEmotePropsMoons(); // Should be unnecessary, but just in case
         }
 
 

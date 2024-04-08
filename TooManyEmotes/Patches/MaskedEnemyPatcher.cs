@@ -9,11 +9,7 @@ using System.Threading.Tasks;
 using TooManyEmotes.Networking;
 using Unity.Collections;
 using Unity.Netcode;
-using UnityEditor.Animations;
 using UnityEngine;
-using UnityEngine.AI;
-using UnityEngine.Animations.Rigging;
-using static Unity.Collections.AllocatorManager;
 
 namespace TooManyEmotes.Patches
 {

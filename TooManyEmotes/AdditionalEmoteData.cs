@@ -9,8 +9,6 @@ using TooManyEmotes.Audio;
 using TooManyEmotes.Props;
 using Unity.Netcode;
 using UnityEngine;
-using static UnityEditor.Progress;
-using static UnityEngine.Rendering.DebugUI;
 
 namespace TooManyEmotes
 {

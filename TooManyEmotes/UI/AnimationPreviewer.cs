@@ -236,7 +236,7 @@ namespace TooManyEmotes.UI
 
             Light spotlight = new GameObject("Spotlight").AddComponent<Light>();
             spotlight.type = LightType.Spot;
-            spotlight.transform.parent = renderingCamera.transform;
+            spotlight.transform.SetParent(renderingCamera.transform);
             spotlight.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
             spotlight.intensity = 50;
             spotlight.range = 40;

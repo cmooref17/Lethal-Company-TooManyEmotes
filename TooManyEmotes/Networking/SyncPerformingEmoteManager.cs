@@ -10,7 +10,6 @@ using Unity.Netcode;
 using TooManyEmotes.Patches;
 using TooManyEmotes.Config;
 using UnityEngine;
-using UnityEditor.PackageManager;
 
 namespace TooManyEmotes.Networking
 {

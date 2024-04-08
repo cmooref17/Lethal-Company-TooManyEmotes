@@ -16,7 +16,6 @@ using TooManyEmotes.Config;
 using TooManyEmotes.Patches;
 using TooManyEmotes.Props;
 using Unity.Netcode;
-using UnityEditor.Analytics;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Animations.Rigging;
@@ -106,7 +105,7 @@ namespace TooManyEmotes
                 {
                     allEmoteControllers.Add(gameObject, this);
                     GameObject emoteAudioSourceObject = new GameObject("PersonalEmoteAudioSource");
-                    emoteAudioSourceObject.transform.parent = humanoidSkeleton;
+                    emoteAudioSourceObject.transform.SetParent(humanoidSkeleton);
                     emoteAudioSourceObject.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                     emoteAudioSourceObject.transform.localScale = Vector3.one;
                     personalEmoteAudioSource = emoteAudioSourceObject.AddComponent<EmoteAudioSource>();
@@ -118,7 +117,7 @@ namespace TooManyEmotes
                     if (propsParent == null)
                     {
                         propsParent = new GameObject("EmoteProps").transform;
-                        propsParent.parent = humanoidSkeleton;
+                        propsParent.SetParent(humanoidSkeleton);
                         propsParent.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                         propsParent.localScale = Vector3.one;
                     }
@@ -405,7 +404,7 @@ namespace TooManyEmotes
                 var propObject = EmotePropManager.LoadEmoteProp(propName);
                 propObject.SetPropLayer(6);
                 emotingProps.Add(propObject);
-                propObject.transform.parent = propsParent;
+                propObject.transform.SetParent(propsParent);
                 propObject.transform.localPosition = Vector3.zero;
                 propObject.transform.localRotation = Quaternion.identity;
             }
@@ -424,7 +423,7 @@ namespace TooManyEmotes
             {
                 foreach (var prop in emotingProps)
                 {
-                    prop.transform.parent = EmotePropManager.propPoolParent;
+                    prop.transform.SetParent(EmotePropManager.propPoolParent);
                     prop.active = false;
                 }
                 emotingProps.Clear();

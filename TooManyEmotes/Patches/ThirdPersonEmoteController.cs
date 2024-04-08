@@ -105,9 +105,9 @@ namespace TooManyEmotes.Patches
             //emoteCamera.cullingMask |= 1 << localPlayerBodyLayer;
             emoteCamera.cullingMask &= ~((1 << 5) | (1 << 7)); // ui/helmet visor
 
-            emoteCameraPivot.transform.parent = localPlayerController.transform;
+            emoteCameraPivot.transform.SetParent(localPlayerController.transform);
             emoteCameraPivot.SetLocalPositionAndRotation(Vector3.up * 1.8f, Quaternion.identity);
-            emoteCamera.transform.parent = emoteCameraPivot;
+            emoteCamera.transform.SetParent(emoteCameraPivot);
             emoteCamera.transform.SetLocalPositionAndRotation(Vector3.back * targetCameraDistance, Quaternion.identity);
 
             // Fix other player's cameras not seeing local player's body
