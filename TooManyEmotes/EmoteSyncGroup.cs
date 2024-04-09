@@ -9,6 +9,7 @@ using TooManyEmotes.Audio;
 using UnityEngine;
 using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.UIElements;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes
 {
@@ -64,7 +65,7 @@ namespace TooManyEmotes
                     if (emoteController.personalEmoteAudioSource == null)
                     {
                         this.useAudio = false;
-                        Plugin.LogError("Attempted to perform emote with personal audio source, which is null.");
+                        LogError("Attempted to perform emote with personal audio source, which is null.");
                     }
                     else
                     {
@@ -79,7 +80,7 @@ namespace TooManyEmotes
                     if (newAudioPlayer != null && newAudioPlayer.CanPlayMusic())
                         AssignExternalAudioPlayer(newAudioPlayer);
                     else
-                        Plugin.LogWarning("Performing emote with no music. No available boomboxes found nearby. Don't worry. Everything will be okay.");
+                        LogWarning("Performing emote with no music. No available boomboxes found nearby. Don't worry. Everything will be okay.");
                 }
                 UpdateAudioVolume();
             }
@@ -183,7 +184,7 @@ namespace TooManyEmotes
 
         public void DestroyEmoteSyncGroup()
         {
-            Plugin.Log("Cleaning up emote sync group with id: " + syncId);
+            Log("Cleaning up emote sync group with id: " + syncId);
             if (currentEmoteAudioSources != null)
             {
                 foreach (var emoteAudioSource in currentEmoteAudioSources.Values)

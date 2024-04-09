@@ -10,6 +10,7 @@ using Unity.Netcode;
 using TooManyEmotes.Patches;
 using TooManyEmotes.Config;
 using UnityEngine;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Networking
 {
@@ -38,7 +39,7 @@ namespace TooManyEmotes.Networking
             if (!NetworkManager.Singleton.IsClient || emote == null)
                 return;
 
-            Plugin.Log("Sending performing emote update to server. Emote: " + emote.emoteName + " EmoteId: " + emote.emoteId);
+            Log("Sending performing emote update to server. Emote: " + emote.emoteName + " EmoteId: " + emote.emoteId);
             var writer = new FastBufferWriter(sizeof(int) + sizeof(bool), Allocator.Temp);
             writer.WriteValue(emote.emoteId);
             writer.WriteValue(doNotTriggerAudio);
@@ -51,7 +52,7 @@ namespace TooManyEmotes.Networking
             if (!NetworkManager.Singleton.IsClient || emoteController == null)
                 return;
 
-            Plugin.Log("Sending sync emote update to server. Sync with emote controller id: " + emoteController);
+            Log("Sending sync emote update to server. Sync with emote controller id: " + emoteController);
             var writer = new FastBufferWriter(sizeof(ulong) + sizeof(short), Allocator.Temp);
             writer.WriteValue(emoteController.emoteControllerId);
             writer.WriteValue(overrideEmoteId);
@@ -66,20 +67,20 @@ namespace TooManyEmotes.Networking
 
             if (!SessionManager.TryGetPlayerByClientId(clientId, out var playerController) || !EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(playerController, out var emoteController))
             {
-                Plugin.LogWarning("Could not handle performing emote request. Could not find emote controller for player with id: " + clientId);
+                LogWarning("Could not handle performing emote request. Could not find emote controller for player with id: " + clientId);
                 return;
             }
 
             reader.ReadValue(out int emoteId);
             if (emoteId < 0 || emoteId >= EmotesManager.allUnlockableEmotes.Count)
             {
-                Plugin.LogWarning("Could not handle performing emote request from client with id: " + clientId + ". Invalid emote id: " + emoteId + " AllUnlockableEmoteListSize: " + EmotesManager.allUnlockableEmotes.Count);
+                LogWarning("Could not handle performing emote request from client with id: " + clientId + ". Invalid emote id: " + emoteId + " AllUnlockableEmoteListSize: " + EmotesManager.allUnlockableEmotes.Count);
                 return;
             }
 
             reader.ReadValue(out bool doNotTriggerAudio);
             var emote = EmotesManager.allUnlockableEmotes[emoteId];
-            Plugin.Log("Receiving performing emote update from client: " + clientId + " Emote: " + emote.emoteName);
+            Log("Receiving performing emote update from client: " + clientId + " Emote: " + emote.emoteName);
             if (NetworkManager.Singleton.IsClient && emoteController != EmoteControllerPlayer.emoteControllerLocal)
                 emoteController.PerformEmote(emote, doNotTriggerAudio: doNotTriggerAudio);
             ServerSendPerformingEmoteUpdateToClients(emoteController, emote, doNotTriggerAudio);
@@ -94,7 +95,7 @@ namespace TooManyEmotes.Networking
 
             if (!SessionManager.TryGetPlayerByClientId(clientId, out var playerController) || !EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(playerController, out var emoteController))
             {
-                Plugin.LogWarning("Could not handle sync emote request. Could not find emote controller for player with id: " + clientId);
+                LogWarning("Could not handle sync emote request. Could not find emote controller for player with id: " + clientId);
                 return;
             }
 
@@ -104,17 +105,17 @@ namespace TooManyEmotes.Networking
             var syncWithEmoteController = GetEmoteControllerById(emoteControllerId);
             if (syncWithEmoteController == null)
             {
-                Plugin.LogWarning("Could not handle sync emote request from client with id: " + clientId + ". Failed to find emote controller with id: " + emoteControllerId);
+                LogWarning("Could not handle sync emote request from client with id: " + clientId + ". Failed to find emote controller with id: " + emoteControllerId);
                 return;
             }
 
             if (syncWithEmoteController.performingEmote == null)
             {
-                Plugin.LogWarning("Could not handle sync emote request from client with id: " + clientId + ". Emote controller is not performing any emote.");
+                LogWarning("Could not handle sync emote request from client with id: " + clientId + ". Emote controller is not performing any emote.");
                 return;
             }
 
-            Plugin.Log("Receiving sync emote update from client with id: " + clientId + " Sync with emote controller id: " + emoteControllerId);
+            Log("Receiving sync emote update from client with id: " + clientId + " Sync with emote controller id: " + emoteControllerId);
             if (NetworkManager.Singleton.IsClient && emoteController != EmoteControllerPlayer.emoteControllerLocal)
                 emoteController.SyncWithEmoteController(syncWithEmoteController, overrideEmoteId);
             ServerSendSyncEmoteUpdateToClients(emoteController, syncWithEmoteController, overrideEmoteId);
@@ -125,7 +126,7 @@ namespace TooManyEmotes.Networking
         {
             if (!NetworkManager.Singleton.IsServer)
             {
-                Plugin.LogWarning("[ServerSendPerformingEmoteUpdateToClients] Only the server can call this method!");
+                LogWarning("[ServerSendPerformingEmoteUpdateToClients] Only the server can call this method!");
                 return;
             }
 
@@ -144,7 +145,7 @@ namespace TooManyEmotes.Networking
         {
             if (!NetworkManager.Singleton.IsServer)
             {
-                Plugin.LogWarning("[ServerSendSyncEmoteUpdateToClients] Only the server can call this method!");
+                LogWarning("[ServerSendSyncEmoteUpdateToClients] Only the server can call this method!");
                 return;
             }
 
@@ -173,20 +174,20 @@ namespace TooManyEmotes.Networking
             var emoteController = GetEmoteControllerById(emoteControllerId);
             if (emoteController == null)
             {
-                Plugin.LogWarning("Could not handle performing emote request from server. Failed to find emote controller with id: " + emoteControllerId);
+                LogWarning("Could not handle performing emote request from server. Failed to find emote controller with id: " + emoteControllerId);
                 return;
             }
 
             reader.ReadValue(out int emoteId);
             if (emoteId < 0 || emoteId >= EmotesManager.allUnlockableEmotes.Count)
             {
-                Plugin.LogWarning("Could not handle performing emote request from server for emote controller with id: " + emoteControllerId + ". Invalid emote id: " + emoteId + " AllUnlockableEmoteListSize: " + EmotesManager.allUnlockableEmotes.Count);
+                LogWarning("Could not handle performing emote request from server for emote controller with id: " + emoteControllerId + ". Invalid emote id: " + emoteId + " AllUnlockableEmoteListSize: " + EmotesManager.allUnlockableEmotes.Count);
                 return;
             }
 
             reader.ReadValue(out bool doNotTriggerAudio);
             var emote = EmotesManager.allUnlockableEmotes[emoteId];
-            Plugin.Log("Receiving performing emote update from server for emote controller with id: " + emoteControllerId + " Emote: " + emote.emoteName);
+            Log("Receiving performing emote update from server for emote controller with id: " + emoteControllerId + " Emote: " + emote.emoteName);
             emoteController.PerformEmote(emote, doNotTriggerAudio: doNotTriggerAudio);
         }
 
@@ -207,7 +208,7 @@ namespace TooManyEmotes.Networking
             var emoteController = GetEmoteControllerById(emoteControllerId);
             if (emoteController == null)
             {
-                Plugin.LogWarning("Could not handle sync emote request from server. Failed to find emote controller with id: " + emoteControllerId);
+                LogWarning("Could not handle sync emote request from server. Failed to find emote controller with id: " + emoteControllerId);
                 return;
             }
 
@@ -217,17 +218,17 @@ namespace TooManyEmotes.Networking
             var syncWithEmoteController = GetEmoteControllerById(syncWithEmoteControllerId);
             if (syncWithEmoteController == null)
             {
-                Plugin.LogWarning("Could not handle sync emote request from server for emote controller with id: " + emoteControllerId + ". Failed to find emote controller with id: " + emoteControllerId + " to sync with.");
+                LogWarning("Could not handle sync emote request from server for emote controller with id: " + emoteControllerId + ". Failed to find emote controller with id: " + emoteControllerId + " to sync with.");
                 return;
             }
 
             if (syncWithEmoteController.performingEmote == null)
             {
-                Plugin.LogWarning("Could not handle sync emote request from server for emote controller with id: " + clientId + ". Emote controller is not performing any emote.");
+                LogWarning("Could not handle sync emote request from server for emote controller with id: " + clientId + ". Emote controller is not performing any emote.");
                 return;
             }
 
-            Plugin.Log("Receiving sync emote update from server for emote controller with id: " + emoteControllerId + " SyncWithEmoteControllerId: " + syncWithEmoteControllerId);
+            Log("Receiving sync emote update from server for emote controller with id: " + emoteControllerId + " SyncWithEmoteControllerId: " + syncWithEmoteControllerId);
             emoteController.SyncWithEmoteController(syncWithEmoteController, overrideEmoteId);
         }
 

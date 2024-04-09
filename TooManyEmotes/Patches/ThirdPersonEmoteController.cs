@@ -18,13 +18,14 @@ using System.Reflection;
 using TooManyEmotes.Networking;
 using TooManyEmotes.Compatibility;
 using TooManyEmotes.UI;
+using static TooManyEmotes.HelperTools;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Patches
 {
     [HarmonyPatch]
     public class ThirdPersonEmoteController
     {
-        public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
         public static Transform localPlayerCameraContainer { get { return localPlayerController?.cameraContainerTransform; } }
 
         public static GameObject playerHUDHelmetModel;
@@ -46,7 +47,7 @@ namespace TooManyEmotes.Patches
 
         public static bool firstPersonEmotesEnabled { get; internal set; } = false;
 
-        private static bool isMovingWhileEmoting { get { return EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote() && (ConfigSync.instance.syncEnableMovingWhileEmoting || EmoteControllerPlayer.emoteControllerLocal.performingEmote.canMoveWhileEmoting); } }
+        private static bool isMovingWhileEmoting { get { return emoteControllerLocal.IsPerformingCustomEmote() && (ConfigSync.instance.syncEnableMovingWhileEmoting || EmoteControllerPlayer.emoteControllerLocal.performingEmote.canMoveWhileEmoting); } }
 
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
@@ -142,7 +143,7 @@ namespace TooManyEmotes.Patches
             }
             catch (Exception e)
             {
-                Plugin.LogError("Error while trying to reset player model for player: " + playerController.name + " Error: " + e);
+                LogError("Error while trying to reset player model for player: " + playerController.name + " Error: " + e);
             }
         }
 
@@ -151,13 +152,13 @@ namespace TooManyEmotes.Patches
         [HarmonyPrefix]
         public static bool UseFreeCamWhileEmoting(PlayerControllerB __instance)
         {
-            if (__instance != localPlayerController || EmoteControllerPlayer.emoteControllerLocal == null)
+            if (__instance != localPlayerController || emoteControllerLocal == null)
                 return true;
 
             if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return true;
 
-            if (EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote())
+            if (emoteControllerLocal.IsPerformingCustomEmote())
             {
                 if (firstPersonEmotesEnabled)
                 {
@@ -224,7 +225,7 @@ namespace TooManyEmotes.Patches
             if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return true;
 
-            if (__instance == localPlayerController && context.performed && EmoteControllerPlayer.emoteControllerLocal != null && EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote() && !isMovingWhileEmoting)
+            if (__instance == localPlayerController && context.performed && emoteControllerLocal != null && emoteControllerLocal.IsPerformingCustomEmote() && !isMovingWhileEmoting)
             {
                 if (!EmoteMenuManager.isMenuOpen && !firstPersonEmotesEnabled)
                     __instance.StartCoroutine(AdjustCameraDistanceEndOfFrame());
@@ -239,7 +240,7 @@ namespace TooManyEmotes.Patches
         [HarmonyPostfix]
         public static void FixedNewHeldItemParent(int slot, PlayerControllerB __instance)
         {
-            if (__instance != localPlayerController || !EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote())
+            if (__instance != localPlayerController || !emoteControllerLocal.IsPerformingCustomEmote())
                 return;
 
             var heldItem = localPlayerController.ItemSlots[localPlayerController.currentItemSlot];
@@ -339,7 +340,7 @@ namespace TooManyEmotes.Patches
             for (; index < emoteControlTipLines.Length; index++)
                 emoteControlTipLines[index] = "";
 
-            if (emoteCamera.enabled && EmoteControllerPlayer.emoteControllerLocal != null && EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote())
+            if (emoteCamera.enabled && emoteControllerLocal != null && emoteControllerLocal.IsPerformingCustomEmote())
                 HUDManager.Instance.ChangeControlTipMultiple(emoteControlTipLines);
         }
 

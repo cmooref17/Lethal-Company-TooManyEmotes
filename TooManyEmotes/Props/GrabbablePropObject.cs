@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Props
 {
@@ -27,12 +28,12 @@ namespace TooManyEmotes.Props
             {
                 if (itemProperties.spawnPrefab == null)
                 {
-                    Plugin.LogError("Failed to initialize grabbable emote prop object. Prefab reference is missing!");
+                    LogError("Failed to initialize grabbable emote prop object. Prefab reference is missing!");
                     return;
                 }
                 if (!EmotePropManager.emotePropsDataDict.TryGetValue(itemProperties.spawnPrefab.name, out emotePropData))
                 {
-                    Plugin.LogError("Failed to initialize grabbable emote prop object. Failed to find EmotePropData for object: " + itemProperties.spawnPrefab.name);
+                    LogError("Failed to initialize grabbable emote prop object. Failed to find EmotePropData for object: " + itemProperties.spawnPrefab.name);
                     return;
                 }
             }
@@ -43,7 +44,7 @@ namespace TooManyEmotes.Props
                     emote = emotePropData.parentEmotes[0];
             }
             else
-                Plugin.LogError("Failed to assign emote to grabbable emote prop: " + name + ". Emote is null.");
+                LogError("Failed to assign emote to grabbable emote prop: " + name + ". Emote is null.");
         }
 
 
@@ -64,13 +65,13 @@ namespace TooManyEmotes.Props
 
             if (emote == null)
             {
-                Plugin.LogWarning("Failed to interact with prop: " + itemProperties.itemName + ". Emote is null!");
+                LogWarning("Failed to interact with prop: " + itemProperties.itemName + ". Emote is null!");
                 return;
             }
 
             if (heldByPlayerEmoteController == null)
             {
-                Plugin.LogWarning("Failed to interact with prop: " + itemProperties.itemName + ". Parent player emote controller is null!");
+                LogWarning("Failed to interact with prop: " + itemProperties.itemName + ". Parent player emote controller is null!");
                 return;
             }
 

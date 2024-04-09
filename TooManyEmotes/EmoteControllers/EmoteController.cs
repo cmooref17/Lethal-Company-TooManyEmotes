@@ -19,6 +19,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Animations.Rigging;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes
 {
@@ -247,7 +248,7 @@ namespace TooManyEmotes
                 return false;
 
             if (!isSimpleEmoteController)
-                Plugin.Log("[" + emoteControllerName + "] Performing emote: " + emote.emoteName);
+                Log("[" + emoteControllerName + "] Performing emote: " + emote.emoteName);
 
             if (isPerformingEmote)
                 StopPerformingEmote();
@@ -293,19 +294,19 @@ namespace TooManyEmotes
                 return false;
 
             if (!isSimpleEmoteController)
-                Plugin.Log("[" + emoteControllerName + "] Attempting to sync with emote controller: " + emoteController.name + " Emote: " + emoteController.performingEmote.emoteName + " PlayEmoteAtTimeNormalized: " + (emoteController.currentAnimationTimeNormalized % 1));
+                Log("[" + emoteControllerName + "] Attempting to sync with emote controller: " + emoteController.name + " Emote: " + emoteController.performingEmote.emoteName + " PlayEmoteAtTimeNormalized: " + (emoteController.currentAnimationTimeNormalized % 1));
 
             if (isPerformingEmote)
             {
-                //Plugin.LogWarning("Syncing with emote controller while performing emote already. Ignore this.");
-                //if (performingEmote != null) Plugin.LogWarning("Emote: " + performingEmote.emoteName);
+                //LogWarning("Syncing with emote controller while performing emote already. Ignore this.");
+                //if (performingEmote != null) LogWarning("Emote: " + performingEmote.emoteName);
                 StopPerformingEmote();
             }
 
             var syncGroup = emoteController.emoteSyncGroup;
 
             if (syncGroup == null)
-                Plugin.LogWarning("[" + emoteControllerName + "] Attempted to sync with emote controller who is not a part of an emote sync group. Continuing anyways.");
+                LogWarning("[" + emoteControllerName + "] Attempted to sync with emote controller who is not a part of an emote sync group. Continuing anyways.");
 
             var emote = emoteController.performingEmote;
             if (emote.emoteSyncGroup != null)
@@ -353,7 +354,7 @@ namespace TooManyEmotes
             var animationClip = emoteController.GetCurrentAnimationClip();
             if (!emote.ClipIsInEmote(animationClip))
             {
-                Plugin.LogError("[" + emoteControllerName + "] Attempted to sync with emote controller whose animation clip is not a part of their performing emote? Emote: " + emoteController.performingEmote + " AnimationClip: " + animationClip.name);
+                LogError("[" + emoteControllerName + "] Attempted to sync with emote controller whose animation clip is not a part of their performing emote? Emote: " + emoteController.performingEmote + " AnimationClip: " + animationClip.name);
                 return false;
             }
 
@@ -439,7 +440,7 @@ namespace TooManyEmotes
             isPerformingEmote = false;
 
             if (!isSimpleEmoteController)
-                Plugin.Log(string.Format("[" + emoteControllerName + "] Stopping emote."));
+                Log(string.Format("[" + emoteControllerName + "] Stopping emote."));
 
             animatorController["emote"] = null;
             animatorController["emote_loop"] = null;
@@ -482,7 +483,7 @@ namespace TooManyEmotes
             var rootIkBone = FindChildRecursive("root_ik");
             if (rootIkBone == null)
             {
-                Plugin.LogError("Failed to find root ik bone called \"root_ik\" in humanoid skeleton: " + emoteControllerName);
+                LogError("Failed to find root ik bone called \"root_ik\" in humanoid skeleton: " + emoteControllerName);
                 return;
             }
 
@@ -525,7 +526,7 @@ namespace TooManyEmotes
         
         protected void AddToEmoteSyncGroup(EmoteSyncGroup emoteSyncGroup)
         {
-            Plugin.Log("Adding to emote sync group with id: " + emoteSyncGroup.syncId);
+            Log("Adding to emote sync group with id: " + emoteSyncGroup.syncId);
             emoteSyncGroup.AddToEmoteSyncGroup(this);
             this.emoteSyncGroup = emoteSyncGroup;
         }

@@ -9,14 +9,15 @@ using TooManyEmotes.Audio;
 using TooManyEmotes.Networking;
 using TooManyEmotes.Patches;
 using Unity.Netcode;
+using static TooManyEmotes.HelperTools;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes
 {
     [HarmonyPatch]
     public static class SessionManager
     {
-        public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
-        public static string localPlayerUsername { get { return GameNetworkManager.Instance.username; } }
+        public static string localPlayerUsername { get { return GameNetworkManager.Instance?.username; } }
 
         internal static List<UnlockableEmote> unlockedEmotes = new List<UnlockableEmote>();
         internal static List<UnlockableEmote> unlockedEmotesTier0 = new List<UnlockableEmote>();
@@ -97,7 +98,7 @@ namespace TooManyEmotes
 
         public static void ResetProgressLocal(bool forceResetAll = false)
         {
-            Plugin.Log("Resetting progress.");
+            Log("Resetting progress.");
             if (!ConfigSync.instance.syncPersistentUnlocks || forceResetAll)
                 ResetEmotesLocal();
             if (!ConfigSync.instance.syncPersistentEmoteCredits || forceResetAll)
@@ -122,7 +123,7 @@ namespace TooManyEmotes
 
             if (ConfigSync.instance.syncShareEverything)
             {
-                Plugin.Log("Syncing unlocked emotes with clients.");
+                Log("Syncing unlocked emotes with clients.");
                 SyncManager.SendOnUnlockEmoteUpdateMulti(TerminalPatcher.currentEmoteCredits);
             }
             else
@@ -224,7 +225,7 @@ namespace TooManyEmotes
 
         public static void ResetEmotesLocal()
         {
-            Plugin.Log("Resetting unlocked emotes.");
+            Log("Resetting unlocked emotes.");
             unlockedEmotes.Clear();
             unlockedEmotesTier0.Clear();
             unlockedEmotesTier1.Clear();
@@ -254,7 +255,7 @@ namespace TooManyEmotes
                     if (IsEmoteUnlocked(emote))
                         unlockedFavoriteEmotes.Add(emote);
                 }
-                //else Plugin.LogWarning("Error loading favorited emote. Emote does not exist. The emote has likely been temporarily removed in this update.");
+                //else LogWarning("Error loading favorited emote. Emote does not exist. The emote has likely been temporarily removed in this update.");
             }
         }
 

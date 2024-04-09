@@ -19,6 +19,7 @@ using TooManyEmotes.Networking;
 using DunGen;
 using Unity.Netcode;
 using TooManyEmotes.Compatibility;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Patches
 {
@@ -208,7 +209,7 @@ namespace TooManyEmotes.Patches
                 }
                 else
                 {
-                    Plugin.Log("Canceling emote order.");
+                    Log("Canceling emote order.");
                     __result = BuildCustomTerminalNode("Canceled order.\n\n");
                 }
                 purchasingEmote = null;
@@ -274,17 +275,17 @@ namespace TooManyEmotes.Patches
             {
                 if (SessionManager.IsEmoteUnlocked(emote))
                 {
-                    Plugin.Log("Attempted to start purchase on emote that was already unlocked. Emote: " + emote.displayName);
+                    Log("Attempted to start purchase on emote that was already unlocked. Emote: " + emote.displayName);
                     __result = BuildTerminalNodeAlreadyUnlocked(emote);
                 }
                 else if (Mathf.Max(currentEmoteCredits, 0) + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? Mathf.Max(terminalInstance.groupCredits, 0) : 0) < emote.price)
                 {
-                    Plugin.Log("Attempted to start purchase with insufficient emote credits. Current credits: " + currentEmoteCredits + ". " + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? ("Group credits: " + terminalInstance.groupCredits + ". ") : "") + "Emote price: " + emote.price);
+                    Log("Attempted to start purchase with insufficient emote credits. Current credits: " + currentEmoteCredits + ". " + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? ("Group credits: " + terminalInstance.groupCredits + ". ") : "") + "Emote price: " + emote.price);
                     __result = BuildTerminalNodeInsufficientFunds(emote);
                 }
                 else
                 {
-                    Plugin.Log("Started purchasing emote: " + emote.emoteName);
+                    Log("Started purchasing emote: " + emote.emoteName);
                     purchasingEmote = emote;
                     __result = BuildTerminalNodeConfirmDenyPurchase(emote);
                 }
@@ -292,7 +293,7 @@ namespace TooManyEmotes.Patches
             }
             else
             {
-                Plugin.Log("Attempted to start purchase on invalid emote, or emote was not in current rotation. Input emote: " + input);
+                Log("Attempted to start purchase on invalid emote, or emote was not in current rotation. Input emote: " + input);
                 __result = BuildTerminalNodeInvalidEmote();
                 return false;
             }
@@ -306,8 +307,8 @@ namespace TooManyEmotes.Patches
             if (((int)Traverse.Create(__instance).Field("__rpc_exec_stage").GetValue()) == 2 && (NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsHost))
             {
                 int emoteCreditsProfit = (int)(itemProfit * ConfigSync.instance.syncAddEmoteCreditsMultiplier);
-                Plugin.Log("Gained " + itemProfit + " group credits.");
-                Plugin.Log("Gained " + emoteCreditsProfit + " emote credits. GainEmoteCreditsMultiplier: " + ConfigSync.instance.syncAddEmoteCreditsMultiplier);
+                Log("Gained " + itemProfit + " group credits.");
+                Log("Gained " + emoteCreditsProfit + " emote credits. GainEmoteCreditsMultiplier: " + ConfigSync.instance.syncAddEmoteCreditsMultiplier);
                 currentEmoteCredits += emoteCreditsProfit;
             }
         }
@@ -329,11 +330,11 @@ namespace TooManyEmotes.Patches
             if (!ConfigSync.instance.syncShareEverything)
             {
                 int localClientId = StartOfRound.Instance.localPlayerController != null ? (int)StartOfRound.Instance.localPlayerController.playerClientId : 0;
-                Plugin.Log("EmoteStoreSeed: " + emoteStoreSeed + " LocalPlayerNull: " + (StartOfRound.Instance.localPlayerController == null ? "NULL" : "NOT NULL - ClientId: " + StartOfRound.Instance.localPlayerController.playerClientId) + " GotClientId: " + localClientId);
+                Log("EmoteStoreSeed: " + emoteStoreSeed + " LocalPlayerNull: " + (StartOfRound.Instance.localPlayerController == null ? "NULL" : "NOT NULL - ClientId: " + StartOfRound.Instance.localPlayerController.playerClientId) + " GotClientId: " + localClientId);
                 seed += localClientId;
             }
 
-            Plugin.Log("Rotating emote selection in store. Seed: " + seed);
+            Log("Rotating emote selection in store. Seed: " + seed);
 
             System.Random random = new System.Random(seed);
             emoteSelection.Clear();

@@ -17,8 +17,8 @@ using TooManyEmotes.Patches;
 using TooManyEmotes.Props;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.Animations;
-using UnityEngine.Animations.Rigging;
+using static TooManyEmotes.HelperTools;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes
 {
@@ -26,10 +26,9 @@ namespace TooManyEmotes
     public class EmoteControllerPlayer : EmoteController
     {
         public static Dictionary<PlayerControllerB, EmoteControllerPlayer> allPlayerEmoteControllers = new Dictionary<PlayerControllerB, EmoteControllerPlayer>();
-        public PlayerControllerB playerController;
-
-        public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
         public static EmoteControllerPlayer emoteControllerLocal { get { return localPlayerController != null && allPlayerEmoteControllers.ContainsKey(localPlayerController) ? allPlayerEmoteControllers[localPlayerController] : null; } }
+        
+        public PlayerControllerB playerController;
 
         public bool isLocalPlayer { get { return playerController == StartOfRound.Instance?.localPlayerController; } }
         public ulong clientId { get { return playerController.actualClientId; } }
@@ -68,7 +67,7 @@ namespace TooManyEmotes
             playerController = GetComponentInParent<PlayerControllerB>();
             if (playerController == null)
             {
-                Plugin.LogError("Failed to find PlayerControllerB component in parent of EmoteControllerPlayer.");
+                LogError("Failed to find PlayerControllerB component in parent of EmoteControllerPlayer.");
                 return;
             }
             allPlayerEmoteControllers.Add(playerController, this);
@@ -95,7 +94,7 @@ namespace TooManyEmotes
 
                 humanoidHead = FindChildRecursive("head", humanoidSkeleton);
                 if (!humanoidHead)
-                    Plugin.LogError("Failed to find Head on: " + emoteControllerName);
+                    LogError("Failed to find Head on: " + emoteControllerName);
             }
         }
 
@@ -217,11 +216,11 @@ namespace TooManyEmotes
 
             if (!isLocalPlayer)
             {
-                Plugin.LogWarning("Cannot run TryPerformEmoteLocal on a character who does not belong to the local player. This is not allowed.");
+                LogWarning("Cannot run TryPerformEmoteLocal on a character who does not belong to the local player. This is not allowed.");
                 return false;
             }
 
-            Plugin.Log("Attempting to emote for player: " + playerController.name);
+            Log("Attempting to emote for player: " + playerController.name);
 
             if (!CanPerformEmote())
                 return false;
@@ -290,11 +289,11 @@ namespace TooManyEmotes
 
             if (!isLocalPlayer)
             {
-                Plugin.LogWarning("Cannot run TrySyncingEmoteWithEmoteController on a character who does not belong to the local player. This is not allowed.");
+                LogWarning("Cannot run TrySyncingEmoteWithEmoteController on a character who does not belong to the local player. This is not allowed.");
                 return;
             }
 
-            Plugin.Log("Attempting to sync emote for player: " + playerController.name + " with emote controller with id: " + emoteController.emoteControllerId);
+            Log("Attempting to sync emote for player: " + playerController.name + " with emote controller with id: " + emoteController.emoteControllerId);
 
             if (!CanPerformEmote() || !emoteController.IsPerformingCustomEmote())
                 return;

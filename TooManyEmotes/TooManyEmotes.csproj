@@ -164,8 +164,10 @@
     <Compile Include="Audio\EmoteAudioPlayer.cs" />
     <Compile Include="BoneMapper.cs" />
     <Compile Include="Compatibility\HelmetCameras_Patcher.cs" />
+    <Compile Include="CustomLogging.cs" />
     <Compile Include="EmoteControllers\OnAnimatorIKHandler.cs" />
     <Compile Include="EmoteSyncGroup.cs" />
+    <Compile Include="HelperTools.cs" />
     <Compile Include="Networking\SyncPerformingEmoteManager.cs" />
     <Compile Include="Patches\CentipedePatcher.cs" />
     <Compile Include="Compatibility\LCVR_Compat.cs" />

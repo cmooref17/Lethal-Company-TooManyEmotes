@@ -16,6 +16,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Animations;
 using UnityEngine.Animations.Rigging;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes
 {
@@ -50,7 +51,7 @@ namespace TooManyEmotes
             maskedEnemy = GetComponentInParent<MaskedPlayerEnemy>();
             if (maskedEnemy == null)
             {
-                Plugin.LogError("Failed to find MaskedPlayerEnemy component in parent of EmoteControllerMaskedEnemy.");
+                LogError("Failed to find MaskedPlayerEnemy component in parent of EmoteControllerMaskedEnemy.");
                 return;
             }
             allMaskedEnemyEmoteControllers.Add(maskedEnemy, this);

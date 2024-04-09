@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TooManyEmotes.Patches;
 using UnityEngine.Rendering;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Compatibility
 {
@@ -24,7 +25,7 @@ namespace TooManyEmotes.Compatibility
                 Enabled = true;
                 ThirdPersonEmoteController.localPlayerBodyLayer = 23;
                 ThirdPersonEmoteController.defaultShadowCastingMode = ShadowCastingMode.On;
-                Plugin.Log("Applied patch for MirrorDecor");
+                Log("Applied patch for MirrorDecor");
             }
         }
     }

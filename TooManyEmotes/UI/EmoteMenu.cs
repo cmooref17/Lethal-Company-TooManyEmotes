@@ -7,33 +7,23 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine.UI;
 using UnityEngine;
-using UnityEditor;
 using UnityEngine.InputSystem;
 using TMPro;
-using UnityEngine.Animations.Rigging;
-using Unity.Mathematics;
-using UnityEngine.Windows;
 using TooManyEmotes.Patches;
-using System.Collections;
-using Dissonance.Integrations.Unity_NFGO;
-using System.Runtime.CompilerServices;
 using TooManyEmotes.Config;
 using UnityEngine.EventSystems;
-using System.Xml.Linq;
-using TooManyEmotes.Networking;
 using TooManyEmotes.Input;
-using UnityEngine.Rendering.HighDefinition;
-using System.Linq.Expressions;
 using TooManyEmotes.Compatibility;
 using TooManyEmotes.Audio;
+using static TooManyEmotes.HelperTools;
+using static TooManyEmotes.CustomLogging;
+
 
 namespace TooManyEmotes.UI
 {
     [HarmonyPatch]
     public static class EmoteMenuManager
     {
-        public static QuickMenuManager quickMenuManager { get { return StartOfRound.Instance?.localPlayerController?.quickMenuManager; } }
-        public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
         public static GameObject menuGameObject;
         public static RectTransform menuTransform;
         public static CanvasGroup canvasGroup;
@@ -55,8 +45,8 @@ namespace TooManyEmotes.UI
 
         public static List<UnlockableEmote> currentLoadoutEmotesList { get { return emoteLoadouts != null && currentLoadoutIndex >= 0 && currentLoadoutIndex < emoteLoadouts.Count ? emoteLoadouts[currentLoadoutIndex] : null; } }
 
-        public static List<EmoteLoadoutUIElement> emoteLoadoutUIElementsList;
-        public static List<List<UnlockableEmote>> emoteLoadouts; // = new List<List<string>>();
+        public static List<EmoteLoadoutUIElement> emoteLoadoutUIElementsList = new List<EmoteLoadoutUIElement>();
+        public static List<List<UnlockableEmote>> emoteLoadouts = new List<List<UnlockableEmote>>();
         public static Color selectedLoadoutUIColor = new Color(0.2f, 0.2f, 1f);
         public static int currentLoadoutIndex = -1;
         public static int numLoadouts { get { return emoteLoadouts.Count; } }
@@ -95,15 +85,21 @@ namespace TooManyEmotes.UI
 
 
         [HarmonyPatch(typeof(HUDManager), "Start")]
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         public static void InitializeUI(HUDManager __instance)
         {
-            if (Plugin.radialMenuPrefab == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
+            if (Plugin.radialMenuPrefab == null)
+            {
+                LogError("Radial menu prefab is null??");
+                return;
+            }
+            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
 
+            Log("Initializing emote menu");
             AnimationPreviewer.enabled = false;
             firstTimeOpeningMenu = true;
-
+            // quickMenuManager, HUDManager.Instance?.controlTipLines
             hoveredEmoteUIIndex = -1;
             currentPage = 0;
             currentLoadoutIndex = -1;
@@ -127,14 +123,14 @@ namespace TooManyEmotes.UI
             currentEmoteText.text = "";
             emoteUIElementsList = new List<EmoteUIElement>();
 
-            controlTipLines = new TextMeshProUGUI[HUDManager.Instance.controlTipLines.Length];
+            controlTipLines = new TextMeshProUGUI[__instance.controlTipLines.Length];
 
-            for (int i = 0; i < HUDManager.Instance.controlTipLines.Length; i++)
+            for (int i = 0; i < __instance.controlTipLines.Length; i++)
             {
-                var newControlTipLine = GameObject.Instantiate(HUDManager.Instance.controlTipLines[i], HUDManager.Instance.controlTipLines[0].transform.parent);
-                newControlTipLine.transform.localScale = HUDManager.Instance.controlTipLines[0].transform.localScale;
+                var newControlTipLine = GameObject.Instantiate(__instance.controlTipLines[i], __instance.controlTipLines[0].transform.parent);
+                newControlTipLine.transform.localScale = __instance.controlTipLines[0].transform.localScale;
                 newControlTipLine.transform.SetParent(menuTransform);
-                newControlTipLine.transform.SetPositionAndRotation(HUDManager.Instance.controlTipLines[i].transform.position, HUDManager.Instance.controlTipLines[i].transform.rotation);
+                newControlTipLine.transform.SetPositionAndRotation(__instance.controlTipLines[i].transform.position, __instance.controlTipLines[i].transform.rotation);
                 newControlTipLine.text = "";
                 newControlTipLine.overflowMode = TextOverflowModes.Overflow;
                 newControlTipLine.enableWordWrapping = false;
@@ -147,7 +143,8 @@ namespace TooManyEmotes.UI
             for (int i = 0; i < emoteUIElementsParent.childCount; i++)
             {
                 Transform uiObject = emoteUIElementsParent.GetChild(i);
-                EmoteUIElement uiElement = new EmoteUIElement {
+                EmoteUIElement uiElement = new EmoteUIElement
+                {
                     uiGameObject = uiObject.gameObject,
                     id = i,
                     backgroundImage = uiObject.GetComponentInChildren<Image>(),
@@ -162,14 +159,17 @@ namespace TooManyEmotes.UI
             emoteLoadoutsUIParent.gameObject.AddComponent<AdditionalPanelUI>();
 
             EmoteLoadoutUIElement.uiCount = 0;
-            emoteLoadoutUIElementsList = new List<EmoteLoadoutUIElement>();
+            emoteLoadoutUIElementsList.Clear();
             emoteLoadoutUIElementsList.Add(emoteLoadoutsUIParent.GetChild(0).gameObject.AddComponent<EmoteLoadoutUIElement>());
-            emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent));
-            emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent));
-            emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent));
-            emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent));
-            emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent));
-            emoteLoadoutUIElementsList.Add(GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent));
+            emoteLoadoutUIElementsList.AddRange(new EmoteLoadoutUIElement[]
+            {
+                GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent),
+                GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent),
+                GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent),
+                GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent),
+                GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent),
+                GameObject.Instantiate(emoteLoadoutUIElementsList[0], emoteLoadoutsUIParent)
+            });
 
             for (int i = 0; i < emoteLoadoutUIElementsList.Count; i++)
                 emoteLoadoutUIElementsList[i].name = "EmoteLoadout_" + i;
@@ -182,7 +182,8 @@ namespace TooManyEmotes.UI
             emoteLoadoutUIElementsList[5].loadoutName = "Complementary";
             emoteLoadoutUIElementsList[6].loadoutName = "All";
 
-            emoteLoadouts = new List<List<UnlockableEmote>>()
+            emoteLoadouts.Clear();
+            emoteLoadouts.AddRange(new List<UnlockableEmote>[]
             {
                 SessionManager.unlockedFavoriteEmotes,
                 SessionManager.unlockedEmotesTier3,
@@ -191,7 +192,7 @@ namespace TooManyEmotes.UI
                 SessionManager.unlockedEmotesTier0,
                 EmotesManager.complementaryEmotes,
                 allUnlockedEmotesFiltered
-            };
+            });
 
             if (currentLoadoutIndex < 0 || currentLoadoutIndex >= emoteLoadouts.Count)
                 currentLoadoutIndex = emoteLoadouts.Count - 1;
@@ -301,7 +302,7 @@ namespace TooManyEmotes.UI
             StartOfRound.Instance.localPlayerUsingController = true;
             if (currentThumbstickPosition == Vector2.zero && previewingEmote != null)
             {
-                EmoteControllerPlayer.emoteControllerLocal.TryPerformingEmoteLocal(previewingEmote);
+                emoteControllerLocal.TryPerformingEmoteLocal(previewingEmote);
                 CloseEmoteMenu();
             }
         }
@@ -420,7 +421,8 @@ namespace TooManyEmotes.UI
                 int emoteIndex = i + 8 * currentPage;
                 emoteUI.textContainer.text = "";
                 emoteUI.emote = null;
-                Color color = defaultUIColor;
+                Color emoteBackgroundColor = defaultUIColor;
+                Color emoteTextColor = Color.white;
                 if (emoteIndex < currentLoadoutEmotesList.Count)
                 {
                     UnlockableEmote emote = currentLoadoutEmotesList[emoteIndex];
@@ -428,11 +430,17 @@ namespace TooManyEmotes.UI
                     {
                         emoteUI.emote = emote;
                         emoteUI.textContainer.text = emote.displayName;
-                        //if (ColorUtility.TryParseHtmlString(UnlockableEmote.rarityColorCodes[emote.rarity], out var emoteColor))
-                        //color = emoteColor;
+                        if (ColorUtility.TryParseHtmlString(UnlockableEmote.rarityColorCodes[emote.rarity], out var emoteColor))
+                        {
+                            if (ConfigSettings.colorCodeEmoteBackgroundInRadialMenu.Value)
+                                emoteBackgroundColor = emoteColor;
+                            else if (ConfigSettings.colorCodeEmoteNamesInRadialMenu.Value)
+                                emoteTextColor = emoteColor;
+                        }
                     }
                 }
-                emoteUI.baseColor = color;
+                emoteUI.baseColor = emoteBackgroundColor;
+                emoteUI.textContainer.color = emoteTextColor;
                 emoteUI.OnHover(false);
             }
             if (hoveredEmoteUIIndex >= 0 && hoveredEmoteUIIndex < 8)
@@ -497,29 +505,41 @@ namespace TooManyEmotes.UI
 
         public static void OpenEmoteMenu()
         {
+            if (!localPlayerController)
+                return;
+
             if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
 
             if (firstTimeOpeningMenu)
             {
-                SetCurrentEmoteLoadout(emoteLoadouts[0].Count > 0 ? 0 : currentLoadoutIndex);
+                if (Assert(emoteLoadouts != null && emoteLoadouts.Count > 0, "Error opening emote menu. Emote loadouts are null or empty!"))
+                    SetCurrentEmoteLoadout(emoteLoadouts[0].Count > 0 ? 0 : currentLoadoutIndex);
                 firstTimeOpeningMenu = false;
             }
 
             currentMuteSetting = AudioManager.muteEmoteAudio;
             currentDmcaFreeSetting = AudioManager.dmcaFreeMode;
             currentVolumeSetting = AudioManager.emoteVolumeMultiplier;
-
-            menuGameObject.SetActive(true);
+            // emoteLoadouts, menuGameObject, quickMenuManager, HUDManager.Instance?.controlTipLines
+            if (Assert(menuGameObject != null, "Error opening emote menu. Menu gameobject is null!"))
+                menuGameObject.SetActive(true);
+            if (Assert(quickMenuManager != null, "Error opening emote menu. Quick menu manager gameobject is null!"))
+                quickMenuManager.isMenuOpen = true;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-            quickMenuManager.isMenuOpen = true;
             AnimationPreviewer.UpdatePlayerSuit();
             currentThumbstickPosition = Vector2.zero;
 
-
-            foreach (var controlTipLine in HUDManager.Instance.controlTipLines)
-                controlTipLine.enabled = false;
+            var controlTipLines = HUDManager.Instance?.controlTipLines;
+            if (controlTipLines != null)
+            {
+                foreach (var controlTipLine in controlTipLines)
+                {
+                    if (controlTipLine)
+                        controlTipLine.enabled = false;
+                }
+            }
 
             UpdateControlTipLines();
             UpdateEmoteWheel();
@@ -532,20 +552,30 @@ namespace TooManyEmotes.UI
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
-            localPlayerController.isFreeCamera = false;
-            menuGameObject.SetActive(false);
-            quickMenuManager.CloseQuickMenu();
+            if (localPlayerController)
+                localPlayerController.isFreeCamera = false;
+            if (menuGameObject)
+                menuGameObject.SetActive(false);
+            if (quickMenuManager)
+                quickMenuManager.CloseQuickMenu();
             OnHoveredNewLoadoutElement(-1);
             AnimationPreviewer.SetPreviewAnimation(null);
             AdditionalPanelUI.hovered = false;
+
             SaveFilterPreferences();
             ThirdPersonEmoteController.SavePreferences();
-            
             if (AudioManager.muteEmoteAudio != currentMuteSetting || AudioManager.dmcaFreeMode != currentDmcaFreeSetting || AudioManager.emoteVolumeMultiplier != currentVolumeSetting)
                 AudioManager.SavePreferences();
 
-            foreach (var controlTipLine in HUDManager.Instance.controlTipLines)
-                controlTipLine.enabled = true;
+            var controlTipLines = HUDManager.Instance?.controlTipLines;
+            if (controlTipLines != null)
+            {
+                foreach (var controlTipLine in controlTipLines)
+                {
+                    if (controlTipLine)
+                        controlTipLine.enabled = true;
+                }
+            }
         }
 
 
@@ -555,7 +585,7 @@ namespace TooManyEmotes.UI
                 return false;
             if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return false;
-            if (localPlayerController.isPlayerDead || localPlayerController.inTerminalMenu || localPlayerController.isTypingChat || localPlayerController.inSpecialInteractAnimation || localPlayerController.isGrabbingObjectAnimation || localPlayerController.inShockingMinigame || localPlayerController.isClimbingLadder || localPlayerController.isSinking)
+            if (localPlayerController.isPlayerDead || localPlayerController.inSpecialInteractAnimation || localPlayerController.inTerminalMenu || localPlayerController.isTypingChat || localPlayerController.inSpecialInteractAnimation || localPlayerController.isGrabbingObjectAnimation || localPlayerController.inShockingMinigame || localPlayerController.isClimbingLadder || localPlayerController.isSinking)
                 return false;
             if (localPlayerController.inAnimationWithEnemy != null || CentipedePatcher.IsCentipedeLatchedOntoLocalPlayer())
                 return false;
@@ -619,6 +649,7 @@ namespace TooManyEmotes.UI
 
         public static void LoadFilterPreferences()
         {
+            // Old keys
             ES3.DeleteKey("hideEmotesComplementary");
             ES3.DeleteKey("hideEmotes0");
             ES3.DeleteKey("hideEmotes1");
@@ -662,9 +693,9 @@ namespace TooManyEmotes.UI
 
         [HarmonyPatch(typeof(PlayerControllerB), "ItemSecondaryUse_performed")]
         [HarmonyPrefix]
-        public static bool PreventItemSecondaryUseInMenu(InputAction.CallbackContext context)
+        public static bool PreventItemSecondaryUseInMenu(InputAction.CallbackContext context, PlayerControllerB __instance)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
+            if (__instance != localPlayerController || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return true;
             return !isMenuOpen;
         }
@@ -672,18 +703,18 @@ namespace TooManyEmotes.UI
 
         [HarmonyPatch(typeof(PlayerControllerB), "ItemTertiaryUse_performed")]
         [HarmonyPrefix]
-        public static bool PreventItemTertiaryUseInMenu(InputAction.CallbackContext context)
+        public static bool PreventItemTertiaryUseInMenu(InputAction.CallbackContext context, PlayerControllerB __instance)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
+            if (__instance != localPlayerController || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return true;
             return !isMenuOpen;
         }
 
         [HarmonyPatch(typeof(PlayerControllerB), "Interact_performed")]
         [HarmonyPrefix]
-        public static bool PreventInteractInMenu(InputAction.CallbackContext context)
+        public static bool PreventItemInteractInMenu(InputAction.CallbackContext context, PlayerControllerB __instance)
         {
-            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
+            if (__instance != localPlayerController || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return true;
             return !isMenuOpen;
         }
@@ -754,10 +785,7 @@ namespace TooManyEmotes.UI
             textContainer.text = loadoutName;
         }
 
-        void Start()
-        {
-            //textContainer.text = loadoutName;
-        }
+        void Start() { }
 
         public void OnHover(bool hovered = true)
         {

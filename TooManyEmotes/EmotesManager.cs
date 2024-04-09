@@ -1,25 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using HarmonyLib;
-using GameNetcodeStuff;
-using System.IO;
-using BepInEx;
-using UnityEngine.InputSystem;
-using UnityEngine.Animations.Rigging;
-using System.Security.Cryptography;
-using System.Collections;
-using Unity.Netcode;
-using TooManyEmotes.Config;
-using TooManyEmotes.Networking;
 using TooManyEmotes.Patches;
-using Unity.Collections;
-using TooManyEmotes.Audio;
-//using static UnityEditor.Progress;
+using static TooManyEmotes.HelperTools;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes
 {
@@ -35,8 +20,6 @@ namespace TooManyEmotes
         public static List<UnlockableEmote> allEmotesTier1;
         public static List<UnlockableEmote> allEmotesTier2;
         public static List<UnlockableEmote> allEmotesTier3;
-
-        //public static Dictionary<GameObject, List<UnlockableEmote>> emotesByProp = new Dictionary<GameObject, List<UnlockableEmote>>();
 
 
         public static void BuildEmotesList()
@@ -103,7 +86,7 @@ namespace TooManyEmotes
                     {
                         if (args.Length > 3)
                         {
-                            Plugin.LogError("Error parsing emote name: " + emote.emoteName + ". Correct format: \"emote_group.optional_arg.emote_name\"");
+                            LogError("Error parsing emote name: " + emote.emoteName + ". Correct format: \"emote_group.optional_arg.emote_name\"");
                             continue;
                         }
                         emote.emoteSyncGroupName = args[0];
@@ -139,7 +122,7 @@ namespace TooManyEmotes
                             }
                             else
                             {
-                                Plugin.LogError("Failed to parse emote layer number in arg: " + args[1] + ". Emote will not be added.");
+                                LogError("Failed to parse emote layer number in arg: " + args[1] + ". Emote will not be added.");
                                 continue;
                             }
                         }
@@ -199,7 +182,8 @@ namespace TooManyEmotes
                 }
             }
 
-            allUnlockableEmotes = allUnlockableEmotes.OrderBy(item => item.rarity).ThenBy(item => item.emoteName).ToList();
+            //allUnlockableEmotes = allUnlockableEmotes.OrderBy(item => item.rarity).ThenBy(item => item.emoteName).ToList(); // Sort by rarity, then by name
+            allUnlockableEmotes = allUnlockableEmotes.OrderBy(item => item.emoteName).ToList(); // Sort by name
 
             int id = 0;
             foreach (var emote in allUnlockableEmotes)

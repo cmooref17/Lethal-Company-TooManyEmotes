@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using TooManyEmotes.Config;
 using TooManyEmotes.UI;
 using UnityEngine;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Audio
 {
@@ -283,7 +284,7 @@ namespace TooManyEmotes.Audio
         public virtual void StopAudio()
         {
             if (isPlayingAudio)
-                Plugin.Log("Stopping audio on emote audio source.");
+                Log("Stopping audio on emote audio source.");
             if (audioSource != null)
             {
                 audioSource.Stop();

@@ -9,14 +9,14 @@ using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using static TooManyEmotes.HelperTools;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Patches
 {
     [HarmonyPatch]
     public static class SyncWithEmoteControllerManager
     {
-        public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
-
         public static int syncableEmoteLayerMask = (1 << LayerMask.NameToLayer("Player")) | (1 << LayerMask.NameToLayer("Enemies"));
         public static EmoteController lookingAtSyncableEmoteController = null;
 
@@ -25,18 +25,18 @@ namespace TooManyEmotes.Patches
         [HarmonyPostfix]
         public static void CheckIfLookingAtSyncableEmoteController(PlayerControllerB __instance)
         {
-            if (__instance != localPlayerController || EmoteControllerPlayer.emoteControllerLocal == null || ConfigSettings.disableEmotesForSelf.Value || Compatibility.LCVR_Compat.LoadedAndEnabled)
+            if (__instance != localPlayerController || emoteControllerLocal == null || ConfigSettings.disableEmotesForSelf.Value || Compatibility.LCVR_Compat.LoadedAndEnabled)
                 return;
 
             if (localPlayerController.cursorTip.text.Contains("Sync emote"))
                 localPlayerController.cursorTip.text = "";
 
-            if (!EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote() && !__instance.isPlayerDead && Physics.Raycast(localPlayerController.gameplayCamera.transform.position + localPlayerController.gameplayCamera.transform.forward * 0.5f, localPlayerController.gameplayCamera.transform.forward * 4.5f, out var hit, 4.5f, syncableEmoteLayerMask))
+            if (!emoteControllerLocal.IsPerformingCustomEmote() && !__instance.isPlayerDead && Physics.Raycast(localPlayerController.gameplayCamera.transform.position + localPlayerController.gameplayCamera.transform.forward * 0.5f, localPlayerController.gameplayCamera.transform.forward * 4.5f, out var hit, 4.5f, syncableEmoteLayerMask))
             {
                 try
                 {
                     EmoteController syncWithEmoteController = hit.collider.GetComponentInChildren<EmoteController>() ?? hit.collider.GetComponentInParent<EmoteController>();
-                    if (CanSyncWithEmoteController(EmoteControllerPlayer.emoteControllerLocal, syncWithEmoteController))
+                    if (CanSyncWithEmoteController(emoteControllerLocal, syncWithEmoteController))
                     {
                         if (!(syncWithEmoteController is EmoteControllerMaskedEnemy) || ConfigSettings.enableSyncingEmotesWithMaskedEnemies.Value)
                         {
@@ -59,13 +59,13 @@ namespace TooManyEmotes.Patches
             if (__instance != localPlayerController || !context.performed)
                 return true;
 
-            if (EmoteControllerPlayer.emoteControllerLocal != null && lookingAtSyncableEmoteController != null && !ConfigSettings.disableEmotesForSelf.Value && !Compatibility.LCVR_Compat.LoadedAndEnabled && !__instance.isPlayerDead)
+            if (emoteControllerLocal != null && lookingAtSyncableEmoteController != null && !ConfigSettings.disableEmotesForSelf.Value && !Compatibility.LCVR_Compat.LoadedAndEnabled && !__instance.isPlayerDead)
             {
-                bool canSync = CanSyncWithEmoteController(EmoteControllerPlayer.emoteControllerLocal, lookingAtSyncableEmoteController);
+                bool canSync = CanSyncWithEmoteController(emoteControllerLocal, lookingAtSyncableEmoteController);
                 if (canSync)
                 {
-                    Plugin.Log("[SyncWithEmoteController_performed] Attempting to sync with emote controller: " + lookingAtSyncableEmoteController);
-                    EmoteControllerPlayer.emoteControllerLocal.TrySyncingEmoteWithEmoteController(lookingAtSyncableEmoteController);
+                    Log("[SyncWithEmoteController_performed] Attempting to sync with emote controller: " + lookingAtSyncableEmoteController);
+                    emoteControllerLocal.TrySyncingEmoteWithEmoteController(lookingAtSyncableEmoteController);
                     ResetState();
                     return false;
                 }
@@ -77,7 +77,7 @@ namespace TooManyEmotes.Patches
 
         public static bool CanSyncWithEmoteController(EmoteController sourceEmoteController, EmoteController syncWithEmoteController)
         {
-            if (sourceEmoteController == EmoteControllerPlayer.emoteControllerLocal && (ConfigSettings.disableEmotesForSelf.Value || Compatibility.LCVR_Compat.LoadedAndEnabled))
+            if (sourceEmoteController == emoteControllerLocal && (ConfigSettings.disableEmotesForSelf.Value || Compatibility.LCVR_Compat.LoadedAndEnabled))
             {
                 return false;
             }

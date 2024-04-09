@@ -1,16 +1,8 @@
 ﻿using BepInEx.Configuration;
-using GameNetcodeStuff;
-using HarmonyLib;
-using Unity.Collections;
-using Unity.Netcode;
-using UnityEngine.InputSystem;
 using TooManyEmotes.Networking;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using static UnityEngine.EventSystems.EventTrigger;
-using System.Text.RegularExpressions;
-using System;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Config
 {
@@ -60,6 +52,8 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<string> openEmoteMenuKeybind;
         public static ConfigEntry<bool> toggleEmoteMenu;
         public static ConfigEntry<bool> reverseEmoteWheelScrollDirection;
+        public static ConfigEntry<bool> colorCodeEmoteNamesInRadialMenu;
+        public static ConfigEntry<bool> colorCodeEmoteBackgroundInRadialMenu;
 
         public static ConfigEntry<string> quickEmoteFavorite1Keybind;
         public static ConfigEntry<string> quickEmoteFavorite2Keybind;
@@ -91,7 +85,7 @@ namespace TooManyEmotes.Config
 
         public static void BindConfigSettings()
         {
-            Plugin.Log("BindingConfigs");
+            Log("BindingConfigs");
 
             unlockEverything = AddConfigEntry("Emote Settings", "I am a Party Pooper", false, "[Host only] If true, every emote will be unlocked at the start of the game. (You're not really a party pooper)");
             shareEverything = AddConfigEntry("Emote Settings", "ShareEverything", false, "[Host only] This setting will be ignored if \"I am a Party Pooper\" is enabled. If this setting is set to false, emotes in the store will be different for each player. Unlocking emotes will only unlock for the player that purchased the emote. Each player will have their own emote credits. The amount of emote credits that each player will receive will NOT be reduced.");
@@ -124,18 +118,20 @@ namespace TooManyEmotes.Config
             rotationChanceEmoteTier2 = AddConfigEntry("Emote Store", "RotationWeightEpicEmote", 0.09f, "[Host only] The likelyhood of [epic] emotes appearing (per slot) in the store rotation.");
             rotationChanceEmoteTier3 = AddConfigEntry("Emote Store", "RotationWeightLegendaryEmote", 0.01f, "[Host only] The likelyhood of [legendary] emotes appearing (per slot) in the store rotation.");
 
-            enableMaskedEnemiesEmoting = AddConfigEntry("MaskedEnemyEmotes", "EnableMaskedEnemiesEmoting", true, "[Host only] Enabling this alone does not change the behaviour of the Masked Enemies, and shouldn't conflict with other mods.");
-            maskedEnemiesEmoteChanceOnEncounter = AddConfigEntry("MaskedEnemyEmotes", "EmoteChanceOnEncounter", 0.25f, "[Host only] Chance per encounter with a Masked Enemy, for them to perform an emote. Use values between 0 and 1.");
-            maskedEnemiesAlwaysEmoteOnFirstEncounter = AddConfigEntry("MaskedEnemyEmotes", "AlwaysEmoteOnFirstEncounter", true, "[Host only] This will force the first encounter (for each player) with a Masked Enemy to trigger an emote, regardless of EmoteChanceOnEncounter.");
-            enableSyncingEmotesWithMaskedEnemies = AddConfigEntry("MaskedEnemyEmotes", "EnableSyncingEmotesWithMaskedEnemies", true, "[Client-side] Enabling this will allow you to sync emotes with Masked Enemies. This config is mainly here to disable in case of strange issues.");
-            maskedEnemyEmoteRandomDelay = AddConfigEntry("MaskedEnemyEmotes", "RandomEmoteDelay", "1.5,2.0", "[Host only] Random range at which Masked Enemies will delay before performing an emote. These values could be raised a bit if OverrideStopAndStareDuration is enabled, otherwise, you may run into emotes ending quickly.");
-            overrideStopAndStareDuration = AddConfigEntry("MaskedEnemyEmotes", "OverrideStopAndStareDuration", true, "[Host only] Enabling this will allow this mod to extend the stop and stare duration for longer emotes. If disabled, emotes may end very quickly. Disable this setting if you run into mod conflicts.");
-            maskedEnemyEmoteRandomDuration = AddConfigEntry("MaskedEnemyEmotes", "RandomEmoteDuration", "2.0,4.0", "[Host only] Random range on how long Masked Enemies will emote for. This will extend the Masked Enemies' stop and stare duration by this amount. Only applies if OverrideStopAndStareDuration is true.");
+            enableMaskedEnemiesEmoting = AddConfigEntry("Masked Enemy Emotes", "EnableMaskedEnemiesEmoting", true, "[Host only] Enabling this alone does not change the behaviour of the Masked Enemies, and shouldn't conflict with other mods.");
+            maskedEnemiesEmoteChanceOnEncounter = AddConfigEntry("Masked Enemy Emotes", "EmoteChanceOnEncounter", 0.25f, "[Host only] Chance per encounter with a Masked Enemy, for them to perform an emote. Use values between 0 and 1.");
+            maskedEnemiesAlwaysEmoteOnFirstEncounter = AddConfigEntry("Masked Enemy Emotes", "AlwaysEmoteOnFirstEncounter", true, "[Host only] This will force the first encounter (for each player) with a Masked Enemy to trigger an emote, regardless of EmoteChanceOnEncounter.");
+            enableSyncingEmotesWithMaskedEnemies = AddConfigEntry("Masked Enemy Emotes", "EnableSyncingEmotesWithMaskedEnemies", true, "[Client-side] Enabling this will allow you to sync emotes with Masked Enemies. This config is mainly here to disable in case of strange issues.");
+            maskedEnemyEmoteRandomDelay = AddConfigEntry("Masked Enemy Emotes", "RandomEmoteDelay", "1.5,2.0", "[Host only] Random range at which Masked Enemies will delay before performing an emote. These values could be raised a bit if OverrideStopAndStareDuration is enabled, otherwise, you may run into emotes ending quickly.");
+            overrideStopAndStareDuration = AddConfigEntry("Masked Enemy Emotes", "OverrideStopAndStareDuration", true, "[Host only] Enabling this will allow this mod to extend the stop and stare duration for longer emotes. If disabled, emotes may end very quickly. Disable this setting if you run into mod conflicts.");
+            maskedEnemyEmoteRandomDuration = AddConfigEntry("Masked Enemy Emotes", "RandomEmoteDuration", "2.0,4.0", "[Host only] Random range on how long Masked Enemies will emote for. This will extend the Masked Enemies' stop and stare duration by this amount. Only applies if OverrideStopAndStareDuration is true.");
 
             // numMysteryEmotesStoreRotation = "Server settings", "NumMysteryEmotesInStoreRotation", 1, "[Host only] The number of \"mystery\" emotes that will be available at a time in the store. These emotes will be a mystery until unlocked. Only applies if UnlockEverythingAtStart is false.");
             openEmoteMenuKeybind = AddConfigEntry("Emote Radial Menu", "OpenEmoteMenuKeybind", "<Keyboard>/backquote", "NOTE: This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
             toggleEmoteMenu = AddConfigEntry("Emote Radial Menu", "ToggleEmoteMenu", false, "If set to false, the emote menu will open upon pressing the related keybind, and close upon releasing, and will play the currently hovered emote.");
             reverseEmoteWheelScrollDirection = AddConfigEntry("Emote Radial Menu", "ReverseEmoteWheelScrollDirection", false, "Reverses the page swapping direction in your emote when scrolling.");
+            colorCodeEmoteNamesInRadialMenu = AddConfigEntry("Emote Radial Menu", "ColorCodeEmoteNamesInRadialMenuByRarity", false, "If true, emote names in the radial menu will be colored based on their rarity.");
+            colorCodeEmoteBackgroundInRadialMenu = AddConfigEntry("Emote Radial Menu", "ColorCodeEmoteBackgroundInRadialMenu", false, "If true, the background UI element for each element in the radial menu will be colored based on their rarity.\nNOTE: Enabling this will force the emote names in the radial menu to have their default color.");
 
             /*
             quickEmoteFavorite1Keybind = AddConfigEntry("Emote Radial Menu", "Perform Favorite Emote 1 Keybind", "", "Hotkey for performing favorite emote 1. This keybind will also be used to assign favorited emotes to a hotkey in the emote menu, favorites tab. NOTE: This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
@@ -167,7 +163,7 @@ namespace TooManyEmotes.Config
 
             if (resetFavoriteOnNextStart.Value)
             {
-                Plugin.LogWarning("Favorited emotes were successfully reset. (this is not a warning)");
+                LogWarning("Favorited emotes were successfully reset. (this is not a warning)");
                 ES3.DeleteKey("TooManyEmotes.FavoriteEmotes");
                 resetFavoriteOnNextStart.Value = false;
                 Plugin.instance.Config.Save();

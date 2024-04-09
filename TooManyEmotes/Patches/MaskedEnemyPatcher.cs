@@ -10,6 +10,7 @@ using TooManyEmotes.Networking;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Patches
 {
@@ -81,7 +82,7 @@ namespace TooManyEmotes.Patches
 
                 float delay = GetRandomEmoteDelay(emoteController);
                 float duration = GetRandomEmoteDuration(emoteController);
-                Plugin.Log("Pre-performing emote on MaskedEnemy. Delay: " + delay + " ExtendedStopAndStareDuration: " + duration);
+                Log("Pre-performing emote on MaskedEnemy. Delay: " + delay + " ExtendedStopAndStareDuration: " + duration);
                 emoteController.stopAndStareTimer = emoteController.stopAndStareTimer + duration;
 
                 PerformEmoteAfterDelay(emote, emoteController, delay);
@@ -96,7 +97,7 @@ namespace TooManyEmotes.Patches
             var random = new System.Random(currentLevelSeed + 1550 + 100 * emoteController.id + emoteController.emoteCount);
             float value = (float)random.NextDouble();
             bool shouldEmote = !playersEmotedWithThisRound.Contains(emoteController.lookingAtPlayer) || value <= ConfigSync.instance.syncMaskedEnemiesEmoteChanceOnEncounter;
-            Plugin.Log("Calculating if masked enemy should emote: " + emoteController.maskedEnemy.name + ". Should emote: " + shouldEmote);
+            Log("Calculating if masked enemy should emote: " + emoteController.maskedEnemy.name + ". Should emote: " + shouldEmote);
             return shouldEmote;
         }
 
@@ -166,7 +167,7 @@ namespace TooManyEmotes.Patches
             reader.ReadValue(out maskedEnemyNetworkId);
             reader.ReadValue(out emoteId);
 
-            Plugin.Log("Receiving update for masked enemy emote from server. Masked enemy id: " + maskedEnemyNetworkId + " EmoteId: " + emoteId);
+            Log("Receiving update for masked enemy emote from server. Masked enemy id: " + maskedEnemyNetworkId + " EmoteId: " + emoteId);
             foreach (var emoteController in EmoteControllerMaskedEnemy.allMaskedEnemyEmoteControllers.Values)
             {
                 if (emoteController.maskedEnemy.NetworkObjectId == maskedEnemyNetworkId)
@@ -175,7 +176,7 @@ namespace TooManyEmotes.Patches
                     return;
                 }
             }
-            Plugin.LogError("Failed to find masked enemy with id: " + maskedEnemyNetworkId);
+            LogError("Failed to find masked enemy with id: " + maskedEnemyNetworkId);
         }
 
         
@@ -189,11 +190,11 @@ namespace TooManyEmotes.Patches
                     float distanceToTarget = Vector3.Distance(emoteController.lookingAtPlayer.transform.position, emoteController.maskedEnemy.transform.position);
                     if (distanceToTarget > 25f)
                     {
-                        //Plugin.LogWarning("Failed to perform emote on masked enemy. Target player is too far away. Distance: " + distanceToTarget + ". This is okay.");
+                        //LogWarning("Failed to perform emote on masked enemy. Target player is too far away. Distance: " + distanceToTarget + ". This is okay.");
                     }
                     else if (!emoteController.CanPerformEmote())
                     {
-                        //Plugin.LogWarning("Failed to perform emote on masked enemy: " + emoteController.maskedEnemy.name);
+                        //LogWarning("Failed to perform emote on masked enemy: " + emoteController.maskedEnemy.name);
                     }
                     else
                     {
@@ -204,7 +205,7 @@ namespace TooManyEmotes.Patches
                 }
                 else
                 {
-                    //Plugin.LogWarning("PerformEmoteDelayed - Not looking at player.");
+                    //LogWarning("PerformEmoteDelayed - Not looking at player.");
                 }
                     
             }

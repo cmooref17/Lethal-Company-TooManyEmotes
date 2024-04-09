@@ -11,6 +11,7 @@ using System.Xml.Linq;
 using TooManyEmotes.Config;
 using Unity.Netcode;
 using UnityEngine;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Props
 {
@@ -64,11 +65,11 @@ namespace TooManyEmotes.Props
                     emotePropsData.Add(emotePropData);
                     emotePropsDataDict.Add(emotePropData.propName, emotePropData);
                 }
-                Plugin.Log("Loaded " + emotePropsData.Count + " emote props.");
+                Log("Loaded " + emotePropsData.Count + " emote props.");
             }
             catch
             {
-                Plugin.LogError("Failed to load emotes props asset bundle: emote_props.");
+                LogError("Failed to load emotes props asset bundle: emote_props.");
             }
         }
 
@@ -83,7 +84,7 @@ namespace TooManyEmotes.Props
 
             if (EmotesManager.allUnlockableEmotes == null || EmotesManager.allUnlockableEmotes.Count <= 0)
             {
-                Plugin.LogError("Failed to build emote prop list. Make sure you build the emote prop list after building the unlockable emotes list.");
+                LogError("Failed to build emote prop list. Make sure you build the emote prop list after building the unlockable emotes list.");
                 return;
             }
 
@@ -118,7 +119,7 @@ namespace TooManyEmotes.Props
         {
             if (!emotePropsDataDict.TryGetValue(propName, out var propData))
             {
-                Plugin.LogError("Failed to instantiate emote prop: " + propName + ". Prop does not exist!");
+                LogError("Failed to instantiate emote prop: " + propName + ". Prop does not exist!");
                 return null;
             }
 

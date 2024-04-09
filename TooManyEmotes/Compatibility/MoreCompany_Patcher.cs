@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Compatibility
 {
@@ -16,7 +17,6 @@ namespace TooManyEmotes.Compatibility
     internal static class MoreCompany_Patcher
     {
         public static bool Enabled { get { return Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany"); } }
-
 
         [HarmonyPatch(typeof(HUDManager), "AddPlayerChatMessageClientRpc")]
         [HarmonyPrefix]
@@ -42,7 +42,7 @@ namespace TooManyEmotes.Compatibility
             if (CosmeticRegistry.locallySelectedCosmetics.Count <= 0 || val.spawnedCosmetics.Count > 0)
                 return;
 
-            Plugin.Log("Applying MoreCompany Cosmetics patch.");
+            Log("Applying MoreCompany Cosmetics patch.");
 
             foreach (string locallySelectedCosmetic in CosmeticRegistry.locallySelectedCosmetics)
                 val.ApplyCosmetic(locallySelectedCosmetic, true);

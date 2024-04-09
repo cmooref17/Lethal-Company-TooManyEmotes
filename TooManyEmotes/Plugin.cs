@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using BepInEx;
 using HarmonyLib;
 using System.IO;
@@ -13,8 +10,8 @@ using TooManyEmotes.Input;
 using BepInEx.Logging;
 using System.Reflection;
 using TooManyEmotes.Audio;
-using TooManyEmotes.Compatibility;
 using TooManyEmotes.Props;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes
 {
@@ -25,7 +22,7 @@ namespace TooManyEmotes
     {
         private Harmony _harmony;
         public static Plugin instance;
-        static ManualLogSource logger;
+        public static ManualLogSource defaultLogger { get { return instance.Logger; } }
 
         public static List<AnimationClip> customAnimationClips;
         public static HashSet<AnimationClip> customAnimationClipsHash;
@@ -51,7 +48,7 @@ namespace TooManyEmotes
         void Awake()
         {
             instance = this;
-            CreateCustomLogger();
+            InitLogger();
             ConfigSettings.BindConfigSettings();
             Keybinds.InitKeybinds();
 
@@ -181,7 +178,7 @@ namespace TooManyEmotes
         }
 
 
-        void PatchAll()
+        private void PatchAll()
         {
             IEnumerable<Type> types;
             try
@@ -196,15 +193,6 @@ namespace TooManyEmotes
                 this._harmony.PatchAll(type);
         }
 
-        void CreateCustomLogger()
-        {
-            try { logger = BepInEx.Logging.Logger.CreateLogSource(string.Format("{0}-{1}", Info.Metadata.Name, Info.Metadata.Version)); }
-            catch { logger = Logger; }
-        }
-
-        public static void Log(string message) => logger.LogInfo(message);
-        public static void LogError(string message) => logger.LogError(message);
-        public static void LogWarning(string message) => logger.LogWarning(message);
 
         public static bool IsModLoaded(string guid) => BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey(guid);
     }

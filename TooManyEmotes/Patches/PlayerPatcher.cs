@@ -11,20 +11,14 @@ using System.IO;
 using BepInEx;
 using UnityEngine.InputSystem;
 using TooManyEmotes.Input;
-using TooManyEmotes.Compatibility;
+using static TooManyEmotes.HelperTools;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Patches
 {
     [HarmonyPatch]
     public class PlayerPatcher
     {
-        //public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
-        //public static Dictionary<GameObject, EmoteController> allEmoteControllers { get { return EmoteController.allEmoteControllers; } }
-        //public static Dictionary<PlayerControllerB, EmoteControllerPlayer> allPlayerEmoteControllers { get { return EmoteControllerPlayer.allPlayerEmoteControllers; } }
-        public static EmoteControllerPlayer emoteControllerLocal { get { return EmoteControllerPlayer.emoteControllerLocal; } }
-        //public static int emoteStateHash { get { return localPlayerController != null ? Animator.StringToHash(localPlayerController.playerBodyAnimator.GetLayerName(1) + ".Dance1") : -1; } }
-
-
         [HarmonyPatch(typeof(PlayerControllerB), "Start")]
         [HarmonyPostfix]
         public static void InitializeEmoteController(PlayerControllerB __instance)
@@ -37,7 +31,7 @@ namespace TooManyEmotes.Patches
         [HarmonyPostfix]
         public static void OnLocalClientReady(PlayerControllerB __instance)
         {
-            Plugin.Log("Initializing local player.");
+            Log("Initializing local player.");
             for (int i = 0; i < HUDManager.Instance.controlTipLines.Length; i++)
             {
                 var textComponent = HUDManager.Instance.controlTipLines[i];
@@ -67,7 +61,7 @@ namespace TooManyEmotes.Patches
         {
             if (__instance != null && EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(__instance, out var emoteController) && emoteController.IsPerformingCustomEmote())
             {
-                Plugin.LogWarning("Player died while emoting. Heh... I mean, I hope this handles smoothly.");
+                LogWarning("Player died while emoting. Heh... I mean, I hope this handles smoothly.");
                 emoteController.StopPerformingEmoteImmediately();
             }
         }
@@ -97,7 +91,7 @@ namespace TooManyEmotes.Patches
         {
             if (context.performed && emoteControllerLocal.IsPerformingCustomEmote())
             {
-                //Plugin.LogWarning("OnPerformEmoteLocalPlayer. Stopping custom emote.");
+                //LogWarning("OnPerformEmoteLocalPlayer. Stopping custom emote.");
                 emoteControllerLocal.StopPerformingEmote();
             }
         }

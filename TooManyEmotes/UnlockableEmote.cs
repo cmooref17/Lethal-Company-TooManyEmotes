@@ -101,7 +101,7 @@ namespace TooManyEmotes
         {
             if (propAnimationData.parentEmote != null && propAnimationData.parentEmote != this)
             {
-                Plugin.LogError("Error adding prop animation to unlockable emote. Prop animation data has another parent unlockable emote: " + propAnimationData.parentEmote.emoteName + ". This emote: " + emoteName);
+                LogError("Error adding prop animation to unlockable emote. Prop animation data has another parent unlockable emote: " + propAnimationData.parentEmote.emoteName + ". This emote: " + emoteName);
                 return;
             }
             if (propAnimationsData == null)

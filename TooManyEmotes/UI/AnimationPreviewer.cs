@@ -15,6 +15,8 @@ using TMPro;
 using Dissonance.Integrations.Unity_NFGO;
 using UnityEngine.Rendering.HighDefinition;
 using Unity.Netcode;
+using static TooManyEmotes.HelperTools;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.UI
 {
@@ -22,7 +24,6 @@ namespace TooManyEmotes.UI
     public static class AnimationPreviewer
     {
         public static bool enabled = false;
-        public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
 
         public static Camera renderingCamera;
         public static GameObject previewPlayerObject;
@@ -39,8 +40,8 @@ namespace TooManyEmotes.UI
 
         public static void UpdatePlayerSuit()
         {
-            if (previewPlayerMesh != null)
-                previewPlayerMesh.material  = localPlayerController.thisPlayerModel.material;
+            if (previewPlayerMesh != null && localPlayerController?.thisPlayerModel != null)
+                previewPlayerMesh.material = localPlayerController.thisPlayerModel.material;
         }
 
 
@@ -97,6 +98,8 @@ namespace TooManyEmotes.UI
             IEnumerator InitPlayerCloneAfterSpawnAnimation()
             {
                 yield return new WaitForSeconds(2);
+
+                Assert(renderingCamera != null, "Render camera null!");
 
                 previewPlayerObject = GameObject.Instantiate(__instance.gameObject, renderingCamera.transform);
                 previewPlayerObject.name = "PreviewPlayerAnimationObject";
@@ -163,16 +166,19 @@ namespace TooManyEmotes.UI
                 }
 
                 foreach (var component in destroyComponents)
-                    Plugin.LogError("Failed to destroy component of type: " + component.GetType().ToString() + " on animation previewer object.");
+                    LogError("Failed to destroy component of type: " + component.GetType().ToString() + " on animation previewer object.");
 
                 simpleEmoteController = previewPlayerObject.AddComponent<EmoteController>();
                 simpleEmoteController.Initialize();
                 simpleEmoteController.CreateBoneMap(EmoteControllerPlayer.sourceBoneNames);
 
                 GameObject boomboxPrefab = null;
-                foreach (var item in StartOfRound.Instance.allItemsList.itemsList)
+                if (allItems == null)
+                    LogError("AllItemsList null!");
+
+                foreach (var item in allItems)
                 {
-                    if (item.itemName == "Boombox")
+                    if (item.itemName.ToLower() == "boombox")
                     {
                         boomboxPrefab = item.spawnPrefab;
                         break;
@@ -220,6 +226,7 @@ namespace TooManyEmotes.UI
             if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
 
+            Log("Initializing animation renderer");
             renderingCamera = new GameObject("AnimationRenderingCamera").AddComponent<Camera>();
             GameObject.Destroy(renderingCamera.GetComponent<AudioListener>());
             renderingCamera.cullingMask = renderLayerMask;

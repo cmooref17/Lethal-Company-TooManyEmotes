@@ -7,14 +7,14 @@ using System.Text;
 using System.Threading.Tasks;
 using TooManyEmotes.Networking;
 using TooManyEmotes.Patches;
+using static TooManyEmotes.HelperTools;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Patches
 {
     [HarmonyPatch]
     public static class LocomotionEmotePatcher
     {
-        static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
-
         [HarmonyPatch(typeof(PlayerControllerB), "CheckConditionsForEmote")]
         [HarmonyPostfix]
         public static void AllowMovingInEmoteConditions(ref bool __result, PlayerControllerB __instance)
@@ -35,10 +35,10 @@ namespace TooManyEmotes.Patches
         [HarmonyPrefix]
         public static bool CancelMovingEmote()
         {
-            if (PlayerPatcher.emoteControllerLocal.IsPerformingCustomEmote() && ConfigSync.instance.syncEnableMovingWhileEmoting)
+            if (emoteControllerLocal.IsPerformingCustomEmote() && ConfigSync.instance.syncEnableMovingWhileEmoting)
             {
                 localPlayerController.performingEmote = false;
-                EmoteControllerPlayer.emoteControllerLocal.StopPerformingEmote();
+                emoteControllerLocal.StopPerformingEmote();
                 localPlayerController.StopPerformingEmoteServerRpc();
                 return false;
             }

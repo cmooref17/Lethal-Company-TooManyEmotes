@@ -9,6 +9,7 @@ using TooManyEmotes.Audio;
 using TooManyEmotes.Props;
 using Unity.Netcode;
 using UnityEngine;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes
 {
@@ -68,17 +69,17 @@ namespace TooManyEmotes
         {
             if (!EmotePropManager.emotePropsDataDict.TryGetValue(propName, out var propPrefab))
             {
-                Plugin.LogWarning("Failed to assign prop: " + propName + " to emote. Prop does not exist!");
+                LogWarning("Failed to assign prop: " + propName + " to emote. Prop does not exist!");
                 return;
             }
             if (!EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote))
             {
-                Plugin.LogWarning("Failed to assign prop: " + propName + " to emote: " + emoteName + ". Emote does not exist!");
+                LogWarning("Failed to assign prop: " + propName + " to emote: " + emoteName + ". Emote does not exist!");
                 return;
             }
             if (!EmotePropManager.emotePropsDataDict.TryGetValue(propName, out var propData))
             {
-                Plugin.LogWarning("Failed to assign prop: " + propName + " to emote: " + emoteName + ". Prop data does not exist for: " + propName);
+                LogWarning("Failed to assign prop: " + propName + " to emote: " + emoteName + ". Prop data does not exist for: " + propName);
                 return;
             }
 

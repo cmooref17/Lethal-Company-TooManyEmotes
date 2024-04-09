@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TooManyEmotes.Config;
 using UnityEngine;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Patches
 {

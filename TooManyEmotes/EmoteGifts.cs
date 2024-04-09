@@ -141,7 +141,7 @@ namespace TooManyEmotes.Patches
 
             if (emoteGiftItem == null || emoteGiftPrefab == null)
             {
-                Plugin.LogError("Cannot spawn emote gifts. EmoteGiftItem is null!");
+                LogError("Cannot spawn emote gifts. EmoteGiftItem is null!");
                 return;
             }
 
@@ -190,7 +190,7 @@ namespace TooManyEmotes.Patches
                 List<RandomScrapSpawn> spawns = (emoteGiftItem.spawnPositionTypes != null && emoteGiftItem.spawnPositionTypes.Count != 0) ? source.Where((RandomScrapSpawn x) => emoteGiftItem.spawnPositionTypes.Contains(x.spawnableItems) && !x.spawnUsed).ToList() : source.ToList();
                 if (spawns.Count <= 0)
                 {
-                    Plugin.Log("No tiles containing a scrap spawn with item type: EmoteGift");
+                    Log("No tiles containing a scrap spawn with item type: EmoteGift");
                     continue;
                 }
 
@@ -249,11 +249,11 @@ namespace TooManyEmotes.Patches
             yield return new WaitForSeconds(12f);
             if (spawnedEmoteGifts.Length > 0 )
             {
-                Plugin.Log("Attemping to spawn " + spawnedEmoteGifts.Length + " emote gifts.");
+                Log("Attemping to spawn " + spawnedEmoteGifts.Length + " emote gifts.");
                 SyncSpawnedEmoteGiftsWithClients(spawnedEmoteGifts);
             }
             else
-                Plugin.LogError("Failed to spawn emote gifts.");
+                LogError("Failed to spawn emote gifts.");
         }
 
 
@@ -280,7 +280,7 @@ namespace TooManyEmotes.Patches
                     OnSpawnEmoteGiftLocal(emoteGiftObject);
                 }    
                 else
-                    Plugin.LogError("Error getting EmoteGift from NetworkObject.");
+                    LogError("Error getting EmoteGift from NetworkObject.");
             }
 
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes.OnSpawnEmoteGiftsClientRpc", writer);
@@ -319,7 +319,7 @@ namespace TooManyEmotes.Patches
                             OnSpawnEmoteGiftLocal(emoteGiftObject);
                         }
                         else
-                            Plugin.LogError("Error getting EmoteGift from NetworkObject.");
+                            LogError("Error getting EmoteGift from NetworkObject.");
                     }
                 }
             }
@@ -335,7 +335,7 @@ namespace TooManyEmotes.Patches
             var emote = StartOfRoundPatcher.allUnlockableEmotesDict[emoteName];
             if (emote == null)
             {
-                Plugin.LogError("Got null emote from EmoteGift: " + emoteGift.name);
+                LogError("Got null emote from EmoteGift: " + emoteGift.name);
                 return;
             }
 

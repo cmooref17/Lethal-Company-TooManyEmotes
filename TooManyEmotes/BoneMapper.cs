@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes
 {
@@ -22,7 +23,7 @@ namespace TooManyEmotes
 
             if (sourceBoneNames.Count != targetBoneNames.Count)
             {
-                Plugin.LogError("Attempted to map humanoid skeleton, but passed two sets of bone names with differing sizes.");
+                LogError("Attempted to map humanoid skeleton, but passed two sets of bone names with differing sizes.");
                 return null;
             }
 

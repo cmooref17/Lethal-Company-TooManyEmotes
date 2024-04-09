@@ -16,6 +16,7 @@ using Unity.Netcode;
 using UnityEngine;
 using TooManyEmotes.Audio;
 using TooManyEmotes.Props;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Networking
 {
@@ -197,12 +198,12 @@ namespace TooManyEmotes.Networking
         {
             if (NetworkManager.Singleton.IsClient)
             {
-                Plugin.Log("Requesting config sync from server");
+                Log("Requesting config sync from server");
                 var writer = new FastBufferWriter(0, Allocator.Temp);
                 NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes.OnRequestConfigSyncServerRpc", NetworkManager.ServerClientId, writer);
                 return;
             }
-            Plugin.LogError("Failed to send unlocked emote update to server.");
+            LogError("Failed to send unlocked emote update to server.");
         }
 
 
@@ -211,7 +212,7 @@ namespace TooManyEmotes.Networking
             if (!NetworkManager.Singleton.IsServer)
                 return;
 
-            Plugin.Log("Receiving config sync request from client: " + clientId);
+            Log("Receiving config sync request from client: " + clientId);
             syncedClients.Add(clientId);
             SyncManager.syncedClients.Remove(clientId);
             byte[] bytes = SerializeConfigToByteArray(instance);
@@ -231,7 +232,7 @@ namespace TooManyEmotes.Networking
             reader.ReadValueSafe(out dataLength);
             if (reader.TryBeginRead(dataLength))
             {
-                Plugin.Log("Receiving config sync from server.");
+                Log("Receiving config sync from server.");
                 byte[] bytes = new byte[dataLength];
                 reader.ReadBytesSafe(ref bytes, dataLength);
                 instance = DeserializeFromByteArray(bytes);
@@ -252,7 +253,7 @@ namespace TooManyEmotes.Networking
                 isSynced = true;
                 return;
             }
-            Plugin.LogError("Error receiving sync from server.");
+            LogError("Error receiving sync from server.");
         }
 
 

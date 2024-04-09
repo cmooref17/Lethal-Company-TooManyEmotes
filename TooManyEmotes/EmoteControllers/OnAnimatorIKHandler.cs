@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes
 {
@@ -17,7 +18,7 @@ namespace TooManyEmotes
         {
             animator = GetComponent<Animator>();
             if (animator == null)
-                Plugin.LogWarning("OnIKHandler must be attached to a gameobject with an animator component.");
+                LogWarning("OnIKHandler must be attached to a gameobject with an animator component.");
         }
 
 

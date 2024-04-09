@@ -1,17 +1,14 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using static TooManyEmotes.HelperTools;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Patches
 {
     [HarmonyPatch]
     public static class CentipedePatcher
     {
-        static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
         public static HashSet<CentipedeAI> latchedOnCentipedesLocalPlayer = new HashSet<CentipedeAI>();
 
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
@@ -29,11 +26,11 @@ namespace TooManyEmotes.Patches
             if (__instance.clingingToPlayer == localPlayerController)
             {
                 latchedOnCentipedesLocalPlayer.Add(__instance);
-                if (PlayerPatcher.emoteControllerLocal.IsPerformingCustomEmote())
+                if (emoteControllerLocal.IsPerformingCustomEmote())
                 {
-                    Plugin.LogWarning("Centipede latched onto local player while emoting. Canceling emote.");
+                    LogWarning("Centipede latched onto local player while emoting. Canceling emote.");
                     localPlayerController.performingEmote = false;
-                    PlayerPatcher.emoteControllerLocal.StopPerformingEmote();
+                    emoteControllerLocal.StopPerformingEmote();
                     localPlayerController.StopPerformingEmoteServerRpc();
                 }
             }

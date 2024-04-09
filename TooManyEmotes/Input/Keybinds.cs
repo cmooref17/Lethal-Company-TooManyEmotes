@@ -7,14 +7,14 @@ using TooManyEmotes.Patches;
 using TooManyEmotes.Networking;
 using TooManyEmotes.Compatibility;
 using TooManyEmotes.UI;
+using static TooManyEmotes.HelperTools;
+using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Input
 {
     [HarmonyPatch]
-    public static class Keybinds
+    internal static class Keybinds
     {
-        public static PlayerControllerB localPlayerController { get { return StartOfRound.Instance?.localPlayerController; } }
-
         public static InputActionAsset Asset;
         public static InputActionMap ActionMap;
 
@@ -48,7 +48,7 @@ namespace TooManyEmotes.Input
 
         public static void InitKeybinds()
         {
-            Plugin.Log("Initializing custom emote hotkeys.");
+            Log("Initializing custom emote hotkeys.");
 
             if (InputUtils_Compat.Enabled)
             {
@@ -203,7 +203,7 @@ namespace TooManyEmotes.Input
 
         static void OnPressOpenEmoteMenu(InputAction.CallbackContext context)
         {
-            //Plugin.Log("Starting opening emote menu...");
+            //Log("Starting opening emote menu...");
             if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
 
@@ -321,7 +321,7 @@ namespace TooManyEmotes.Input
             if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled || !context.performed)
                 return;
 
-            Plugin.Log("Reloading local player model.");
+            Log("Reloading local player model.");
             ThirdPersonEmoteController.ReloadPlayerModel(localPlayerController);
         }
     }
