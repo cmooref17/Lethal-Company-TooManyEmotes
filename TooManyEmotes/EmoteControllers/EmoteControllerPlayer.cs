@@ -307,26 +307,12 @@ namespace TooManyEmotes
             if (!CanPerformEmote() || !emoteController.IsPerformingCustomEmote())
                 return;
 
-            /*
-            short overrideEmoteId = -1;
-            if (emoteController.emoteSyncGroup != null)
-            {
-                emoteController.emoteSyncGroup.AddToEmoteSyncGroup(this);
-                emoteSyncGroup = emoteController.emoteSyncGroup;
-                if (!emoteController.performingEmote.randomEmote)
-                {
-                    overrideEmoteId = (short)emoteSyncGroup.syncGroup.IndexOf(this);
-                    if (overrideEmoteId != -1)
-                        overrideEmoteId %= (short)emoteController.performingEmote.emoteSyncGroup.Count;
-                }
-            }
-            */
             SyncWithEmoteController(emoteController);
             if (performingEmote != null)
             {
-                short overrideEmoteId = -1;
+                int overrideEmoteId = -1;
                 if (performingEmote.inEmoteSyncGroup)
-                    overrideEmoteId = (short)performingEmote.emoteSyncGroup.IndexOf(performingEmote);
+                    overrideEmoteId = performingEmote.emoteSyncGroup.IndexOf(performingEmote);
 
                 playerController.StartPerformingEmoteServerRpc();
                 SyncPerformingEmoteManager.SendSyncEmoteUpdateToServer(emoteController, overrideEmoteId);
@@ -387,8 +373,6 @@ namespace TooManyEmotes
             if (playerController == null || (isLocalPlayer && (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)))
                 return false;
 
-            LogWarning("222 OverrideEmoteId: " + overrideEmoteId + " EmoteName: " + emote.emoteName);
-
             bool success = base.PerformEmote(emote, overrideEmoteId, doNotTriggerAudio);
             if (isPerformingEmote)
             {
@@ -429,7 +413,7 @@ namespace TooManyEmotes
         }
 
 
-        public override void StopPerformingEmote()
+        /*public override void StopPerformingEmote()
         {
             if (playerController == null || (isLocalPlayer && ConfigSettings.disableEmotesForSelf.Value))
                 return;
@@ -451,10 +435,18 @@ namespace TooManyEmotes
         }
 
 
+        IEnumerator StopEmoteCameraEndOfFrame()
+        {
+            yield return new WaitForEndOfFrame();
+            if (!isPerformingEmote)
+                ThirdPersonEmoteController.OnStopCustomEmoteLocal();
+        }*/
+
+
         /// <summary>
         /// Stops emoting, and switches camera back to the player's view immediately.
         /// </summary>
-        public void StopPerformingEmoteImmediately()
+        public override void StopPerformingEmote()
         {
             if (playerController == null || (isLocalPlayer && ConfigSettings.disableEmotesForSelf.Value))
                 return;
@@ -474,14 +466,6 @@ namespace TooManyEmotes
                 playerController.StopPerformingEmoteServerRpc();
                 ThirdPersonEmoteController.OnStopCustomEmoteLocal();
             }
-        }
-
-
-        IEnumerator StopEmoteCameraEndOfFrame()
-        {
-            yield return new WaitForEndOfFrame();
-            if (!isPerformingEmote)
-                ThirdPersonEmoteController.OnStopCustomEmoteLocal();
         }
 
 

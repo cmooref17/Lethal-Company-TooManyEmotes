@@ -51,7 +51,7 @@ namespace TooManyEmotes.Patches
         {
             PlayerControllerB playerController = __instance.allPlayerObjects[playerObjectNumber].GetComponent<PlayerControllerB>();
             if (playerController != null && EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(playerController, out var emoteController) && emoteController.IsPerformingCustomEmote())
-                emoteController.StopPerformingEmoteImmediately();
+                emoteController.StopPerformingEmote();
         }
 
 
@@ -62,7 +62,7 @@ namespace TooManyEmotes.Patches
             if (__instance != null && EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(__instance, out var emoteController) && emoteController.IsPerformingCustomEmote())
             {
                 LogWarning("Player died while emoting. Heh... I mean, I hope this handles smoothly.");
-                emoteController.StopPerformingEmoteImmediately();
+                emoteController.StopPerformingEmote();
             }
         }
 

@@ -44,6 +44,7 @@ namespace TooManyEmotes.Patches
 
         public static Vector3 firstPersonCameraLocalPosition;
         public static Quaternion firstPersonCameraLocalRotation;
+        private static bool isPerformingEmote = false;
 
         public static bool firstPersonEmotesEnabled { get; internal set; } = false;
 
@@ -104,14 +105,14 @@ namespace TooManyEmotes.Patches
             gameplayCamera.cullingMask &= ~(1 << 23);
             emoteCamera.cullingMask |= (1 << 23);
             //emoteCamera.cullingMask |= 1 << localPlayerBodyLayer;
-            emoteCamera.cullingMask &= ~((1 << 5) | (1 << 7)); // ui/helmet visor
+            emoteCamera.cullingMask &= ~((1 << 5) | (1 << 7) | (1 << 22)); // ui/helmet visor/scan nodes
 
             emoteCameraPivot.transform.SetParent(localPlayerController.transform);
             emoteCameraPivot.SetLocalPositionAndRotation(Vector3.up * 1.8f, Quaternion.identity);
             emoteCamera.transform.SetParent(emoteCameraPivot);
             emoteCamera.transform.SetLocalPositionAndRotation(Vector3.back * targetCameraDistance, Quaternion.identity);
 
-            // Fix other player's cameras not seeing local player's body
+            // Fix other player's cameras not seeing local player's body (maybe?)
             foreach (var playerController in StartOfRound.Instance.allPlayerScripts)
             {
                 if (playerController != null && playerController != localPlayerController && playerController.gameplayCamera != null)
@@ -273,7 +274,8 @@ namespace TooManyEmotes.Patches
                 {
                     StartOfRound.Instance.SwitchCamera(emoteCamera);
                     CallChangeAudioListenerToObject(emoteCamera.gameObject);
-                    emoteCameraPivot.eulerAngles = gameplayCamera.transform.eulerAngles;
+                    if (!isPerformingEmote)
+                        emoteCameraPivot.eulerAngles = gameplayCamera.transform.eulerAngles;
                 }
 
                 // Double checking values
@@ -295,6 +297,7 @@ namespace TooManyEmotes.Patches
                 HUDManager.Instance.ClearControlTips();
                 UpdateControlTip();
             }
+            isPerformingEmote = true;
         }
 
 
@@ -319,6 +322,19 @@ namespace TooManyEmotes.Patches
 
             if (localPlayerController.serverItemHolder == localPlayerController.currentlyHeldObjectServer?.parentObject)
                 localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.localItemHolder;
+
+            localPlayerController.StartCoroutine(ResetCameraTransformEndOfFrame());
+        }
+
+
+        private static IEnumerator ResetCameraTransformEndOfFrame()
+        {
+            yield return new WaitForEndOfFrame();
+            if (!EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote())
+            {
+                emoteCameraPivot.eulerAngles = localPlayerCameraContainer.eulerAngles;
+                isPerformingEmote = false;
+            }
         }
 
 

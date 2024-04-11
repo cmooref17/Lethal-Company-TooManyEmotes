@@ -8,7 +8,7 @@ using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Props
 {
-    public class GrabbablePropObject : GrabbableObject
+    public class GrabbablePropObject : PhysicsProp
     {
         public EmotePropData emotePropData;
         public UnlockableEmote emote;
@@ -45,6 +45,9 @@ namespace TooManyEmotes.Props
             }
             else
                 LogError("Failed to assign emote to grabbable emote prop: " + name + ". Emote is null.");
+
+            var collider = GetComponent<BoxCollider>();
+            collider.isTrigger = false;
         }
 
 

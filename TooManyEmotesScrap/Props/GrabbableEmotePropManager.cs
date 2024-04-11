@@ -6,10 +6,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
+using TooManyEmotes;
+using TooManyEmotes.Props;
+using TooManyEmotes.Networking;
 using static TooManyEmotes.HelperTools;
-using static TooManyEmotes.CustomLogging;
-/*
-namespace TooManyEmotes.Props
+using static TooManyEmotesScrap.CustomLogging;
+using GameNetcodeStuff;
+
+namespace TooManyEmotesScrap.Props
 {
     public static class GrabbableEmotePropManager
     {
@@ -22,7 +26,7 @@ namespace TooManyEmotes.Props
         private static Item defaultPropItemDataTwoHanded;
         private static GameObject scanNodePrefab;
 
-        public static int startGrabbableItemId { get { return allItems != null && numGrabbableEmoteProps > 0 && grabbableEmotePropsData[0] != null ? StartOfRound.Instance.allItemsList.itemsList.IndexOf(grabbableEmotePropsData[0].itemData) : -1; } }
+        public static int startGrabbableItemId { get { return allItems != null && numGrabbableEmoteProps > 0 && grabbableEmotePropsData[0] != null ? allItems.IndexOf(grabbableEmotePropsData[0].itemData) : -1; } }
         public static int numGrabbableEmoteProps { get { return grabbableEmotePropsData != null ? grabbableEmotePropsData.Count : 0; } }
 
 
@@ -35,6 +39,17 @@ namespace TooManyEmotes.Props
         }
 
 
+        [HarmonyPatch(typeof(ConfigSync), "OnSynced")]
+        [HarmonyPostfix]
+        private static void OnConfigSynced()
+        {
+            if (ConfigSync.instance.syncEnableGrabbableEmoteProps)
+                AddGrabbableEmotePropsMoons();
+            else
+                RemoveGrabbableEmotePropsMoons(); // Should be unnecessary, but just in case
+        }
+
+        
         [HarmonyPatch(typeof(GameNetworkManager), "Start")]
         [HarmonyPostfix]
         private static void CreateAllGrabbablePropsData(GameNetworkManager __instance)
@@ -179,13 +194,19 @@ namespace TooManyEmotes.Props
                 if (scanNode == null)
                 {
                     var scanNodeGameobject = GameObject.Instantiate(scanNodePrefab);
-                    scanNodeGameobject.transform.SetParent(propData.propPrefab.transform);
-                    scanNodeGameobject.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-                    scanNode = scanNodeGameobject.GetComponent<ScanNodeProperties>();
+                    scanNodeGameobject.name = "ScanNode";
+
                     var scanNodeCollider = scanNodeGameobject.GetComponent<BoxCollider>();
                     var propCollider = grabbableEmoteProp.GetComponentInChildren<BoxCollider>();
                     scanNodeCollider.center = propCollider.center;
-                    scanNodeCollider.size = propCollider.size + Vector3.one * 0.1f;
+                    scanNodeCollider.size = propCollider.size;
+
+                    scanNodeGameobject.transform.SetParent(propData.propPrefab.transform);
+                    scanNodeGameobject.transform.position = scanNodeGameobject.transform.parent.position + Vector3.up * scanNodeCollider.size.y;
+                    scanNodeCollider.center = new Vector3(scanNodeCollider.center.x, 0, scanNodeCollider.center.z);
+                    scanNodeGameobject.transform.localRotation = Quaternion.identity;
+                    scanNodeGameobject.transform.localScale = Vector3.one;
+                    scanNode = scanNodeGameobject.GetComponent<ScanNodeProperties>();
                 }
                 grabbableEmoteProp.scanNodeProperties = scanNode;
 
@@ -440,4 +461,3 @@ namespace TooManyEmotes.Props
         }
     }
 }
-*/

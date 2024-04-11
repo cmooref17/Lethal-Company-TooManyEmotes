@@ -17,6 +17,7 @@ using UnityEngine;
 using TooManyEmotes.Audio;
 using TooManyEmotes.Props;
 using static TooManyEmotes.CustomLogging;
+using TooManyEmotes.Compatibility;
 
 namespace TooManyEmotes.Networking
 {
@@ -262,11 +263,6 @@ namespace TooManyEmotes.Networking
             isSynced = true;
             if (!instance.syncDisableAudioShipSpeaker)
                 EmoteAudioPlayerManager.InitializeShipSpeakerAudioPlayer();
-
-            if (instance.syncEnableGrabbableEmoteProps)
-                GrabbableEmotePropManager.AddGrabbableEmotePropsMoons();
-            else
-                GrabbableEmotePropManager.RemoveGrabbableEmotePropsMoons(); // Should be unnecessary, but just in case
         }
 
 

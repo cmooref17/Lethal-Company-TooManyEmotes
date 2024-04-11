@@ -11,13 +11,14 @@ namespace TooManyEmotes.Props
     {
         public GameObject propPrefab;
         public string propName;
-        public bool registered = false;
         public List<UnlockableEmote> parentEmotes = new List<UnlockableEmote>();
+        public bool isGrabbableObject = false;
+
+        public bool registered = false;
 
         public Item itemData;
         public SpawnableItemWithRarity itemRarityData;
 
-        public bool isGrabbableObject = false;
         public string itemName = "";
         public GrabbablePropObject grabbablePropObject = null;
         public bool isScrap = true;

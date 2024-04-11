@@ -1,26 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
 using HarmonyLib;
-using GameNetcodeStuff;
-using TooManyEmotes.Config;
-using System.IO;
-using BepInEx;
-using UnityEngine.InputSystem;
-using UnityEngine.Animations.Rigging;
-using UnityEditor;
-using System.Security.Cryptography;
-using System.Collections;
 using TooManyEmotes.Networking;
 using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Patches
 {
-
     [HarmonyPatch]
     public static class SaveManager
     {

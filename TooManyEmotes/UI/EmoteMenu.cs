@@ -84,11 +84,8 @@ namespace TooManyEmotes.UI
         [HarmonyPostfix]
         public static void InitializeUI(HUDManager __instance)
         {
-            if (Plugin.radialMenuPrefab == null)
-            {
-                LogError("Radial menu prefab is null??");
+            if (!Assert(Plugin.radialMenuPrefab != null, "Radial menu prefab is null??"))
                 return;
-            }
             if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
 
