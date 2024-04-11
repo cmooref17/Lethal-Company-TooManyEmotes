@@ -1,11 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using TooManyEmotes.Config;
 using TooManyEmotes.Compatibility;
@@ -13,7 +9,6 @@ using UnityEngine.Animations.Rigging;
 using UnityEngine.UI;
 using TMPro;
 using Dissonance.Integrations.Unity_NFGO;
-using UnityEngine.Rendering.HighDefinition;
 using Unity.Netcode;
 using static TooManyEmotes.HelperTools;
 using static TooManyEmotes.CustomLogging;
@@ -38,53 +33,38 @@ namespace TooManyEmotes.UI
         public static GameObject previewBoombox;
 
 
-        public static void UpdatePlayerSuit()
+        public static void InitializeAnimationRenderer()
         {
-            if (previewPlayerMesh != null && localPlayerController?.thisPlayerModel != null)
-                previewPlayerMesh.material = localPlayerController.thisPlayerModel.material;
-        }
-
-
-        public static void SetPreviewAnimation(UnlockableEmote emote)
-        {
-            if (!enabled || !previewPlayerObject || !simpleEmoteController)
+            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
 
-            if (enabled && emote != null)
-            {
-                previewPlayerObject.SetActive(true);
-                renderingCamera.enabled = true;
-                if (previewBoombox)
-                    previewBoombox.SetActive(emote.hasAudio && emote.isBoomboxAudio);
+            Log("Initializing animation renderer");
+            renderingCamera = new GameObject("AnimationRenderingCamera").AddComponent<Camera>();
+            GameObject.Destroy(renderingCamera.GetComponent<AudioListener>());
+            renderingCamera.cullingMask = renderLayerMask;
+            renderingCamera.clearFlags = CameraClearFlags.SolidColor;
+            renderingCamera.cameraType = CameraType.Preview;
+            renderingCamera.backgroundColor = new Color(0.1f, 0.1f, 0.1f, 0);
+            // Most of this was to try and get transparency working, but it was being stubborn. Still keeping it though
+            renderingCamera.allowHDR = false;
+            renderingCamera.allowMSAA = false;
+            renderingCamera.farClipPlane = 5;
+            renderingCamera.targetTexture = EmoteMenuManager.renderTexture;
+            renderingCamera.transform.position = Vector3.down * 1000;
+            EmoteMenuManager.renderTextureImageUI.texture = EmoteMenuManager.renderTexture;
 
-                simpleEmoteController.PerformEmote(emote);
-                if (simpleEmoteController.emotingProps != null)
-                {
-                    foreach (var emoteProp in simpleEmoteController.emotingProps)
-                        emoteProp.SetPropLayer(3);
-                }
-                
-            }
-            else
-            {
-                simpleEmoteController.StopPerformingEmote();
-                previewPlayerObject.SetActive(false);
-                if (previewBoombox)
-                    previewBoombox.SetActive(false);
-                DisableRenderCameraNextFrame();
-            }
-        }
+            Light spotlight = new GameObject("Spotlight").AddComponent<Light>();
+            spotlight.type = LightType.Spot;
+            spotlight.transform.SetParent(renderingCamera.transform);
+            spotlight.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+            spotlight.intensity = 50;
+            spotlight.range = 40;
+            spotlight.innerSpotAngle = 100;
+            spotlight.spotAngle = 120;
+            spotlight.gameObject.layer = renderLayer;
 
-
-        public static void DisableRenderCameraNextFrame()
-        {
-            IEnumerator DisableRenderCameraNextFrameCoroutine()
-            {
-                yield return null;
-                renderingCamera.enabled = false;
-            }
-
-            HUDManager.Instance.StartCoroutine(DisableRenderCameraNextFrameCoroutine());
+            DisableRenderCameraNextFrame();
+            enabled = true;
         }
 
 
@@ -132,15 +112,6 @@ namespace TooManyEmotes.UI
                     if (child.name != "spine")
                         GameObject.Destroy(child.gameObject);
 
-                /*
-                List<Component> destroyComponents = new List<Component>(previewPlayerObject.GetComponentsInChildren<HDAdditionalLightData>());
-                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<HDAdditionalCameraData>());
-                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioReverbFilter>());
-                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<OccludeAudio>());
-                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioLowPassFilter>());
-                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioHighPassFilter>());
-                destroyComponents.AddRange(previewPlayerObject.GetComponentsInChildren<AudioChorusFilter>());
-                */
                 List<Component> destroyComponents = new List<Component>(previewPlayerObject.GetComponentsInChildren<Component>());
                 int numDestroyed = -1;
                 while (destroyComponents != null && destroyComponents.Count > 0 && numDestroyed != 0)
@@ -201,7 +172,7 @@ namespace TooManyEmotes.UI
                             GameObject.Destroy(component);
                     }
                 }
-                
+
                 SetObjectLayerRecursive(previewPlayerObject, renderLayer);
             }
 
@@ -212,47 +183,62 @@ namespace TooManyEmotes.UI
         }
 
 
+        public static void UpdatePlayerSuit()
+        {
+            if (previewPlayerMesh != null && localPlayerController?.thisPlayerModel != null)
+                previewPlayerMesh.material = localPlayerController.thisPlayerModel.material;
+        }
+
+
+        public static void SetPreviewAnimation(UnlockableEmote emote)
+        {
+            if (!enabled || !previewPlayerObject || !simpleEmoteController)
+                return;
+
+            if (enabled && emote != null)
+            {
+                previewPlayerObject.SetActive(true);
+                renderingCamera.enabled = true;
+                if (previewBoombox)
+                    previewBoombox.SetActive(emote.hasAudio && emote.isBoomboxAudio);
+
+                simpleEmoteController.PerformEmote(emote);
+                if (simpleEmoteController.emotingProps != null)
+                {
+                    foreach (var emoteProp in simpleEmoteController.emotingProps)
+                        emoteProp.SetPropLayer(3);
+                }
+                
+            }
+            else
+            {
+                simpleEmoteController.StopPerformingEmote();
+                previewPlayerObject.SetActive(false);
+                if (previewBoombox)
+                    previewBoombox.SetActive(false);
+                DisableRenderCameraNextFrame();
+            }
+        }
+
+
+        private static void DisableRenderCameraNextFrame()
+        {
+            IEnumerator DisableRenderCameraNextFrameCoroutine()
+            {
+                yield return null;
+                renderingCamera.enabled = false;
+            }
+
+            HUDManager.Instance.StartCoroutine(DisableRenderCameraNextFrameCoroutine());
+        }
+
+
         private static void SetObjectLayerRecursive(GameObject obj, int layer)
         {
             if (!obj) return;
             obj.layer = layer;
             for (int i = 0; i < obj.transform.childCount; i++)
                 SetObjectLayerRecursive(obj.transform.GetChild(i)?.gameObject, layer);
-        }
-
-
-        public static void InitializeAnimationRenderer()
-        {
-            if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
-                return;
-
-            Log("Initializing animation renderer");
-            renderingCamera = new GameObject("AnimationRenderingCamera").AddComponent<Camera>();
-            GameObject.Destroy(renderingCamera.GetComponent<AudioListener>());
-            renderingCamera.cullingMask = renderLayerMask;
-            renderingCamera.clearFlags = CameraClearFlags.SolidColor;
-            renderingCamera.cameraType = CameraType.Preview;
-            renderingCamera.backgroundColor = new Color(0.1f, 0.1f, 0.1f, 0);
-            // Most of this was to try and get transparency working, but it was being stubborn. Still keeping it though
-            renderingCamera.allowHDR = false;
-            renderingCamera.allowMSAA = false;
-            renderingCamera.farClipPlane = 5;
-            renderingCamera.targetTexture = EmoteMenuManager.renderTexture;
-            renderingCamera.transform.position = Vector3.down * 1000;
-            EmoteMenuManager.renderTextureImageUI.texture = EmoteMenuManager.renderTexture;
-
-            Light spotlight = new GameObject("Spotlight").AddComponent<Light>();
-            spotlight.type = LightType.Spot;
-            spotlight.transform.SetParent(renderingCamera.transform);
-            spotlight.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-            spotlight.intensity = 50;
-            spotlight.range = 40;
-            spotlight.innerSpotAngle = 100;
-            spotlight.spotAngle = 120;
-            spotlight.gameObject.layer = renderLayer;
-
-            DisableRenderCameraNextFrame();
-            enabled = true;
         }
     }
 }

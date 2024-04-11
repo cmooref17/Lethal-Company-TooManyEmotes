@@ -95,7 +95,7 @@ namespace TooManyEmotes.Props
 
             if (!heldByPlayerEmoteController.IsPerformingCustomEmote())
             {
-                heldByPlayerEmoteController.TryPerformingEmoteLocal(emote, this);
+                heldByPlayerEmoteController.TryPerformingEmoteLocal(emote, sourcePropObject:this);
                 if (heldByPlayerEmoteController.IsPerformingCustomEmote())
                 {
                     foreach (var renderer in GetComponentsInChildren<SkinnedMeshRenderer>())

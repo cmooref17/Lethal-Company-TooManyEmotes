@@ -1,10 +1,6 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -84,8 +80,8 @@ namespace TooManyEmotes.UI
         private static Toggle hideEmotes3Toggle;
 
 
-        [HarmonyPatch(typeof(HUDManager), "Start")]
-        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HUDManager), "Awake")]
+        [HarmonyPostfix]
         public static void InitializeUI(HUDManager __instance)
         {
             if (Plugin.radialMenuPrefab == null)
@@ -522,10 +518,12 @@ namespace TooManyEmotes.UI
             currentDmcaFreeSetting = AudioManager.dmcaFreeMode;
             currentVolumeSetting = AudioManager.emoteVolumeMultiplier;
             // emoteLoadouts, menuGameObject, quickMenuManager, HUDManager.Instance?.controlTipLines
+
             if (Assert(menuGameObject != null, "Error opening emote menu. Menu gameobject is null!"))
                 menuGameObject.SetActive(true);
             if (Assert(quickMenuManager != null, "Error opening emote menu. Quick menu manager gameobject is null!"))
                 quickMenuManager.isMenuOpen = true;
+
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             AnimationPreviewer.UpdatePlayerSuit();

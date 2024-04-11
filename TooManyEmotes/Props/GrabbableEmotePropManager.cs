@@ -20,6 +20,7 @@ namespace TooManyEmotes.Props
 
         private static Item defaultPropItemData;
         private static Item defaultPropItemDataTwoHanded;
+        private static GameObject scanNodePrefab;
 
         public static int startGrabbableItemId { get { return allItems != null && numGrabbableEmoteProps > 0 && grabbableEmotePropsData[0] != null ? StartOfRound.Instance.allItemsList.itemsList.IndexOf(grabbableEmotePropsData[0].itemData) : -1; } }
         public static int numGrabbableEmoteProps { get { return grabbableEmotePropsData != null ? grabbableEmotePropsData.Count : 0; } }
@@ -70,6 +71,23 @@ namespace TooManyEmotes.Props
                                 {
                                     itemData.twoHanded = false;
                                     defaultPropItemData = itemData;
+                                    if (scanNodePrefab == null)
+                                    {
+                                        scanNodePrefab = grabbableObject.transform.Find("ScanNode").gameObject;
+                                        if (scanNodePrefab == null)
+                                            LogError("Failed to find scanNodePrefab!");
+                                        else
+                                        {
+                                            scanNodePrefab = GameObject.Instantiate(scanNodePrefab);
+                                            scanNodePrefab.layer = 22; // ScanNode layer
+                                            var scanNode = scanNodePrefab.GetComponentInChildren<ScanNodeProperties>();
+                                            scanNode.headerText = "Prop";
+                                            scanNode.subText = "Value:";
+                                            scanNode.minRange = 1;
+                                            scanNode.maxRange = 15;
+                                            scanNode.scrapValue = 0;
+                                        }
+                                    }
                                 }
                                 else if (itemName == "v-type engine" && defaultPropItemDataTwoHanded == null)
                                 {
@@ -87,8 +105,8 @@ namespace TooManyEmotes.Props
                 }
             }
 
-            CreateGrabbablePropData("trombone.prop", value: 80, rarity: 12, weight: 1.05f, positionOffset: new Vector3(-0.155f, 0.325f, -0.015f), rotationOffset: new Vector3(-90, -80, 0));
             CreateGrabbablePropData("sexy_saxophone.sexy_sax.prop", value: 120, rarity: 10, weight: 1.05f, positionOffset: new Vector3(-0.15f, 0.08f, -0.055f), rotationOffset: new Vector3(0, 100, 80));
+            CreateGrabbablePropData("trombone.prop", value: 80, rarity: 12, weight: 1.05f, positionOffset: new Vector3(-0.155f, 0.325f, -0.015f), rotationOffset: new Vector3(-90, -80, 0));
             CreateGrabbablePropData("baseball_bat.prop", value: 80, rarity: 12, weight: 1.03f, positionOffset: new Vector3(0.3f, 0.2f, 0.02f), rotationOffset: new Vector3(0, 0, -160));
 
             CreateGrabbablePropData("junk_food.prop", value: 60, rarity: 15, weight: 0, positionOffset: new Vector3(-0.02f, 0.05f, -0.03f), rotationOffset: new Vector3(-10, 110, -10));
@@ -139,6 +157,9 @@ namespace TooManyEmotes.Props
                     return;
                 }
 
+                networkObject.AutoObjectParentSync = false;
+                networkObject.DontDestroyWithOwner = true;
+
                 string itemName = propName.Split('.')[0].Replace('_', ' ');
                 itemName = char.ToUpper(itemName[0]) + itemName.Substring(1).ToLower();
 
@@ -150,18 +171,32 @@ namespace TooManyEmotes.Props
                 grabbableEmoteProp.grabbable = true;
                 grabbableEmoteProp.mainObjectRenderer = propData.propPrefab.GetComponentInChildren<MeshRenderer>();
                 grabbableEmoteProp.tag = "PhysicsProp";
-                grabbableEmoteProp.gameObject.layer = LayerMask.NameToLayer("Props");
+                grabbableEmoteProp.gameObject.layer = 6; // Props layer
 
                 grabbableEmoteProp.sfxAudioSource = propData.propPrefab.AddComponent<AudioSource>();
 
                 var scanNode = propData.propPrefab.GetComponentInChildren<ScanNodeProperties>();
                 if (scanNode == null)
-                    scanNode = propData.propPrefab.AddComponent<ScanNodeProperties>();
+                {
+                    var scanNodeGameobject = GameObject.Instantiate(scanNodePrefab);
+                    scanNodeGameobject.transform.SetParent(propData.propPrefab.transform);
+                    scanNodeGameobject.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+                    scanNode = scanNodeGameobject.GetComponent<ScanNodeProperties>();
+                    var scanNodeCollider = scanNodeGameobject.GetComponent<BoxCollider>();
+                    var propCollider = grabbableEmoteProp.GetComponentInChildren<BoxCollider>();
+                    scanNodeCollider.center = propCollider.center;
+                    scanNodeCollider.size = propCollider.size + Vector3.one * 0.1f;
+                }
                 grabbableEmoteProp.scanNodeProperties = scanNode;
 
                 scanNode.scrapValue = value;
                 scanNode.headerText = itemName;
-                scanNode.subText = "Value: " + value;
+                scanNode.subText = "Value:";
+                scanNode.creatureScanID = -1;
+                scanNode.requiresLineOfSight = true;
+                scanNode.maxRange = 15;
+                scanNode.minRange = 0;
+                scanNode.nodeType = 2;
 
                 propData.itemName = itemName;
                 propData.grabbablePropObject = grabbableEmoteProp;
@@ -192,7 +227,7 @@ namespace TooManyEmotes.Props
                         propData.grabbablePropObject.itemProperties = itemData;
                 }
 
-                itemData.name = propData.itemName + "Prop";
+                itemData.name = propData.itemName + ".prop";
                 itemData.itemName = propData.itemName;
                 itemData.spawnPrefab = propData.propPrefab;
                 itemData.saveItemVariable = false;

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Unity.Netcode;
 using UnityEngine;
 using static TooManyEmotes.CustomLogging;
 
@@ -20,17 +21,15 @@ namespace TooManyEmotes.Compatibility
 
         [HarmonyPatch(typeof(HUDManager), "AddPlayerChatMessageClientRpc")]
         [HarmonyPrefix]
-        private static void ApplyPatch(HUDManager __instance)
+        private static bool ApplyPatch(HUDManager __instance)
         {
-            // Not client exec stage
-            if ((int)Traverse.Create(__instance).Field("__rpc_exec_stage").GetValue() != 2)
-                return;
-
             if (Enabled)
             {
                 if (!Plugin.IsModLoaded("com.potatoepet.AdvancedCompany"))
                     Patch();
             }
+
+            return (int)Traverse.Create(__instance).Field("__rpc_exec_stage").GetValue() != 2 && (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost);
         }
 
 

@@ -80,9 +80,13 @@ namespace TooManyEmotes.Networking
 
             reader.ReadValue(out bool doNotTriggerAudio);
             var emote = EmotesManager.allUnlockableEmotes[emoteId];
+            int overrideEmoteId = -1;
+            if (emote.emoteSyncGroup != null)
+                overrideEmoteId = emote.emoteSyncGroup.IndexOf(emote);
+
             Log("Receiving performing emote update from client: " + clientId + " Emote: " + emote.emoteName);
             if (NetworkManager.Singleton.IsClient && emoteController != EmoteControllerPlayer.emoteControllerLocal)
-                emoteController.PerformEmote(emote, doNotTriggerAudio: doNotTriggerAudio);
+                emoteController.PerformEmote(emote, overrideEmoteId: overrideEmoteId, doNotTriggerAudio: doNotTriggerAudio);
             ServerSendPerformingEmoteUpdateToClients(emoteController, emote, doNotTriggerAudio);
         }
 
@@ -187,8 +191,11 @@ namespace TooManyEmotes.Networking
 
             reader.ReadValue(out bool doNotTriggerAudio);
             var emote = EmotesManager.allUnlockableEmotes[emoteId];
+            int overrideEmoteId = -1;
+            if (emote.emoteSyncGroup != null)
+                overrideEmoteId = emote.emoteSyncGroup.IndexOf(emote);
             Log("Receiving performing emote update from server for emote controller with id: " + emoteControllerId + " Emote: " + emote.emoteName);
-            emoteController.PerformEmote(emote, doNotTriggerAudio: doNotTriggerAudio);
+            emoteController.PerformEmote(emote, overrideEmoteId: overrideEmoteId, doNotTriggerAudio: doNotTriggerAudio);
         }
 
 

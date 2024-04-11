@@ -209,7 +209,7 @@ namespace TooManyEmotes
         }
 
 
-        public bool TryPerformingEmoteLocal(UnlockableEmote emote, GrabbablePropObject sourcePropObject = null)
+        public bool TryPerformingEmoteLocal(UnlockableEmote emote, int overrideEmoteId = -1, GrabbablePropObject sourcePropObject = null)
         {
             if (!initialized || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return false;
@@ -225,30 +225,39 @@ namespace TooManyEmotes
             if (!CanPerformEmote())
                 return false;
 
-            if (emote.emoteSyncGroup != null && emote.emoteSyncGroup.Count > 0)
+            if (overrideEmoteId >= 0 && (emote.emoteSyncGroup == null || emote.emoteSyncGroup.Count <= 1 || overrideEmoteId < 0 || overrideEmoteId >= emote.emoteSyncGroup.Count))
+                overrideEmoteId = -1;
+
+            if (emote.emoteSyncGroup != null && emote.emoteSyncGroup.Count > 1)
             {
                 if (emote.randomEmote)
-                    emote = emote.emoteSyncGroup[UnityEngine.Random.Range(0, emote.emoteSyncGroup.Count)];
+                {
+                    if (overrideEmoteId < 0)
+                        overrideEmoteId = UnityEngine.Random.Range(0, emote.emoteSyncGroup.Count);
+                }
                 else
                     emote = emote.emoteSyncGroup[0];
             }
 
+            if (overrideEmoteId >= 0 && emote.emoteSyncGroup != null && overrideEmoteId < emote.emoteSyncGroup.Count)
+                emote = emote.emoteSyncGroup[overrideEmoteId];
+            else
+                overrideEmoteId = -1;
 
             EmoteController syncWithEmoteController = null;
-            int overrideEmoteId = -1;
+
+            // Already performing emote, and we perform the same emote
             if (isPerformingEmote && performingEmote.IsEmoteInEmoteGroup(emote))
             {
-                if (performingEmote.emoteSyncGroup != null)
+                // Perform the next emote in the sync group
+                if (performingEmote.emoteSyncGroup != null && performingEmote.emoteSyncGroup.Count > 1)
                 {
-                    overrideEmoteId = performingEmote.emoteSyncGroup.IndexOf(performingEmote);
-                    if (overrideEmoteId != -1)
-                    {
-                        overrideEmoteId = (overrideEmoteId + 1) % performingEmote.emoteSyncGroup.Count;
-                        if (performingEmote.emoteSyncGroup[overrideEmoteId] != null)
-                            emote = performingEmote.emoteSyncGroup[overrideEmoteId];
-                    }
+                    overrideEmoteId = (performingEmote.emoteSyncGroup.IndexOf(performingEmote) + 1) % performingEmote.emoteSyncGroup.Count;
+                    if (performingEmote.emoteSyncGroup[overrideEmoteId] != null)
+                        emote = performingEmote.emoteSyncGroup[overrideEmoteId];
                 }
-                if (emoteSyncGroup.syncGroup.Count > 1)
+                // Perform emote at same time as before
+                if (isPerformingEmote && emoteSyncGroup?.syncGroup != null && emoteSyncGroup.syncGroup.Count > 1)
                 {
                     foreach (var emoteController in emoteSyncGroup.syncGroup)
                     {
@@ -378,6 +387,8 @@ namespace TooManyEmotes
             if (playerController == null || (isLocalPlayer && (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)))
                 return false;
 
+            LogWarning("222 OverrideEmoteId: " + overrideEmoteId + " EmoteName: " + emote.emoteName);
+
             bool success = base.PerformEmote(emote, overrideEmoteId, doNotTriggerAudio);
             if (isPerformingEmote)
             {
@@ -405,10 +416,14 @@ namespace TooManyEmotes
             if (isPerformingEmote)
             {
                 cameraContainerLerp.SetPositionAndRotation(cameraContainerTarget.position, cameraContainerTarget.rotation);
+
                 playerController.performingEmote = true;
                 originalAnimator.SetInteger("emoteNumber", 0);
                 if (isLocalPlayer)
+                {
                     ThirdPersonEmoteController.OnStartCustomEmoteLocal();
+                    playerController.StartPerformingEmoteServerRpc();
+                }
             }
             return success;
         }
@@ -426,12 +441,13 @@ namespace TooManyEmotes
             if (heldProp)
                 heldProp.EnableItemMeshes(true);
 
-            playerController.StopPerformingEmoteServerRpc();
             playerController.playerBodyAnimator.SetInteger("emote_number", 0);
             playerController.performingEmote = false;
-
             if (isLocalPlayer)
+            {
+                playerController.StopPerformingEmoteServerRpc();
                 StartCoroutine(StopEmoteCameraEndOfFrame());
+            }
         }
 
 
@@ -444,8 +460,20 @@ namespace TooManyEmotes
                 return;
 
             base.StopPerformingEmote();
+            cameraContainerLerp.SetPositionAndRotation(cameraContainerTarget.position, cameraContainerTarget.rotation);
+
+            var heldProp = playerController.ItemSlots[playerController.currentItemSlot] as GrabbablePropObject;
+            if (heldProp)
+                heldProp.EnableItemMeshes(true);
+
+            playerController.playerBodyAnimator.SetInteger("emote_number", 0);
+            playerController.performingEmote = false;
+
             if (isLocalPlayer)
+            {
+                playerController.StopPerformingEmoteServerRpc();
                 ThirdPersonEmoteController.OnStopCustomEmoteLocal();
+            }
         }
 
 

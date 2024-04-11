@@ -15,10 +15,12 @@ namespace TooManyEmotes.Props
         public RuntimeAnimatorController animatorController { get { return animator != null ? animator.runtimeAnimatorController : null; } }
 
 
-        void Awake()
+        private void Awake()
         {
             if (!initialized)
                 InitializeEmoteProp();
+            foreach (var collider in GetComponentsInChildren<Collider>())
+                GameObject.Destroy(collider);
         }
 
 
@@ -50,7 +52,8 @@ namespace TooManyEmotes.Props
 
         private void SetPropLayerRecursive(GameObject obj, int layer)
         {
-            obj.layer = layer;
+            if (obj.layer != 22 && obj.layer != 23)
+                obj.layer = layer;
             for (int i = 0; i < obj.transform.childCount; i++)
                 SetPropLayerRecursive(obj.transform.GetChild(i).gameObject, layer);
         }

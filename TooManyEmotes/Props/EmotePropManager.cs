@@ -151,7 +151,8 @@ namespace TooManyEmotes.Props
             GameObject.DestroyImmediate(newProp.GetComponent<GrabbablePropObject>());
             GameObject.DestroyImmediate(newProp.GetComponent<NetworkObject>());
             GameObject.Destroy(newProp.GetComponent<ScanNodeProperties>());
-            GameObject.Destroy(newProp.GetComponent<Collider>());
+            foreach (var collider in newProp.GetComponentsInChildren<Collider>())
+                GameObject.Destroy(collider);
 
             PropObject propObject = newProp.GetComponentInChildren<PropObject>();
             if (propObject == null)
