@@ -32,7 +32,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>..\..\..\..\..\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\core\0Harmony.dll</HintPath>
+      <HintPath>..\..\..\..\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\core\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Assembly-CSharp.dll</HintPath>
@@ -41,16 +41,10 @@
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="BepInEx">
-      <HintPath>..\..\..\..\..\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\core\BepInEx.dll</HintPath>
+      <HintPath>..\..\..\..\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\core\BepInEx.dll</HintPath>
     </Reference>
-    <Reference Include="GeneralImprovements">
-      <HintPath>..\..\..\..\..\Downloads\ShaosilGaming-GeneralImprovements-1.1.12\GeneralImprovements.dll</HintPath>
-    </Reference>
-    <Reference Include="LCVR">
-      <HintPath>..\..\..\..\..\Downloads\DaXcess-LethalCompanyVR-1.2.0\BepInEx\plugins\LCVR\LCVR.dll</HintPath>
-    </Reference>
-    <Reference Include="MoreCompany">
-      <HintPath>..\..\..\..\..\Downloads\notnotnotswipez-MoreCompany-1.7.2\BepInEx\plugins\MoreCompany.dll</HintPath>
+    <Reference Include="LethalCompanyInputUtils">
+      <HintPath>D:\Downloads\Rune580-LethalCompany_InputUtils-0.4.4\LethalCompanyInputUtils\LethalCompanyInputUtils.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

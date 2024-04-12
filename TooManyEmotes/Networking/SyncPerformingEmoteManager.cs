@@ -60,7 +60,7 @@ namespace TooManyEmotes.Networking
         }
 
 
-        static void PerformEmoteServerRpc(ulong clientId, FastBufferReader reader)
+        private static void PerformEmoteServerRpc(ulong clientId, FastBufferReader reader)
         {
             if (!NetworkManager.Singleton.IsServer)
                 return;
@@ -92,7 +92,7 @@ namespace TooManyEmotes.Networking
 
 
         // SYNC EMOTE
-        static void SyncEmoteServerRpc(ulong clientId, FastBufferReader reader)
+        private static void SyncEmoteServerRpc(ulong clientId, FastBufferReader reader)
         {
             if (!NetworkManager.Singleton.IsServer)
                 return;
@@ -164,7 +164,7 @@ namespace TooManyEmotes.Networking
         }
 
 
-        static void PerformEmoteClientRpc(ulong clientId, FastBufferReader reader)
+        private static void PerformEmoteClientRpc(ulong clientId, FastBufferReader reader)
         {
             if (!NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsServer)
                 return;
@@ -200,7 +200,7 @@ namespace TooManyEmotes.Networking
 
 
         // SYNC EMOTE
-        static void SyncEmoteClientRpc(ulong clientId, FastBufferReader reader)
+        private static void SyncEmoteClientRpc(ulong clientId, FastBufferReader reader)
         {
             if (!NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsServer)
                 return;

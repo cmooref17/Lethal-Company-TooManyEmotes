@@ -247,7 +247,7 @@ namespace TooManyEmotes
             EmoteController syncWithEmoteController = null;
 
             // Already performing emote, and we perform the same emote
-            if (isPerformingEmote && performingEmote.IsEmoteInEmoteGroup(emote))
+            if (isPerformingEmote && performingEmote.IsEmoteInEmoteGroup(emote) && !(performingEmote.randomEmote && !performingEmote.loopable))
             {
                 // Perform the next emote in the sync group
                 if (performingEmote.emoteSyncGroup != null && performingEmote.emoteSyncGroup.Count > 1)
@@ -257,7 +257,7 @@ namespace TooManyEmotes
                         emote = performingEmote.emoteSyncGroup[overrideEmoteId];
                 }
                 // Perform emote at same time as before
-                if (isPerformingEmote && emoteSyncGroup?.syncGroup != null && emoteSyncGroup.syncGroup.Count > 1)
+                if (emoteSyncGroup?.syncGroup != null && emoteSyncGroup.syncGroup.Count > 1)
                 {
                     foreach (var emoteController in emoteSyncGroup.syncGroup)
                     {
@@ -272,7 +272,9 @@ namespace TooManyEmotes
 
             bool success;
             if (syncWithEmoteController != null)
+            {
                 success = SyncWithEmoteController(syncWithEmoteController, overrideEmoteId);
+            }
             else
             {
                 if (sourcePropObject != null && sourcePropObject == localPlayerController.ItemSlots[localPlayerController.currentItemSlot])
@@ -363,7 +365,7 @@ namespace TooManyEmotes
 
             bool success = PerformEmote(emote, overrideEmoteId, doNotTriggerAudio);
             if (!isPerformingEmote)
-                sourceGrabbableEmoteProp = null;
+                StopPerformingEmote();
             return success;
         }
 
@@ -460,6 +462,13 @@ namespace TooManyEmotes
 
             playerController.playerBodyAnimator.SetInteger("emote_number", 0);
             playerController.performingEmote = false;
+
+            if (sourceGrabbableEmoteProp != null)
+            {
+                if (sourceGrabbableEmoteProp.isPerformingEmote)
+                    sourceGrabbableEmoteProp.StopEmote();
+                sourceGrabbableEmoteProp = null;
+            }
 
             if (isLocalPlayer)
             {

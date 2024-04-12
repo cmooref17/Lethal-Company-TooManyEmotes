@@ -17,6 +17,7 @@ namespace TooManyEmotes.Props
 
         public ScanNodeProperties scanNodeProperties;
         public AudioSource sfxAudioSource;
+        public bool isPerformingEmote { get; private set; }
 
 
         public void Awake()
@@ -91,13 +92,14 @@ namespace TooManyEmotes.Props
         }
 
 
-        private void PerformEmote()
+        internal void PerformEmote()
         {
             if (emote == null || heldByPlayerEmoteController == null) // !propAnimator
                 return;
 
             if (!heldByPlayerEmoteController.IsPerformingCustomEmote())
             {
+                isPerformingEmote = true;
                 heldByPlayerEmoteController.TryPerformingEmoteLocal(emote, sourcePropObject:this);
                 if (heldByPlayerEmoteController.IsPerformingCustomEmote())
                 {
@@ -108,10 +110,11 @@ namespace TooManyEmotes.Props
         }
 
 
-        private void StopEmote()
+        internal void StopEmote()
         {
             if (heldByPlayerEmoteController)
             {
+                isPerformingEmote = false;
                 if (heldByPlayerEmoteController.IsPerformingCustomEmote())
                     heldByPlayerEmoteController.StopPerformingEmote();
                 parentObject = heldByPlayerEmoteController.isLocalPlayer ? heldByPlayerEmoteController.playerController.localItemHolder : heldByPlayerEmoteController.playerController.serverItemHolder;

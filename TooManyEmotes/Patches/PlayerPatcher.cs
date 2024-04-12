@@ -71,7 +71,9 @@ namespace TooManyEmotes.Patches
         [HarmonyPrefix]
         public static void OnStopPerformingEmote(PlayerControllerB __instance)
         {
-            if (__instance != null && EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(__instance, out var emoteController) && emoteController.IsPerformingCustomEmote())
+            if (__instance == localPlayerController)
+                return;
+            if (EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(__instance, out var emoteController) && emoteController.IsPerformingCustomEmote())
                 emoteController.StopPerformingEmote();
         }
 

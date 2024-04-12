@@ -217,7 +217,8 @@ namespace TooManyEmotes
         {
             if (isPerformingEmote)
             {
-                return performingEmote == null || (!performingEmote.loopable && !performingEmote.isPose && currentAnimationTimeNormalized >= 1);
+                bool shouldStop = performingEmote == null || (!performingEmote.loopable && !performingEmote.isPose && currentAnimationTimeNormalized >= 1);
+                return shouldStop;
             }
             return false;
         }
@@ -297,11 +298,7 @@ namespace TooManyEmotes
                 Log("[" + emoteControllerName + "] Attempting to sync with emote controller: " + emoteController.name + " Emote: " + emoteController.performingEmote.emoteName + " PlayEmoteAtTimeNormalized: " + (emoteController.currentAnimationTimeNormalized % 1));
 
             if (isPerformingEmote)
-            {
-                //LogWarning("Syncing with emote controller while performing emote already. Ignore this.");
-                //if (performingEmote != null) LogWarning("Emote: " + performingEmote.emoteName);
                 StopPerformingEmote();
-            }
 
             var syncGroup = emoteController.emoteSyncGroup;
 
@@ -316,9 +313,7 @@ namespace TooManyEmotes
                 else if (emote.randomEmote)
                 {
                     if (emote.hasAudio && !emote.isBoomboxAudio)
-                    {
                         emote = emoteController.performingEmote;
-                    }
                     else
                     {
                         int randomIndex = UnityEngine.Random.Range(0, emote.emoteSyncGroup.Count);
