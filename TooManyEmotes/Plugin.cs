@@ -15,7 +15,7 @@ using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes
 {
-    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "2.1.2")]
+    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "2.1.3")]
     [BepInDependency("com.rune580.LethalCompanyInputUtils", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("me.swipez.melonloader.morecompany", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin

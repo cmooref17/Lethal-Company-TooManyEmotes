@@ -1,4 +1,5 @@
 ﻿using BepInEx.Bootstrap;
+using Discord;
 using GameNetcodeStuff;
 using HarmonyLib;
 using MoreCompany.Cosmetics;
@@ -11,6 +12,7 @@ using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using static TooManyEmotes.CustomLogging;
+using static TooManyEmotes.HelperTools;
 
 namespace TooManyEmotes.Compatibility
 {
@@ -19,17 +21,18 @@ namespace TooManyEmotes.Compatibility
     {
         public static bool Enabled { get { return Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany"); } }
 
-        [HarmonyPatch(typeof(HUDManager), "AddPlayerChatMessageClientRpc")]
+
+        [HarmonyPatch(typeof(HUDManager), "AddTextMessageClientRpc")]
         [HarmonyPrefix]
-        private static bool ApplyPatch(HUDManager __instance)
+        private static bool ApplyPatch(string chatMessage, HUDManager __instance)
         {
             if (Enabled)
             {
                 if (!Plugin.IsModLoaded("com.potatoepet.AdvancedCompany"))
                     Patch();
             }
-
-            return (int)Traverse.Create(__instance).Field("__rpc_exec_stage").GetValue() != 2 && (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost);
+            bool isClientExecStage = (int)Traverse.Create(__instance).Field("__rpc_exec_stage").GetValue() == 2;
+            return (!isClientExecStage && (networkManager.IsServer || networkManager.IsHost)) || (isClientExecStage && (networkManager.IsClient || networkManager.IsHost));
         }
 
 
@@ -37,16 +40,19 @@ namespace TooManyEmotes.Compatibility
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void Patch()
         {
-            CosmeticApplication val = UnityEngine.Object.FindObjectOfType<CosmeticApplication>();
-            if (CosmeticRegistry.locallySelectedCosmetics.Count <= 0 || val.spawnedCosmetics.Count > 0)
+            CosmeticApplication cosmetics = UnityEngine.Object.FindObjectOfType<CosmeticApplication>();
+            if (cosmetics == null)
+                return;
+
+            if (CosmeticRegistry.locallySelectedCosmetics.Count <= 0 || cosmetics.spawnedCosmetics.Count > 0)
                 return;
 
             Log("Applying MoreCompany Cosmetics patch.");
 
             foreach (string locallySelectedCosmetic in CosmeticRegistry.locallySelectedCosmetics)
-                val.ApplyCosmetic(locallySelectedCosmetic, true);
+                cosmetics.ApplyCosmetic(locallySelectedCosmetic, true);
 
-            foreach (CosmeticInstance spawnedCosmetic in val.spawnedCosmetics)
+            foreach (CosmeticInstance spawnedCosmetic in cosmetics.spawnedCosmetics)
             {
                 Transform transform = spawnedCosmetic.transform;
                 transform.localScale *= 0.38f;

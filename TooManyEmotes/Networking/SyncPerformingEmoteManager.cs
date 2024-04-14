@@ -1,71 +1,78 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Netcode;
-using TooManyEmotes.Patches;
-using TooManyEmotes.Config;
-using UnityEngine;
 using static TooManyEmotes.CustomLogging;
+using static TooManyEmotes.HelperTools;
 
 namespace TooManyEmotes.Networking
 {
     [HarmonyPatch]
     public static class SyncPerformingEmoteManager
     {
+        internal static Dictionary<EmoteController, bool> doNotTriggerAudioDict = new Dictionary<EmoteController, bool>();
+        private static HashSet<PlayerControllerB> sentLastAudioUpdateToPlayers = new HashSet<PlayerControllerB>();
+
+
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
         public static void Init()
         {
-            if (NetworkManager.Singleton.IsServer)
+            doNotTriggerAudioDict.Clear();
+            sentLastAudioUpdateToPlayers.Clear();
+            if (isServer)
             {
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.PerformEmoteServerRpc", PerformEmoteServerRpc);
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.SyncEmoteServerRpc", SyncEmoteServerRpc);
             }
-            else
+            else if (isClient)
             {
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.PerformEmoteClientRpc", PerformEmoteClientRpc);
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.SyncEmoteClientRpc", SyncEmoteClientRpc);
             }
         }
 
-
+        
+        // Client
         public static void SendPerformingEmoteUpdateToServer(UnlockableEmote emote, bool doNotTriggerAudio = false)
         {
-            if (!NetworkManager.Singleton.IsClient || emote == null)
+            if (!isClient || emote == null)
                 return;
 
+            if (!doNotTriggerAudioDict.ContainsKey(emoteControllerLocal))
+                doNotTriggerAudioDict[emoteControllerLocal] = !doNotTriggerAudio;
+
+            if (isServer)
+            {
+                ServerSendPerformingEmoteUpdateToClients(emoteControllerLocal, emote, doNotTriggerAudio);
+                return;
+            }
+
             Log("Sending performing emote update to server. Emote: " + emote.emoteName + " EmoteId: " + emote.emoteId);
-            var writer = new FastBufferWriter(sizeof(short) + sizeof(bool), Allocator.Temp);
+            bool sendTriggerAudioUpdate = doNotTriggerAudioDict[emoteControllerLocal] != doNotTriggerAudio;
+
+            int bufferSize = sizeof(short) + (sendTriggerAudioUpdate ? sizeof(bool) : 0);
+            var writer = new FastBufferWriter(bufferSize, Allocator.Temp);
             writer.WriteValue((short)emote.emoteId);
-            writer.WriteValue(doNotTriggerAudio);
+
+            if (sendTriggerAudioUpdate)
+            {
+                writer.WriteValue(doNotTriggerAudio);
+                doNotTriggerAudioDict[emoteControllerLocal] = doNotTriggerAudio;
+            }
+
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes.PerformEmoteServerRpc", NetworkManager.ServerClientId, writer);
         }
 
 
-        public static void SendSyncEmoteUpdateToServer(EmoteController emoteController, int overrideEmoteId = -1)
-        {
-            if (!NetworkManager.Singleton.IsClient || emoteController == null)
-                return;
-
-            Log("Sending sync emote update to server. Sync with emote controller id: " + emoteController);
-            var writer = new FastBufferWriter(sizeof(ushort) + sizeof(short), Allocator.Temp);
-            writer.WriteValue((ushort)emoteController.emoteControllerId);
-            writer.WriteValue((short)overrideEmoteId);
-            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes.SyncEmoteServerRpc", NetworkManager.ServerClientId, writer);
-        }
-
-
+        // ServerRpc
         private static void PerformEmoteServerRpc(ulong clientId, FastBufferReader reader)
         {
-            if (!NetworkManager.Singleton.IsServer)
+            if (!isServer)
                 return;
 
-            if (!SessionManager.TryGetPlayerByClientId(clientId, out var playerController) || !EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(playerController, out var emoteController))
+            if (!TryGetPlayerByClientId(clientId, out var playerController) || !EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(playerController, out var emoteController))
             {
                 LogWarning("Could not handle performing emote request. Could not find emote controller for player with id: " + clientId);
                 return;
@@ -78,26 +85,131 @@ namespace TooManyEmotes.Networking
                 return;
             }
 
-            reader.ReadValue(out bool doNotTriggerAudio);
+            bool doNotTriggerAudio = false;
+            if (reader.TryBeginRead(sizeof(bool)))
+                reader.ReadValue(out doNotTriggerAudio);
+
             var emote = EmotesManager.allUnlockableEmotes[emoteId];
             int overrideEmoteId = -1;
             if (emote.emoteSyncGroup != null)
                 overrideEmoteId = emote.emoteSyncGroup.IndexOf(emote);
 
             Log("Receiving performing emote update from client: " + clientId + " Emote: " + emote.emoteName);
-            if (NetworkManager.Singleton.IsClient && emoteController != EmoteControllerPlayer.emoteControllerLocal)
+            if (isClient && !emoteController.isLocalPlayer)
                 emoteController.PerformEmote(emote, overrideEmoteId: overrideEmoteId, doNotTriggerAudio: doNotTriggerAudio);
             ServerSendPerformingEmoteUpdateToClients(emoteController, emote, doNotTriggerAudio);
         }
 
 
-        // SYNC EMOTE
-        private static void SyncEmoteServerRpc(ulong clientId, FastBufferReader reader)
+        // Server
+        public static void ServerSendPerformingEmoteUpdateToClients(EmoteController emoteController, UnlockableEmote emote, bool doNotTriggerAudio = false)
         {
-            if (!NetworkManager.Singleton.IsServer)
+            if (!isServer)
+            {
+                LogWarning("[ServerSendPerformingEmoteUpdateToClients] Only the server can call this method!");
+                return;
+            }
+
+            if (emoteController == null || emote == null)
                 return;
 
-            if (!SessionManager.TryGetPlayerByClientId(clientId, out var playerController) || !EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(playerController, out var emoteController))
+            if (!doNotTriggerAudioDict.ContainsKey(emoteController))
+                doNotTriggerAudioDict[emoteControllerLocal] = !doNotTriggerAudio;
+
+            bool sendTriggerAudioUpdate = doNotTriggerAudioDict[emoteControllerLocal] != doNotTriggerAudio;
+
+            int bufferSize = sizeof(ushort) + sizeof(short) + (sendTriggerAudioUpdate ? sizeof(bool) : 0);
+            var writer = new FastBufferWriter(bufferSize, Allocator.Temp);
+            writer.WriteValue((ushort)emoteController.emoteControllerId);
+            writer.WriteValue((short)emote.emoteId);
+
+            if (sendTriggerAudioUpdate)
+            {
+                writer.WriteValue(doNotTriggerAudio);
+                doNotTriggerAudioDict[emoteController] = doNotTriggerAudio;
+            }
+            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes.PerformEmoteClientRpc", writer);
+        }
+
+
+        // ClientRpc
+        private static void PerformEmoteClientRpc(ulong clientId, FastBufferReader reader)
+        {
+            if (!isClient || isServer)
+                return;
+
+            reader.ReadValue(out ushort emoteControllerId);
+
+            // Do not update player's local emote controller
+            if (emoteControllerLocal != null && emoteControllerId == emoteControllerLocal.emoteControllerId)
+                return;
+
+            var emoteController = GetEmoteControllerById(emoteControllerId);
+            if (emoteController == null)
+            {
+                LogWarning("Could not handle performing emote request from server. Failed to find emote controller with id: " + emoteControllerId);
+                return;
+            }
+
+            reader.ReadValue(out short emoteId);
+            if (emoteId < 0 || emoteId >= EmotesManager.allUnlockableEmotes.Count)
+            {
+                LogWarning("Could not handle performing emote request from server for emote controller with id: " + emoteControllerId + ". Invalid emote id: " + emoteId + " AllUnlockableEmoteListSize: " + EmotesManager.allUnlockableEmotes.Count);
+                return;
+            }
+
+            bool doNotTriggerAudio = false;
+            if (!reader.TryBeginRead(sizeof(bool)))
+            {
+                if (doNotTriggerAudioDict.ContainsKey(emoteController))
+                    doNotTriggerAudio = doNotTriggerAudioDict[emoteController];
+            }
+            else
+                reader.ReadValue(out doNotTriggerAudio);
+            doNotTriggerAudioDict[emoteController] = doNotTriggerAudio;
+
+            var emote = EmotesManager.allUnlockableEmotes[emoteId];
+            int overrideEmoteId = -1;
+            if (emote.emoteSyncGroup != null)
+                overrideEmoteId = emote.emoteSyncGroup.IndexOf(emote);
+            Log("Receiving performing emote update from server for emote controller with id: " + emoteControllerId + " Emote: " + emote.emoteName);
+            emoteController.PerformEmote(emote, overrideEmoteId: overrideEmoteId, doNotTriggerAudio: doNotTriggerAudio);
+        }
+
+
+
+
+
+
+
+
+        // Client
+        public static void SendSyncEmoteUpdateToServer(EmoteController emoteController, int overrideEmoteId = -1)
+        {
+            if (!isClient || emoteController == null)
+                return;
+
+            if (isServer)
+            {
+                ServerSendSyncEmoteUpdateToClients(emoteControllerLocal, emoteController, overrideEmoteId);
+                return;
+            }
+
+            Log("Sending sync emote update to server. Sync with emote controller id: " + emoteController);
+            var writer = new FastBufferWriter(sizeof(ushort) + sizeof(short), Allocator.Temp);
+            writer.WriteValue((ushort)emoteController.emoteControllerId);
+            writer.WriteValue((short)overrideEmoteId);
+            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes.SyncEmoteServerRpc", NetworkManager.ServerClientId, writer);
+        }
+
+
+        // ServerRpc
+        private static void SyncEmoteServerRpc(ulong clientId, FastBufferReader reader)
+        {
+            if (!isServer)
+                return;
+
+            if (!TryGetPlayerByClientId(clientId, out var playerController) || !EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(playerController, out var emoteController))
             {
                 LogWarning("Could not handle sync emote request. Could not find emote controller for player with id: " + clientId);
                 return;
@@ -120,34 +232,16 @@ namespace TooManyEmotes.Networking
             }
 
             Log("Receiving sync emote update from client with id: " + clientId + " Sync with emote controller id: " + emoteControllerId);
-            if (NetworkManager.Singleton.IsClient && emoteController != EmoteControllerPlayer.emoteControllerLocal)
+            if (isClient && !emoteController.isLocalPlayer)
                 emoteController.SyncWithEmoteController(syncWithEmoteController, overrideEmoteId);
             ServerSendSyncEmoteUpdateToClients(emoteController, syncWithEmoteController, overrideEmoteId);
         }
 
 
-        public static void ServerSendPerformingEmoteUpdateToClients(EmoteController emoteController, UnlockableEmote emote, bool doNotTriggerAudio = false)
-        {
-            if (!NetworkManager.Singleton.IsServer)
-            {
-                LogWarning("[ServerSendPerformingEmoteUpdateToClients] Only the server can call this method!");
-                return;
-            }
-
-            if (emoteController == null || emote == null)
-                return;
-
-            var writer = new FastBufferWriter(sizeof(ushort) + sizeof(short) + sizeof(bool), Allocator.Temp);
-            writer.WriteValue((ushort)emoteController.emoteControllerId);
-            writer.WriteValue((short)emote.emoteId);
-            writer.WriteValue(doNotTriggerAudio);
-            NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes.PerformEmoteClientRpc", writer);
-        }
-
-        // SYNC EMOTE
+        // Server
         public static void ServerSendSyncEmoteUpdateToClients(EmoteController emoteController, EmoteController syncWithEmoteController, int overrideEmoteId = -1)
         {
-            if (!NetworkManager.Singleton.IsServer)
+            if (!isServer)
             {
                 LogWarning("[ServerSendSyncEmoteUpdateToClients] Only the server can call this method!");
                 return;
@@ -164,51 +258,16 @@ namespace TooManyEmotes.Networking
         }
 
 
-        private static void PerformEmoteClientRpc(ulong clientId, FastBufferReader reader)
-        {
-            if (!NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsServer)
-                return;
-
-            reader.ReadValue(out ushort emoteControllerId);
-
-            // Do not update player's local emote controller
-            if (EmoteControllerPlayer.emoteControllerLocal != null && emoteControllerId == EmoteControllerPlayer.emoteControllerLocal.emoteControllerId)
-                return;
-
-            var emoteController = GetEmoteControllerById(emoteControllerId);
-            if (emoteController == null)
-            {
-                LogWarning("Could not handle performing emote request from server. Failed to find emote controller with id: " + emoteControllerId);
-                return;
-            }
-
-            reader.ReadValue(out short emoteId);
-            if (emoteId < 0 || emoteId >= EmotesManager.allUnlockableEmotes.Count)
-            {
-                LogWarning("Could not handle performing emote request from server for emote controller with id: " + emoteControllerId + ". Invalid emote id: " + emoteId + " AllUnlockableEmoteListSize: " + EmotesManager.allUnlockableEmotes.Count);
-                return;
-            }
-
-            reader.ReadValue(out bool doNotTriggerAudio);
-            var emote = EmotesManager.allUnlockableEmotes[emoteId];
-            int overrideEmoteId = -1;
-            if (emote.emoteSyncGroup != null)
-                overrideEmoteId = emote.emoteSyncGroup.IndexOf(emote);
-            Log("Receiving performing emote update from server for emote controller with id: " + emoteControllerId + " Emote: " + emote.emoteName);
-            emoteController.PerformEmote(emote, overrideEmoteId: overrideEmoteId, doNotTriggerAudio: doNotTriggerAudio);
-        }
-
-
-        // SYNC EMOTE
+        // ClientRpc
         private static void SyncEmoteClientRpc(ulong clientId, FastBufferReader reader)
         {
-            if (!NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsServer)
+            if (!isClient || isServer)
                 return;
 
             reader.ReadValue(out ushort emoteControllerId);
 
             // Do not update player's local emote controller
-            if (EmoteControllerPlayer.emoteControllerLocal != null && emoteControllerId == EmoteControllerPlayer.emoteControllerLocal.emoteControllerId)
+            if (emoteControllerLocal != null && emoteControllerId == emoteControllerLocal.emoteControllerId)
                 return;
 
             var emoteController = GetEmoteControllerById(emoteControllerId);
@@ -236,17 +295,6 @@ namespace TooManyEmotes.Networking
 
             Log("Receiving sync emote update from server for emote controller with id: " + emoteControllerId + " SyncWithEmoteControllerId: " + syncWithEmoteControllerId);
             emoteController.SyncWithEmoteController(syncWithEmoteController, overrideEmoteId);
-        }
-
-
-        public static EmoteController GetEmoteControllerById(ulong id)
-        {
-            foreach (var emoteController in EmoteController.allEmoteControllers.Values)
-            {
-                if (emoteController.emoteControllerId == id)
-                    return emoteController;
-            }
-            return null;
         }
     }
 }

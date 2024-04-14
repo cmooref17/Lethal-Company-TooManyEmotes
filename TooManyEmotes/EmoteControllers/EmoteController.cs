@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using TooManyEmotes.Audio;
 using TooManyEmotes.Compatibility;
 using TooManyEmotes.Config;
+using TooManyEmotes.Networking;
 using TooManyEmotes.Patches;
 using TooManyEmotes.Props;
 using Unity.Netcode;
@@ -166,6 +167,9 @@ namespace TooManyEmotes
             if (isPerformingEmote)
                 StopPerformingEmote();
             allEmoteControllers?.Remove(gameObject);
+
+            if (SyncPerformingEmoteManager.doNotTriggerAudioDict.ContainsKey(this))
+                SyncPerformingEmoteManager.doNotTriggerAudioDict.Remove(this);
         }
 
 
@@ -279,7 +283,7 @@ namespace TooManyEmotes
             isPerformingEmote = true;
 
             // Emote on props (if they exist)
-            PerformPropEmotes();
+            PerformEmoteProps();
 
             // Create emote sync group and try to play emote audio
             if (!isSimpleEmoteController)
@@ -366,7 +370,7 @@ namespace TooManyEmotes
             isPerformingEmote = true;
 
             // Emote on props (if they exist)
-            PerformPropEmotes();
+            PerformEmoteProps();
 
             // Create emote sync group and try to play emote audio
             if (!isSimpleEmoteController && emoteController.emoteSyncGroup != null)
@@ -376,10 +380,11 @@ namespace TooManyEmotes
         }
 
 
-        protected void PerformPropEmotes()
+        protected void PerformEmoteProps()
         {
             if (propsParent != null && performingEmote.propNamesInEmote != null)
                 LoadEmoteProps();
+
             if (emotingProps != null)
             {
                 foreach (var prop in emotingProps)
@@ -404,12 +409,6 @@ namespace TooManyEmotes
                 propObject.transform.localPosition = Vector3.zero;
                 propObject.transform.localRotation = Quaternion.identity;
             }
-        }
-
-
-        protected void StopPerformingEmoteOnProps()
-        {
-
         }
 
 

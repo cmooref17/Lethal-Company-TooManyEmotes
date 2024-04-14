@@ -261,35 +261,5 @@ namespace TooManyEmotes
 
 
         public static void SortUnlockedEmotes() => unlockedEmotes = unlockedEmotes.OrderBy(item => item.rarity).ThenBy(item => item.emoteName).ToList();
-
-
-        public static bool TryGetPlayerByClientId(ulong clientId, out PlayerControllerB playerController)
-        {
-            playerController = null;
-            foreach (var _playerController in StartOfRound.Instance.allPlayerScripts)
-            {
-                if (_playerController.actualClientId == clientId)
-                {
-                    playerController = _playerController;
-                    break;
-                }
-            }
-            return playerController != null;
-        }
-
-
-        public static bool TryGetPlayerByUsername(string username, out PlayerControllerB playerController)
-        {
-            playerController = null;
-            foreach (var _playerController in StartOfRound.Instance.allPlayerScripts)
-            {
-                if (_playerController.playerUsername == username)
-                {
-                    playerController = _playerController;
-                    break;
-                }
-            }
-            return playerController != null;
-        }
     }
 }

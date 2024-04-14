@@ -48,7 +48,7 @@ namespace TooManyEmotes
         public List<string> propNamesInEmote;
 
         public bool canSyncEmote = false;
-        public bool favorite = false;
+        public bool favorite { get { return EmotesManager.allFavoriteEmotes.Contains(emoteName); } }
 
         public int rarity = 0;
 

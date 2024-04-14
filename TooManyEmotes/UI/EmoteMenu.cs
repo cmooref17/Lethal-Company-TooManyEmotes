@@ -13,6 +13,7 @@ using TooManyEmotes.Compatibility;
 using TooManyEmotes.Audio;
 using static TooManyEmotes.HelperTools;
 using static TooManyEmotes.CustomLogging;
+using System.Linq;
 
 
 namespace TooManyEmotes.UI
@@ -423,6 +424,8 @@ namespace TooManyEmotes.UI
                     {
                         emoteUI.emote = emote;
                         emoteUI.textContainer.text = emote.displayName;
+                        //emoteTextColor = emote.favorite ? Color.green : Color.white;
+                        /*
                         if (ColorUtility.TryParseHtmlString(UnlockableEmote.rarityColorCodes[emote.rarity], out var emoteColor))
                         {
                             if (ConfigSettings.colorCodeEmoteBackgroundInRadialMenu.Value)
@@ -430,6 +433,7 @@ namespace TooManyEmotes.UI
                             else if (ConfigSettings.colorCodeEmoteNamesInRadialMenu.Value)
                                 emoteTextColor = emoteColor;
                         }
+                        */
                     }
                 }
                 emoteUI.baseColor = emoteBackgroundColor;
@@ -441,7 +445,7 @@ namespace TooManyEmotes.UI
         }
 
 
-        static void SortFilteredEmotes()
+        private static void SortFilteredEmotes()
         {
             allUnlockedEmotesFiltered.Clear();
             if (!hideEmotesComplementaryToggle.isOn)
@@ -458,8 +462,10 @@ namespace TooManyEmotes.UI
             for (int i = SessionManager.unlockedFavoriteEmotes.Count - 1; i >= 0; i--)
             {
                 if (!allUnlockedEmotesFiltered.Contains(SessionManager.unlockedFavoriteEmotes[i]))
-                    allUnlockedEmotesFiltered.Insert(0, SessionManager.unlockedFavoriteEmotes[i]);
+                    allUnlockedEmotesFiltered.Add(SessionManager.unlockedFavoriteEmotes[i]);
             }
+
+            allUnlockedEmotesFiltered.OrderBy(item => item.displayName).ToList();
         }
 
 
@@ -506,12 +512,16 @@ namespace TooManyEmotes.UI
 
             if (firstTimeOpeningMenu)
             {
-                if (Assert(emoteLoadouts != null && emoteLoadouts.Count > 0, "Error opening emote menu. Emote loadouts are null or empty!"))
-                    SetCurrentEmoteLoadout(emoteLoadouts[0].Count > 0 ? 0 : currentLoadoutIndex);
+                Assert(emoteLoadouts != null && emoteLoadouts.Count > 0, "Error opening emote menu. Emote loadouts are null or empty!");
+                int loadoutIndex = emoteLoadouts[0].Count > 0 ? 0 : currentLoadoutIndex;
+                SetCurrentEmoteLoadout(loadoutIndex);
+                if (currentLoadoutIndex < emoteLoadouts.Count - 1)
+                    SortFilteredEmotes();
                 firstTimeOpeningMenu = false;
             }
 
             currentMuteSetting = AudioManager.muteEmoteAudio;
+            currentEmoteOnlyMode = AudioManager.emoteOnlyMode;
             currentDmcaFreeSetting = AudioManager.dmcaFreeMode;
             currentVolumeSetting = AudioManager.emoteVolumeMultiplier;
             // emoteLoadouts, menuGameObject, quickMenuManager, HUDManager.Instance?.controlTipLines
@@ -559,7 +569,7 @@ namespace TooManyEmotes.UI
 
             SaveFilterPreferences();
             ThirdPersonEmoteController.SavePreferences();
-            if (AudioManager.muteEmoteAudio != currentMuteSetting || AudioManager.dmcaFreeMode != currentDmcaFreeSetting || AudioManager.emoteVolumeMultiplier != currentVolumeSetting)
+            if (AudioManager.muteEmoteAudio != currentMuteSetting || AudioManager.emoteOnlyMode != currentEmoteOnlyMode || AudioManager.dmcaFreeMode != currentDmcaFreeSetting || AudioManager.emoteVolumeMultiplier != currentVolumeSetting)
                 AudioManager.SavePreferences();
 
             var controlTipLines = HUDManager.Instance?.controlTipLines;

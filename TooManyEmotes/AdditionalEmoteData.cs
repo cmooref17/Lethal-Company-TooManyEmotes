@@ -36,6 +36,8 @@ namespace TooManyEmotes
             AssignPropToEmote("trombone.prop", "sad_trombone");
             AssignPropToEmote("old_chair.prop", "ma-ya-hi");
             AssignPropToEmote("baseball_bat.prop", "miracle_trickshot");
+            AssignPropToEmote("dumbbell.prop", "pumping_iron");
+            AssignPropToEmote("paddle.prop", "paddle_royale");
         }
 
 
@@ -56,6 +58,8 @@ namespace TooManyEmotes
             SetEmoteDoesNotUseBoombox("snake_summoner");
             SetEmoteDoesNotUseBoombox("miracle_trickshot");
             SetEmoteDoesNotUseBoombox("junk_food");
+            SetEmoteDoesNotUseBoombox("pumping_iron");
+            SetEmoteDoesNotUseBoombox("paddle_royale");
 
             //AssignMusicToEmote("smug_dance", "starlit_loop");
             AssignMusicToEmote("jug_band.jug", "jug_band.jug");

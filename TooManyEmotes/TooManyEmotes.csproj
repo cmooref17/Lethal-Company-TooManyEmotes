@@ -50,8 +50,9 @@
     <Reference Include="LethalCompanyInputUtils">
       <HintPath>..\..\..\..\..\Downloads\Rune580-LethalCompany_InputUtils-0.4.4\LethalCompanyInputUtils\LethalCompanyInputUtils.dll</HintPath>
     </Reference>
-    <Reference Include="MoreCompany">
-      <HintPath>..\..\..\..\..\Downloads\notnotnotswipez-MoreCompany-1.7.2\BepInEx\plugins\MoreCompany.dll</HintPath>
+    <Reference Include="MoreCompany, Version=1.7.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>D:\Downloads\notnotnotswipez-MoreCompany-1.9.0\BepInEx\plugins\MoreCompany.dll</HintPath>
     </Reference>
     <Reference Include="netstandard">
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\netstandard.dll</HintPath>

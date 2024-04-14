@@ -220,7 +220,7 @@ namespace TooManyEmotes
                 return false;
             }
 
-            Log("Attempting to emote for player: " + playerController.name);
+            Log("Attempting to perform emote on local player.");
 
             if (!CanPerformEmote())
                 return false;
@@ -259,6 +259,10 @@ namespace TooManyEmotes
                 // Perform emote at same time as before
                 if (emoteSyncGroup?.syncGroup != null && emoteSyncGroup.syncGroup.Count > 1)
                 {
+                    // Performing emote with others in the sync group, but emote only has 1 emote in the emote group.
+                    if (emoteSyncGroup.syncGroup.Count > 1 && (performingEmote?.emoteSyncGroup == null || performingEmote.emoteSyncGroup.Count <= 1))
+                        return true;
+
                     foreach (var emoteController in emoteSyncGroup.syncGroup)
                     {
                         if (emoteController != this)
@@ -270,18 +274,16 @@ namespace TooManyEmotes
                 }
             }
 
-            bool success;
             if (syncWithEmoteController != null)
             {
-                success = SyncWithEmoteController(syncWithEmoteController, overrideEmoteId);
+                return TrySyncingEmoteWithEmoteController(syncWithEmoteController, overrideEmoteId);
             }
+            
+            bool success;
+            if (sourcePropObject != null && sourcePropObject == localPlayerController.ItemSlots[localPlayerController.currentItemSlot])
+                success = PerformEmote(emote, sourcePropObject, overrideEmoteId, AudioManager.emoteOnlyMode);
             else
-            {
-                if (sourcePropObject != null && sourcePropObject == localPlayerController.ItemSlots[localPlayerController.currentItemSlot])
-                    success = PerformEmote(emote, sourcePropObject, overrideEmoteId, AudioManager.emoteOnlyMode);
-                else
-                    success = PerformEmote(emote, overrideEmoteId, AudioManager.emoteOnlyMode);
-            }
+                success = PerformEmote(emote, overrideEmoteId, AudioManager.emoteOnlyMode);
 
             playerController.StartPerformingEmoteServerRpc();
             SyncPerformingEmoteManager.SendPerformingEmoteUpdateToServer(emote, AudioManager.emoteOnlyMode);
@@ -293,26 +295,28 @@ namespace TooManyEmotes
         }
 
 
-        public void TrySyncingEmoteWithEmoteController(EmoteController emoteController)
+        public bool TrySyncingEmoteWithEmoteController(EmoteController emoteController, int overrideEmoteId = -1)
         {
             if (!initialized || emoteController == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
-                return;
+                return false;
 
             if (!isLocalPlayer)
             {
                 LogWarning("Cannot run TrySyncingEmoteWithEmoteController on a character who does not belong to the local player. This is not allowed.");
-                return;
+                return false;
             }
 
             Log("Attempting to sync emote for player: " + playerController.name + " with emote controller with id: " + emoteController.emoteControllerId);
 
             if (!CanPerformEmote() || !emoteController.IsPerformingCustomEmote())
-                return;
+                return false;
 
-            SyncWithEmoteController(emoteController);
+            if (overrideEmoteId >= 0 && (emoteController.performingEmote?.emoteSyncGroup == null || overrideEmoteId >= emoteController.performingEmote.emoteSyncGroup.Count || emoteController.performingEmote.emoteSyncGroup[overrideEmoteId] == null))
+                overrideEmoteId = -1;
+
+            SyncWithEmoteController(emoteController, overrideEmoteId);
             if (performingEmote != null)
             {
-                int overrideEmoteId = -1;
                 if (performingEmote.inEmoteSyncGroup)
                     overrideEmoteId = performingEmote.emoteSyncGroup.IndexOf(performingEmote);
 
@@ -321,7 +325,9 @@ namespace TooManyEmotes
                 timeSinceStartingEmote = 0;
                 playerController.performingEmote = true;
                 originalAnimator.SetInteger("emoteNumber", 1);
+                return true;
             }
+            return false;
         }
 
 
@@ -472,9 +478,20 @@ namespace TooManyEmotes
 
             if (isLocalPlayer)
             {
-                playerController.StopPerformingEmoteServerRpc();
                 ThirdPersonEmoteController.OnStopCustomEmoteLocal();
+                playerController.StartCoroutine(TryStopPerformingEmoteEndOfFrame());
             }
+        }
+
+        /// <summary>
+        /// Will tell the server that this player has stopped emoting, unless isPerformingEmote is true.
+        /// </summary>
+        /// <returns></returns>
+        IEnumerator TryStopPerformingEmoteEndOfFrame()
+        {
+            yield return new WaitForEndOfFrame();
+            if (!isPerformingEmote && isLocalPlayer)
+                playerController.StopPerformingEmoteServerRpc();
         }
 
 

@@ -245,7 +245,7 @@ namespace TooManyEmotes.Patches
                 return;
 
             var heldItem = localPlayerController.ItemSlots[localPlayerController.currentItemSlot];
-            if (heldItem)
+            if (!heldItem)
                 return;
 
             heldItem.parentObject = localPlayerController.serverItemHolder;

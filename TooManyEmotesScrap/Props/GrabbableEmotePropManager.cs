@@ -129,6 +129,9 @@ namespace TooManyEmotesScrap.Props
 
             CreateGrabbablePropData("perfect_score.prop", value: 60, rarity: 15, weight: 1.05f, positionOffset: new Vector3(-0.1f, 0.025f, -0.027f), rotationOffset: new Vector3(-10, 110, -10));
             CreateGrabbablePropData("old_chair.prop", value: 100, rarity: 12, weight: 1.15f, two_handed: true, positionOffset: new Vector3(0, 0.1f, 0.6f), rotationOffset: new Vector3(85, 180, 0));
+
+            CreateGrabbablePropData("paddle.prop", value: 60, rarity: 15, weight: 1.01f, positionOffset: new Vector3(0.15f, 0.08f, -0.01f), rotationOffset: new Vector3(0, 95, -10));
+            CreateGrabbablePropData("dumbbell.prop", value: 120, rarity: 10, weight: 1.2f, positionOffset: new Vector3(0.015f, -0.08f, 0.02f), rotationOffset: new Vector3(0, 10, 0));
         }
 
 
