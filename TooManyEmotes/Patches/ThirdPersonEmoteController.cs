@@ -30,7 +30,7 @@ namespace TooManyEmotes.Patches
 
         public static GameObject playerHUDHelmetModel;
         public static Camera gameplayCamera;
-        public static Transform gameplayCameraContainer { get { return gameplayCamera?.transform.parent; } }
+        //public static Transform gameplayCameraContainer { get { return gameplayCamera?.transform.parent; } }
         public static Camera emoteCamera;
         public static Transform emoteCameraPivot;
         public static int cameraCollideLayerMask = /*1 << LayerMask.NameToLayer("Default") |*/ 1 << LayerMask.NameToLayer("Room") | 1 << LayerMask.NameToLayer("PlaceableShipObject") | 1 << LayerMask.NameToLayer("Terrain") | 1 << LayerMask.NameToLayer("MiscLevelGeometry");
@@ -51,7 +51,7 @@ namespace TooManyEmotes.Patches
         public static bool allowMovingWhileEmoting { get; internal set; } = false;
 
         //private static bool isMovingWhileEmoting { get { return emoteControllerLocal.IsPerformingCustomEmote() && (ConfigSync.instance.syncEnableMovingWhileEmoting || emoteControllerLocal.performingEmote.canMoveWhileEmoting); } }
-        private static bool isMovingWhileEmoting { get { return emoteControllerLocal.IsPerformingCustomEmote() && (allowMovingWhileEmoting || emoteControllerLocal.performingEmote.canMoveWhileEmoting); } }
+        internal static bool isMovingWhileEmoting { get { return emoteControllerLocal.IsPerformingCustomEmote() && (allowMovingWhileEmoting || emoteControllerLocal.performingEmote.canMoveWhileEmoting); } }
 
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
@@ -173,7 +173,7 @@ namespace TooManyEmotes.Patches
                     if (StartOfRound.Instance.activeCamera != gameplayCamera)
                     {
                         StartOfRound.Instance.SwitchCamera(gameplayCamera);
-                        CallChangeAudioListenerToObject(gameplayCameraContainer.gameObject);
+                        CallChangeAudioListenerToObject(gameplayCamera.gameObject);
                         emoteCamera.enabled = false;
                         if (localPlayerController.currentlyHeldObjectServer != null)
                             localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.localItemHolder;
@@ -214,9 +214,10 @@ namespace TooManyEmotes.Patches
                         float cameraPitch = emoteCameraPivot.localEulerAngles.x - vector.y;
                         cameraPitch = (cameraPitch > 180) ? cameraPitch - 360 : cameraPitch;
                         cameraPitch = Mathf.Clamp(cameraPitch, -45, 45);
-                        emoteCameraPivot.transform.eulerAngles = new Vector3(cameraPitch, emoteCameraPivot.eulerAngles.y, 0f);
+                        emoteCameraPivot.transform.localEulerAngles = new Vector3(cameraPitch, emoteCameraPivot.localEulerAngles.y, 0f);
                     }
-                    //else if (isMovingWhileEmoting) emoteCameraPivot.transform.eulerAngles = gameplayCameraContainer.eulerAngles;
+                    else
+                        emoteCameraPivot.transform.localEulerAngles = gameplayCamera.transform.localEulerAngles;
 
                     //TODO animate the cameracontainer again in the emotecontrollerplayer class
 
