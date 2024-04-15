@@ -44,7 +44,10 @@ namespace TooManyEmotesScrap.Props
         private static void OnConfigSynced()
         {
             if (ConfigSync.instance.syncEnableGrabbableEmoteProps)
+            {
                 AddGrabbableEmotePropsMoons();
+                RemoveComplementaryEmotesFromPropsFromUnlockedEmotes();
+            }
             else
                 RemoveGrabbableEmotePropsMoons(); // Should be unnecessary, but just in case
         }
@@ -377,6 +380,28 @@ namespace TooManyEmotesScrap.Props
         }
 
 
+        public static void RemoveComplementaryEmotesFromPropsFromUnlockedEmotes()
+        {
+            if (ConfigSync.instance.syncUnlockEverything)
+                return;
+
+            foreach (var emotePropData in emotePropsData)
+            {
+                if (emotePropData.parentEmotes != null)
+                {
+                    foreach (var emote in emotePropData.parentEmotes)
+                    {
+                        if (emote != null && emote.complementary)
+                        {
+                            SessionManager.unlockedEmotes.Remove(emote);
+                            EmotesManager.complementaryEmotes.Remove(emote);
+                        }
+                    }
+                }
+            }
+        }
+
+
         [HarmonyPatch(typeof(GameNetworkManager), "SaveItemsInShip")]
         [HarmonyPostfix]
         private static void OnSaveGrabbableShipObjects(GameNetworkManager __instance)
@@ -459,7 +484,7 @@ namespace TooManyEmotesScrap.Props
             if (numValuesChanged > 0)
             {
                 ES3.Save("shipGrabbableItemIDs", itemIds, currentSaveFileName);
-                LogWarning("Item list has changed. Updating grabbable emote prop start id from: " + startId + " to: " + startGrabbableItemId);
+                LogWarning("Item list has changed since last session. Updating grabbable emote prop start id from: " + startId + " to: " + startGrabbableItemId);
             }
         }
     }

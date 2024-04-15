@@ -17,6 +17,7 @@ using UnityEngine;
 using TooManyEmotes.Audio;
 using TooManyEmotes.Props;
 using static TooManyEmotes.CustomLogging;
+using static TooManyEmotes.HelperTools;
 using TooManyEmotes.Compatibility;
 
 namespace TooManyEmotes.Networking
@@ -149,18 +150,19 @@ namespace TooManyEmotes.Networking
         }
 
 
+        [HarmonyPatch(typeof(StartOfRound), "Awake")]
+        [HarmonyPrefix]
+        public static void ResetValues()
+        {
+            isSynced = false;
+            BuildDefaultConfigSync();
+        }
+
+
         public static void BuildDefaultConfigSync()
         {
             defaultConfig = new ConfigSync();
             instance = new ConfigSync();
-        }
-
-
-        [HarmonyPatch(typeof(StartOfRound), "Awake")]
-        [HarmonyPostfix]
-        public static void ResetValues()
-        {
-            isSynced = false;
         }
 
 
@@ -170,10 +172,11 @@ namespace TooManyEmotes.Networking
         {
             if (isSynced)
                 return;
-            isSynced = NetworkManager.Singleton.IsServer;
+
+            isSynced = isServer;
             SyncManager.isSynced = false;
             SyncManager.requestedSync = false;
-            if (NetworkManager.Singleton.IsServer)
+            if (isServer)
             {
                 syncedClients = new HashSet<ulong>();
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.OnRequestConfigSyncServerRpc", OnRequestConfigSyncServerRpc);
