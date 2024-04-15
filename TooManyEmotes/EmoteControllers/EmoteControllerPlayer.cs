@@ -156,8 +156,12 @@ namespace TooManyEmotes
                 cameraContainerLerp.position = Vector3.Lerp(cameraContainerLerp.position, cameraContainerTarget.position, 25f * Time.deltaTime);
                 cameraContainerLerp.rotation = Quaternion.Lerp(cameraContainerLerp.rotation, cameraContainerTarget.rotation, 25f * Time.deltaTime);
 
-                playerController.cameraContainerTransform.position = cameraContainerLerp.position;
-                playerController.cameraContainerTransform.rotation = cameraContainerLerp.rotation;
+                //playerController.cameraContainerTransform.position = cameraContainerLerp.position;
+                //playerController.cameraContainerTransform.rotation = cameraContainerLerp.rotation;
+                playerController.gameplayCamera.transform.position = cameraContainerLerp.position;
+                if (!isLocalPlayer || !ThirdPersonEmoteController.firstPersonEmotesEnabled)
+                    playerController.gameplayCamera.transform.rotation = cameraContainerLerp.rotation;
+
                 if (isLocalPlayer)
                 {
                     playerController.localVisor.position = playerController.localVisorTargetPoint.position;
@@ -461,6 +465,7 @@ namespace TooManyEmotes
 
             base.StopPerformingEmote();
             cameraContainerLerp.SetPositionAndRotation(cameraContainerTarget.position, cameraContainerTarget.rotation);
+            playerController.gameplayCamera.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
 
             var heldProp = playerController.ItemSlots[playerController.currentItemSlot] as GrabbablePropObject;
             if (heldProp)

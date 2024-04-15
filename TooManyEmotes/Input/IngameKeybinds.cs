@@ -23,6 +23,12 @@ namespace TooManyEmotes.Input
         [InputAction("<Keyboard>/leftAlt", GamepadPath = "", Name = "Rotate Character in Emote")]
         public InputAction RotateCharacterEmoteHotkey { get; set; }
 
+        [InputAction("<Mouse>/scroll/up", GamepadPath = "", Name = "Zoom In While Emoting")]
+        public InputAction ZoomInEmoteHotkey { get; set; }
+
+        [InputAction("<Mouse>/scroll/down", GamepadPath = "", Name = "Zoom Out While Emoting")]
+        public InputAction ZoomOutEmoteHotkey { get; set; }
+
         [InputAction("<Mouse>/middleButton", GamepadPath = "<Gamepad>/rightStickPress", Name = "Favorite/Unfavorite Emote")]
         public InputAction FavoriteEmoteHotkey { get; set; }
 

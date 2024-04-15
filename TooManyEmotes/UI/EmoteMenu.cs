@@ -54,17 +54,23 @@ namespace TooManyEmotes.UI
         public static bool usingController { get { return StartOfRound.Instance.localPlayerUsingController; } }
         private static bool firstTimeOpeningMenu;
         
+        // AudioManager preferences
+        private static Slider emoteVolumeSlider;
         private static Toggle muteEmoteToggle;
         private static Toggle emoteOnlyModeToggle;
         private static Toggle enableDmcaFreeToggle;
+
+        // ThirdPersonEmoteController preferences
         private static Toggle enableFirstPersonEmoteToggle;
-        private static Slider emoteVolumeSlider;
+        private static Toggle allowMovingWhileEmotingToggle;
         
+        private static float currentVolumeSetting = 1;
         private static bool currentMuteSetting = false;
         private static bool currentEmoteOnlyMode = false;
         private static bool currentDmcaFreeSetting = false;
-        private static bool currentFirstPersonSetting = false;
-        private static float currentVolumeSetting = 1;
+
+        private static bool currentFirstPersonEmotes = false;
+        private static bool currentAllowMovingWhileEmoting = false;
         
         private static List<UnlockableEmote> allUnlockedEmotesFiltered = new List<UnlockableEmote>();
         
@@ -146,7 +152,6 @@ namespace TooManyEmotes.UI
                 };
                 //emoteUIElement.backgroundImage.color = colorUnhovered;
                 emoteUIElementsList.Add(uiElement);
-
             }
 
             Transform emoteLoadoutsUIParent = menuTransform.Find("MenuUI/EmoteLoadouts").transform;
@@ -194,6 +199,14 @@ namespace TooManyEmotes.UI
             Transform additionalUIParent = menuTransform.Find("MenuUI/AdditionalUI").transform;
             additionalUIParent.gameObject.AddComponent<AdditionalPanelUI>();
 
+            AudioManager.LoadPreferences();
+            ThirdPersonEmoteController.LoadPreferences();
+
+            emoteVolumeSlider = additionalUIParent.Find("AudioVolumePanel")?.GetComponentInChildren<Slider>();
+            emoteVolumeSlider.value = Mathf.Clamp(AudioManager.emoteVolumeMultiplier, 0, emoteVolumeSlider.maxValue);
+            emoteVolumeSlider.onValueChanged.AddListener(delegate { OnUpdateEmoteVolume(emoteVolumeSlider); });
+            currentVolumeSetting = emoteVolumeSlider.value;
+
             muteEmoteToggle = additionalUIParent.Find("MasterMutePanel")?.GetComponentInChildren<Toggle>();
             muteEmoteToggle.isOn = AudioManager.muteEmoteAudio;
             muteEmoteToggle.onValueChanged.AddListener(delegate { OnUpdateToggleMuteEmote(muteEmoteToggle); });
@@ -209,19 +222,15 @@ namespace TooManyEmotes.UI
             enableDmcaFreeToggle.onValueChanged.AddListener(delegate { OnUpdateToggleDmcaFreeMode(enableDmcaFreeToggle); });
             currentDmcaFreeSetting = enableDmcaFreeToggle.isOn;
 
-            ThirdPersonEmoteController.LoadPreferences();
             enableFirstPersonEmoteToggle = additionalUIParent.Find("FirstPersonEmotesPanel")?.GetComponentInChildren<Toggle>();
             enableFirstPersonEmoteToggle.isOn = ThirdPersonEmoteController.firstPersonEmotesEnabled;
             enableFirstPersonEmoteToggle.onValueChanged.AddListener(delegate { OnUpdateToggleFirstPerson(enableFirstPersonEmoteToggle); });
-            currentFirstPersonSetting = enableFirstPersonEmoteToggle.isOn;
+            currentFirstPersonEmotes = enableFirstPersonEmoteToggle.isOn;
 
-            emoteVolumeSlider = additionalUIParent.Find("AudioVolumePanel")?.GetComponentInChildren<Slider>();
-            emoteVolumeSlider.value = AudioManager.emoteVolumeMultiplier;
-            emoteVolumeSlider.onValueChanged.AddListener(delegate { OnUpdateEmoteVolume(emoteVolumeSlider); });
-            currentVolumeSetting = emoteVolumeSlider.value;
-
-            muteEmoteToggle.isOn = AudioManager.muteEmoteAudio;
-            emoteVolumeSlider.value = Mathf.Clamp(AudioManager.emoteVolumeMultiplier, 0, emoteVolumeSlider.maxValue);
+            allowMovingWhileEmotingToggle = additionalUIParent.Find("MoveWhileEmotingPanel")?.GetComponentInChildren<Toggle>();
+            allowMovingWhileEmotingToggle.isOn = ThirdPersonEmoteController.allowMovingWhileEmoting;
+            allowMovingWhileEmotingToggle.onValueChanged.AddListener(delegate { OnUpdateToggleAllowMovingWhileEmoting(allowMovingWhileEmotingToggle); });
+            currentAllowMovingWhileEmoting = allowMovingWhileEmotingToggle.isOn;
 
             togglePanelComplementary = additionalUIParent.Find("HideEmotesComplementary").gameObject;
             togglePanel0 = additionalUIParent.Find("HideEmotes0").gameObject;
@@ -566,7 +575,8 @@ namespace TooManyEmotes.UI
             AdditionalPanelUI.hovered = false;
 
             SaveFilterPreferences();
-            ThirdPersonEmoteController.SavePreferences();
+            if (ThirdPersonEmoteController.firstPersonEmotesEnabled != currentFirstPersonEmotes || ThirdPersonEmoteController.allowMovingWhileEmoting != currentAllowMovingWhileEmoting)
+                ThirdPersonEmoteController.SavePreferences();
             if (AudioManager.muteEmoteAudio != currentMuteSetting || AudioManager.emoteOnlyMode != currentEmoteOnlyMode || AudioManager.dmcaFreeMode != currentDmcaFreeSetting || AudioManager.emoteVolumeMultiplier != currentVolumeSetting)
                 AudioManager.SavePreferences();
 
@@ -622,7 +632,12 @@ namespace TooManyEmotes.UI
         {
             ThirdPersonEmoteController.firstPersonEmotesEnabled = toggle.isOn;
         }
-        
+
+
+        public static void OnUpdateToggleAllowMovingWhileEmoting(Toggle toggle)
+        {
+            ThirdPersonEmoteController.SetCanMoveWhileEmoting(toggle.isOn);
+        }
 
 
         public static void OnUpdateEmoteVolume(Slider volumeSlider)

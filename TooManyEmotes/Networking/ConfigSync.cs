@@ -35,7 +35,7 @@ namespace TooManyEmotes.Networking
         public bool syncPersistentUnlocks;
         public bool syncPersistentEmoteCredits;
         public bool syncSyncUnsharedEmotes;
-        public bool syncEnableMovingWhileEmoting;
+        //public bool syncEnableMovingWhileEmoting;
         public bool syncDisableRaritySystem;
         public bool syncEnableGrabbableEmoteProps;
 
@@ -80,7 +80,7 @@ namespace TooManyEmotes.Networking
             syncPersistentUnlocks = ConfigSettings.persistentUnlocks.Value;
             syncPersistentEmoteCredits = syncPersistentUnlocks && ConfigSettings.persistentEmoteCredits.Value;
             syncSyncUnsharedEmotes = ConfigSettings.syncUnsharedEmotes.Value;
-            syncEnableMovingWhileEmoting = ConfigSettings.enableMovingWhileEmoting.Value;
+            //syncEnableMovingWhileEmoting = ConfigSettings.enableMovingWhileEmoting.Value;
             syncDisableRaritySystem = ConfigSettings.disableRaritySystem.Value;
 
             syncEnableGrabbableEmoteProps = ConfigSettings.enableGrabbableEmoteProps.Value;

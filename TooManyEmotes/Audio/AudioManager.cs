@@ -46,8 +46,9 @@ namespace TooManyEmotes.Audio
 
         public static void SavePreferences()
         {
-            ES3.Save("TooManyEmotes.MuteEmoteAudio", muteEmoteAudio);
+            Log("Saving AudioManager preferences.");
             ES3.Save("TooManyEmotes.EmoteAudioVolume", emoteVolumeMultiplier);
+            ES3.Save("TooManyEmotes.MuteEmoteAudio", muteEmoteAudio);
             ES3.Save("TooManyEmotes.EmoteOnlyMode", emoteOnlyMode);
             ES3.Save("TooManyEmotes.DmcaFreeMode", dmcaFreeMode);
         }
@@ -55,8 +56,9 @@ namespace TooManyEmotes.Audio
 
         public static void LoadPreferences()
         {
-            muteEmoteAudio = ES3.Load("TooManyEmotes.MuteEmoteAudio", false);
+            Log("Loading AudioManager preferences.");
             emoteVolumeMultiplier = ES3.Load("TooManyEmotes.EmoteAudioVolume", 1.0f);
+            muteEmoteAudio = ES3.Load("TooManyEmotes.MuteEmoteAudio", false);
             emoteOnlyMode = ES3.Load("TooManyEmotes.EmoteOnlyMode", false);
             dmcaFreeMode = ES3.Load("TooManyEmotes.DmcaFreeMode", false);
         }

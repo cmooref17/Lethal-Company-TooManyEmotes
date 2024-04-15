@@ -103,6 +103,8 @@ namespace TooManyEmotes.Input
             displayName = displayName.Replace("leftstickpress", "LS");
             displayName = displayName.Replace("rightstickpress", "RS");
             displayName = displayName.Replace("dpad/", "DPad-");
+            displayName = displayName.Replace("scroll/up", "Scroll Up");
+            displayName = displayName.Replace("scroll/down", "Scroll Down");
 
             displayName = displayName.Replace("backquote", "`");
 

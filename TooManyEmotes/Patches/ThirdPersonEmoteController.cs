@@ -30,6 +30,7 @@ namespace TooManyEmotes.Patches
 
         public static GameObject playerHUDHelmetModel;
         public static Camera gameplayCamera;
+        public static Transform gameplayCameraContainer { get { return gameplayCamera?.transform.parent; } }
         public static Camera emoteCamera;
         public static Transform emoteCameraPivot;
         public static int cameraCollideLayerMask = /*1 << LayerMask.NameToLayer("Default") |*/ 1 << LayerMask.NameToLayer("Room") | 1 << LayerMask.NameToLayer("PlaceableShipObject") | 1 << LayerMask.NameToLayer("Terrain") | 1 << LayerMask.NameToLayer("MiscLevelGeometry");
@@ -47,8 +48,10 @@ namespace TooManyEmotes.Patches
         private static bool isPerformingEmote = false;
 
         public static bool firstPersonEmotesEnabled { get; internal set; } = false;
+        public static bool allowMovingWhileEmoting { get; internal set; } = false;
 
-        private static bool isMovingWhileEmoting { get { return emoteControllerLocal.IsPerformingCustomEmote() && (ConfigSync.instance.syncEnableMovingWhileEmoting || EmoteControllerPlayer.emoteControllerLocal.performingEmote.canMoveWhileEmoting); } }
+        //private static bool isMovingWhileEmoting { get { return emoteControllerLocal.IsPerformingCustomEmote() && (ConfigSync.instance.syncEnableMovingWhileEmoting || emoteControllerLocal.performingEmote.canMoveWhileEmoting); } }
+        private static bool isMovingWhileEmoting { get { return emoteControllerLocal.IsPerformingCustomEmote() && (allowMovingWhileEmoting || emoteControllerLocal.performingEmote.canMoveWhileEmoting); } }
 
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
@@ -80,13 +83,17 @@ namespace TooManyEmotes.Patches
 
         internal static void SavePreferences()
         {
+            Log("Saving ThirdPersonEmoteController preferences.");
             ES3.Save("TooManyEmotes.EnableFirstPersonEmotes", firstPersonEmotesEnabled);
+            ES3.Save("TooManyEmotes.AllowMovingWhileEmoting", allowMovingWhileEmoting);
         }
 
 
         internal static void LoadPreferences()
         {
+            Log("Loading ThirdPersonEmoteController preferences.");
             firstPersonEmotesEnabled = ES3.Load("TooManyEmotes.EnableFirstPersonEmotes", false);
+            allowMovingWhileEmoting = ES3.Load("TooManyEmotes.AllowMovingWhileEmoting", false);
         }
 
 
@@ -166,7 +173,7 @@ namespace TooManyEmotes.Patches
                     if (StartOfRound.Instance.activeCamera != gameplayCamera)
                     {
                         StartOfRound.Instance.SwitchCamera(gameplayCamera);
-                        CallChangeAudioListenerToObject(gameplayCamera.gameObject);
+                        CallChangeAudioListenerToObject(gameplayCameraContainer.gameObject);
                         emoteCamera.enabled = false;
                         if (localPlayerController.currentlyHeldObjectServer != null)
                             localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.localItemHolder;
@@ -189,7 +196,9 @@ namespace TooManyEmotes.Patches
 
                 if (!localPlayerController.quickMenuManager.isMenuOpen && !EmoteMenuManager.isMenuOpen)
                 {
-                    if (Keybinds.holdingRotatePlayerModifier || Keybinds.toggledRotating || isMovingWhileEmoting)
+                    //if (Keybinds.holdingRotatePlayerModifier || Keybinds.toggledRotating || isMovingWhileEmoting)
+                    bool canRotateModifier = ConfigSettings.toggleRotateCharacterInEmote.Value ? Keybinds.toggledRotating : Keybinds.holdingRotatePlayerModifier;
+                    if (canRotateModifier != isMovingWhileEmoting)
                     {
                         if (emoteCameraPivot.localEulerAngles.y != 0)
                         {
@@ -198,17 +207,24 @@ namespace TooManyEmotes.Patches
                         }
                     }
 
-                    Vector2 vector = localPlayerController.playerActions.Movement.Look.ReadValue<Vector2>() * 0.008f * IngamePlayerSettings.Instance.settings.lookSensitivity;
-                    emoteCameraPivot.Rotate(new Vector3(0f, vector.x, 0f));
-                    float cameraPitch = emoteCameraPivot.localEulerAngles.x - vector.y;
-                    cameraPitch = (cameraPitch > 180) ? cameraPitch - 360 : cameraPitch;
-                    cameraPitch = Mathf.Clamp(cameraPitch, -45, 45);
-                    emoteCameraPivot.transform.eulerAngles = new Vector3(cameraPitch, emoteCameraPivot.eulerAngles.y, 0f);
+                    if (!isMovingWhileEmoting || canRotateModifier)
+                    {
+                        Vector2 vector = localPlayerController.playerActions.Movement.Look.ReadValue<Vector2>() * 0.008f * IngamePlayerSettings.Instance.settings.lookSensitivity;
+                        emoteCameraPivot.Rotate(new Vector3(0f, vector.x, 0f));
+                        float cameraPitch = emoteCameraPivot.localEulerAngles.x - vector.y;
+                        cameraPitch = (cameraPitch > 180) ? cameraPitch - 360 : cameraPitch;
+                        cameraPitch = Mathf.Clamp(cameraPitch, -45, 45);
+                        emoteCameraPivot.transform.eulerAngles = new Vector3(cameraPitch, emoteCameraPivot.eulerAngles.y, 0f);
+                    }
+                    //else if (isMovingWhileEmoting) emoteCameraPivot.transform.eulerAngles = gameplayCameraContainer.eulerAngles;
+
+                    //TODO animate the cameracontainer again in the emotecontrollerplayer class
 
                     if (Physics.Raycast(emoteCameraPivot.position, -emoteCameraPivot.forward * targetCameraDistance, out var hit, targetCameraDistance, cameraCollideLayerMask))
                         emoteCamera.transform.localPosition = Vector3.back * Mathf.Clamp(hit.distance - 0.2f, 0, targetCameraDistance);
 
-                    if (!Keybinds.holdingRotatePlayerModifier && !Keybinds.toggledRotating && !isMovingWhileEmoting)
+                    //if (!Keybinds.holdingRotatePlayerModifier && !Keybinds.toggledRotating && !isMovingWhileEmoting)
+                    if (!isMovingWhileEmoting || canRotateModifier)
                         return false;
                 }
             }
@@ -216,9 +232,67 @@ namespace TooManyEmotes.Patches
         }
 
 
+        internal static void OnZoomInEmote(InputAction.CallbackContext context)
+        {
+            if (localPlayerController == null || !emoteControllerLocal.IsPerformingCustomEmote() || firstPersonEmotesEnabled || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
+                return;
+
+            bool canZoomModifier = ConfigSettings.toggleRotateCharacterInEmote.Value ? Keybinds.toggledRotating : Keybinds.holdingRotatePlayerModifier;
+            if (isMovingWhileEmoting && !canZoomModifier)
+                return;
+
+            targetCameraDistance = Mathf.Clamp(targetCameraDistance - 0.25f, clampCameraDistance[0], clampCameraDistance[1]);
+        }
+
+
+        internal static void OnZoomOutEmote(InputAction.CallbackContext context)
+        {
+            if (localPlayerController == null || !emoteControllerLocal.IsPerformingCustomEmote() || firstPersonEmotesEnabled || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
+                return;
+
+            bool canZoomModifier = ConfigSettings.toggleRotateCharacterInEmote.Value ? Keybinds.toggledRotating : Keybinds.holdingRotatePlayerModifier;
+            if (isMovingWhileEmoting && !canZoomModifier)
+                return;
+
+            targetCameraDistance = Mathf.Clamp(targetCameraDistance + 0.25f, clampCameraDistance[0], clampCameraDistance[1]);
+        }
+
+
+        /*internal static void UpdateFirstPersonEmoteMode(bool value)
+        {
+            if (firstPersonEmotesEnabled == value)
+                return;
+
+            firstPersonEmotesEnabled = value;
+            if (!emoteControllerLocal.IsPerformingCustomEmote())
+                return;
+
+            if (firstPersonEmotesEnabled)
+                gameplayCamera.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+            CallChangeAudioListenerToObject(firstPersonEmotesEnabled ? gameplayCameraContainer.gameObject : emoteCamera.gameObject);
+            UpdateControlTip();
+        }*/
+
+
+        internal static void SetCanMoveWhileEmoting(bool value)
+        {
+            if (allowMovingWhileEmoting == value)
+                return;
+
+            allowMovingWhileEmoting = value;
+            if (!emoteControllerLocal.IsPerformingCustomEmote())
+                return;
+
+            if (allowMovingWhileEmoting)
+                emoteCameraPivot.localEulerAngles = new Vector3(emoteCameraPivot.localEulerAngles.x, 0, emoteCameraPivot.localEulerAngles.z);
+
+            UpdateControlTip();
+        }
+
+
         [HarmonyPatch(typeof(PlayerControllerB), "ScrollMouse_performed")]
         [HarmonyPrefix]
-        public static bool AdjustCameraDistance(InputAction.CallbackContext context, PlayerControllerB __instance)
+        public static bool PreventSwappingItemsWhileEmoting(InputAction.CallbackContext context, PlayerControllerB __instance)
         {
             if (!emoteCamera || !emoteCamera.enabled)
                 return true;
@@ -226,16 +300,29 @@ namespace TooManyEmotes.Patches
             if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return true;
 
-            if (__instance == localPlayerController && context.performed && emoteControllerLocal != null && emoteControllerLocal.IsPerformingCustomEmote() && !isMovingWhileEmoting)
+            bool canZoomModifier = ConfigSettings.toggleRotateCharacterInEmote.Value ? Keybinds.toggledRotating : Keybinds.holdingRotatePlayerModifier;
+            if (__instance == localPlayerController && context.performed && emoteControllerLocal != null && emoteControllerLocal.IsPerformingCustomEmote() && (!isMovingWhileEmoting || canZoomModifier))
             {
-                if (!EmoteMenuManager.isMenuOpen && !firstPersonEmotesEnabled)
-                    __instance.StartCoroutine(AdjustCameraDistanceEndOfFrame());
+                //if (!EmoteMenuManager.isMenuOpen && !firstPersonEmotesEnabled)
+                    //__instance.StartCoroutine(AdjustCameraDistanceEndOfFrame());
 
-                return false;
+                return false; // Prevent swapping items while emoting
             }
             return true;
         }
 
+        /*
+        private static IEnumerator AdjustCameraDistanceEndOfFrame()
+        {
+            yield return new WaitForEndOfFrame();
+            float value = Keybinds.RawScrollAction.ReadValue<Vector2>().y;
+            if (value != 0)
+            {
+                float direction = value < 0 ? 1 : -1;
+                targetCameraDistance = Mathf.Clamp(targetCameraDistance + direction * 0.25f, clampCameraDistance.x, clampCameraDistance.y);
+            }
+        }
+        */
 
         [HarmonyPatch(typeof(PlayerControllerB), "SwitchToItemSlot")]
         [HarmonyPostfix]
@@ -249,18 +336,6 @@ namespace TooManyEmotes.Patches
                 return;
 
             heldItem.parentObject = localPlayerController.serverItemHolder;
-        }
-
-
-        private static IEnumerator AdjustCameraDistanceEndOfFrame()
-        {
-            yield return new WaitForEndOfFrame();
-            float value = Keybinds.RawScrollAction.ReadValue<Vector2>().y;
-            if (value != 0)
-            {
-                float direction = value < 0 ? 1 : -1;
-                targetCameraDistance = Mathf.Clamp(targetCameraDistance + direction * 0.25f, clampCameraDistance.x, clampCameraDistance.y);
-            }
         }
 
 
@@ -291,12 +366,9 @@ namespace TooManyEmotes.Patches
                     localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.serverItemHolder;
             }
 
+            HUDManager.Instance.ClearControlTips();
+            UpdateControlTip();
 
-            if (!isMovingWhileEmoting)
-            {
-                HUDManager.Instance.ClearControlTips();
-                UpdateControlTip();
-            }
             isPerformingEmote = true;
         }
 
@@ -340,19 +412,44 @@ namespace TooManyEmotes.Patches
 
         public static void UpdateControlTip()
         {
-            if (isMovingWhileEmoting)
-                return;
-            if (emoteControlTipLines == null)
+            if (!emoteControllerLocal.IsPerformingCustomEmote() || emoteControlTipLines == null)
                 return;
 
-            int index = 0;
-            emoteControlTipLines[index++] = "Zoom In/Out : [Scroll Mouse]";
-            if (!ConfigSync.instance.syncEnableMovingWhileEmoting)
+            /*if (allowMovingWhileEmoting)
             {
-                string rotateDisplayText = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.RotatePlayerEmoteAction);
-                if (rotateDisplayText != "")
-                    emoteControlTipLines[index++] = string.Format("Rotate : " + (Keybinds.toggledRotating ? "Toggle" : "Hold") + " [{0}]", rotateDisplayText);
-            }
+                HUDManager.Instance.ClearControlTips();
+                return; // For now until I can finish updating the control tips while the allow emoting while moving setting is enabled
+            }*/
+
+            string zoomInDisplayText = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.ZoomInEmoteAction);
+            string zoomOutDisplayText = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.ZoomOutEmoteAction);
+            string rotateDisplayText = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.RotatePlayerEmoteAction);
+
+            if (zoomInDisplayText == "")
+                zoomInDisplayText = "Unbound";
+            if (zoomOutDisplayText == "")
+                zoomOutDisplayText = "Unbound";
+            if (rotateDisplayText == "")
+                rotateDisplayText = "Unbound";
+
+            int index = 0;
+            
+            string zoomControlText;
+            if ((zoomInDisplayText == "Scroll Up" || zoomInDisplayText == "Scroll Down") && (zoomOutDisplayText == "Scroll Up" || zoomOutDisplayText == "Scroll Down") && zoomInDisplayText != zoomOutDisplayText)
+                zoomControlText = "[Scroll Mouse]";
+            else if (zoomInDisplayText != "Unbound" || zoomOutDisplayText != "Unbound")
+                zoomControlText = zoomInDisplayText + "/" + zoomOutDisplayText;
+            else
+                zoomControlText = "Unbound";
+
+            emoteControlTipLines[index] = "Zoom : ";
+            if (allowMovingWhileEmoting)
+                emoteControlTipLines[index] += "[" + rotateDisplayText + "] + ";
+            emoteControlTipLines[index++] += zoomControlText;
+
+            //if (!ConfigSync.instance.syncEnableMovingWhileEmoting)
+            emoteControlTipLines[index++] = string.Format((allowMovingWhileEmoting ? "Freeze" : "Rotate") + " : " + (ConfigSettings.toggleRotateCharacterInEmote.Value ? "Toggle" : "Hold") + " [{0}]", rotateDisplayText);
+
             for (; index < emoteControlTipLines.Length; index++)
                 emoteControlTipLines[index] = "";
 

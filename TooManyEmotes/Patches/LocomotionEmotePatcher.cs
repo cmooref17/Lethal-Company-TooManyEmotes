@@ -21,7 +21,9 @@ namespace TooManyEmotes.Patches
         {
             if (__result)
                 return;
-            if (EmoteController.allEmoteControllers.TryGetValue(__instance.gameObject, out var emoteController) && emoteController.IsPerformingCustomEmote() && (ConfigSync.instance.syncEnableMovingWhileEmoting || emoteController.performingEmote.canMoveWhileEmoting))
+
+            //if (EmoteController.allEmoteControllers.TryGetValue(__instance.gameObject, out var emoteController) && emoteController.IsPerformingCustomEmote() && (ConfigSync.instance.syncEnableMovingWhileEmoting || emoteController.performingEmote.canMoveWhileEmoting))
+            if (EmoteController.allEmoteControllers.TryGetValue(__instance.gameObject, out var emoteController) && emoteController.IsPerformingCustomEmote() && (ThirdPersonEmoteController.allowMovingWhileEmoting || emoteController.performingEmote.canMoveWhileEmoting))
             {
                 bool isJumping = (bool)Traverse.Create(__instance).Field("isJumping").GetValue();
                 bool result = !(__instance.inSpecialInteractAnimation || __instance.isPlayerDead || isJumping || __instance.isCrouching || __instance.isClimbingLadder || __instance.isGrabbingObjectAnimation || __instance.inTerminalMenu || __instance.isTypingChat);
@@ -35,7 +37,8 @@ namespace TooManyEmotes.Patches
         [HarmonyPrefix]
         public static bool CancelMovingEmote()
         {
-            if (emoteControllerLocal.IsPerformingCustomEmote() && ConfigSync.instance.syncEnableMovingWhileEmoting)
+            //if (emoteControllerLocal.IsPerformingCustomEmote() && ConfigSync.instance.syncEnableMovingWhileEmoting)
+            if (emoteControllerLocal.IsPerformingCustomEmote() && ThirdPersonEmoteController.allowMovingWhileEmoting)
             {
                 localPlayerController.performingEmote = false;
                 emoteControllerLocal.StopPerformingEmote();

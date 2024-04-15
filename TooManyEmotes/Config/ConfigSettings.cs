@@ -14,9 +14,8 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<bool> persistentEmoteCredits;
         //public static ConfigEntry<bool> persistentUnlocksGlobally;
         public static ConfigEntry<bool> syncUnsharedEmotes;
-        public static ConfigEntry<bool> enableMovingWhileEmoting;
+        //public static ConfigEntry<bool> enableMovingWhileEmoting;
         public static ConfigEntry<bool> disableEmotesForSelf;
-        public static ConfigEntry<string> rotateCharacterInEmoteKeybind;
         public static ConfigEntry<bool> toggleRotateCharacterInEmote;
 
         public static ConfigEntry<bool> enableGrabbableEmoteProps;
@@ -92,9 +91,8 @@ namespace TooManyEmotes.Config
             persistentUnlocks = AddConfigEntry("Emote Settings", "PersistentUnlocks", true, "[Host only] If enabled, unlocked emotes will be unlocked per save, and will not reset upon ship resets, unless a new save is created.");
             persistentEmoteCredits = AddConfigEntry("Emote Settings", "PersistentEmoteCredits", false, "[Host only] If enabled, emote credits will not reset upon ship resets. Only applies if PersistentUnlocks is enabled.");
             syncUnsharedEmotes = AddConfigEntry("Emote Settings", "CanSyncUnsharedEmotes", true, "[Host only] Only applies if ShareEverything is false. If set to true, players will be able to sync emotes with other players, even if they do not have the emote being performed unlocked.");
-            enableMovingWhileEmoting = AddConfigEntry("Emote Settings", "CanMoveWhileEmoting", false, "[Host only] If set to true, rotating while emoting will be automatic. To cancel an emote, you will press the vanilla menu button.");
+            //enableMovingWhileEmoting = AddConfigEntry("Emote Settings", "CanMoveWhileEmoting", false, "[Host only] If set to true, rotating while emoting will be automatic. To cancel an emote, you will press the vanilla menu button.");
             disableEmotesForSelf = AddConfigEntry("Emote Settings", "DisableEmotingForSelf", false, "Disabling this will not convert your player's animator controller to an AnimatorOverrideController, and you will not be able to perform custom emotes. Disable this in case of specific mod conflicts. You will still be able to see other players emoting.");
-            rotateCharacterInEmoteKeybind = AddConfigEntry("Emote Settings", "RotateCharacterInEmoteKeybind", "<Keyboard>/leftAlt", "Keybind to hold to rotate character while performing a custom emote. NOTE: This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
             toggleRotateCharacterInEmote = AddConfigEntry("Emote Settings", "ToggleRotateCharacterInEmote", false, "If true, rotating character while emoting will be toggled, instead of rotating while holding the hotkey.");
 
             enableGrabbableEmoteProps = AddConfigEntry("Emote Settings", "EnableGrabbableEmoteProps", true, "[Host only] If true, certain emote props can be found as items in the world, and will be the trigger for specific emotes. The emotes performed on these props cannot be purchased as emotes from the terminal, but certain emote props may be purchasable as items in the terminal. If false, the emotes can be purchased normally via the terminal without the need of the emote prop.");

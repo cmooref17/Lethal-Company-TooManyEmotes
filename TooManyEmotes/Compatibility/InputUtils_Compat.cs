@@ -18,6 +18,8 @@ namespace TooManyEmotes.Compatibility
         public static InputAction OpenEmoteMenuHotkey => IngameKeybinds.Instance.OpenEmoteMenuHotkey;
         //public static InputAction PerformEmoteHotkey => IngameKeybinds.Instance.PerformEmoteHotkey;
         public static InputAction RotateCharacterEmoteHotkey => IngameKeybinds.Instance.RotateCharacterEmoteHotkey;
+        public static InputAction ZoomInEmoteHotkey => IngameKeybinds.Instance.ZoomInEmoteHotkey;
+        public static InputAction ZoomOutEmoteHotkey => IngameKeybinds.Instance.ZoomOutEmoteHotkey;
         public static InputAction FavoriteEmoteHotkey => IngameKeybinds.Instance.FavoriteEmoteHotkey;
 
         public static InputAction PrevEmotePageHotkey => IngameKeybinds.Instance.PrevEmotePageHotkey;

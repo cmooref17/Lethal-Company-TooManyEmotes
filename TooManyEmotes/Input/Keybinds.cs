@@ -21,6 +21,8 @@ namespace TooManyEmotes.Input
         public static InputAction OpenEmoteMenuAction;
         public static InputAction PerformSelectedEmoteAction;
         public static InputAction RotatePlayerEmoteAction;
+        public static InputAction ZoomOutEmoteAction;
+        public static InputAction ZoomInEmoteAction;
         public static InputAction FavoriteEmoteAction;
         public static InputAction ThumbStickAction;
         public static InputAction PrevEmotePageAction;
@@ -56,7 +58,6 @@ namespace TooManyEmotes.Input
                 ActionMap = Asset.actionMaps[0];
 
                 OpenEmoteMenuAction = InputUtils_Compat.OpenEmoteMenuHotkey;
-                RotatePlayerEmoteAction = InputUtils_Compat.RotateCharacterEmoteHotkey;
                 FavoriteEmoteAction = InputUtils_Compat.FavoriteEmoteHotkey;
 
                 PrevEmotePageAction = InputUtils_Compat.PrevEmotePageHotkey;
@@ -64,6 +65,10 @@ namespace TooManyEmotes.Input
 
                 NextEmoteLoadoutUpAction = InputUtils_Compat.NextEmoteLoadoutUpHotkey;
                 NextEmoteLoadoutDownAction = InputUtils_Compat.NextEmoteLoadoutDownHotkey;
+
+                RotatePlayerEmoteAction = InputUtils_Compat.RotateCharacterEmoteHotkey;
+                ZoomInEmoteAction = InputUtils_Compat.ZoomInEmoteHotkey;
+                ZoomOutEmoteAction = InputUtils_Compat.ZoomOutEmoteHotkey;
 
                 ForceReloadPlayerModelAction = InputUtils_Compat.ForceReloadPlayerModelHotkey;
 
@@ -79,8 +84,6 @@ namespace TooManyEmotes.Input
 
                 OpenEmoteMenuAction = ActionMap.AddAction("TooManyEmotes.OpenEmoteMenu", binding: ConfigSettings.openEmoteMenuKeybind.Value, interactions: "Press");
                 OpenEmoteMenuAction.AddBinding("<Gamepad>/leftStickPress");
-                RotatePlayerEmoteAction = ActionMap.AddAction("TooManyEmotes.RotatePlayerEmote", binding: ConfigSettings.rotateCharacterInEmoteKeybind.Value, interactions: "Press");
-                RotatePlayerEmoteAction.AddBinding("<Gamepad>/");
                 FavoriteEmoteAction = ActionMap.AddAction("TooManyEmotes.FavoriteEmote", binding: "<Mouse>/middleButton", interactions: "Press");
                 FavoriteEmoteAction.AddBinding("<Gamepad>/rightStickPress");
 
@@ -93,6 +96,13 @@ namespace TooManyEmotes.Input
                 NextEmoteLoadoutUpAction.AddBinding("<Gamepad>/dpad/up");
                 NextEmoteLoadoutDownAction = ActionMap.AddAction("TooManyEmotes.EmoteLoadoutDown", binding: "<Keyboard>/", interactions: "Press");
                 NextEmoteLoadoutDownAction.AddBinding("<Gamepad>/dpad/down");
+
+                RotatePlayerEmoteAction = ActionMap.AddAction("TooManyEmotes.RotatePlayerEmote", binding: "<Keyboard>/leftAlt", interactions: "Press");
+                RotatePlayerEmoteAction.AddBinding("<Gamepad>/");
+                ZoomInEmoteAction = ActionMap.AddAction("TooManyEmotes.ZoomInEmote", binding: "<Mouse>/scroll/up", interactions: "Press");
+                ZoomInEmoteAction.AddBinding("<Gamepad>/");
+                ZoomOutEmoteAction = ActionMap.AddAction("TooManyEmotes.ZoomOutEmote", binding: "<Mouse>/scroll/down", interactions: "Press");
+                ZoomOutEmoteAction.AddBinding("<Gamepad>/");
 
                 ForceReloadPlayerModelAction = ActionMap.AddAction("TooManyEmotes.ForceReloadPlayerModel", binding: "<Keyboard>/", interactions: "Press");
                 ForceReloadPlayerModelAction.AddBinding("<Gamepad>/");
@@ -113,9 +123,6 @@ namespace TooManyEmotes.Input
             OpenEmoteMenuAction.canceled += OnPressOpenEmoteMenu;
             FavoriteEmoteAction.performed += OnFavoriteEmote;
 
-            RotatePlayerEmoteAction.performed += OnUpdateRotatePlayerEmoteModifier;
-            RotatePlayerEmoteAction.canceled += OnUpdateRotatePlayerEmoteModifier;
-
             PrevEmotePageAction.Enable();
             NextEmotePageAction.Enable();
             NextEmoteLoadoutUpAction.Enable();
@@ -125,6 +132,11 @@ namespace TooManyEmotes.Input
             NextEmotePageAction.performed += OnNextEmotePage;
             NextEmoteLoadoutUpAction.performed += OnEmoteLoadoutUp;
             NextEmoteLoadoutDownAction.performed += OnEmoteLoadoutDown;
+
+            RotatePlayerEmoteAction.performed += OnUpdateRotatePlayerEmoteModifier;
+            RotatePlayerEmoteAction.canceled += OnUpdateRotatePlayerEmoteModifier;
+            ZoomInEmoteAction.performed += ThirdPersonEmoteController.OnZoomInEmote;
+            ZoomOutEmoteAction.performed += ThirdPersonEmoteController.OnZoomOutEmote;
 
             ForceReloadPlayerModelAction.performed += OnReloadPlayerModel;
 
@@ -145,8 +157,6 @@ namespace TooManyEmotes.Input
             OpenEmoteMenuAction.performed -= OnPressOpenEmoteMenu;
             OpenEmoteMenuAction.canceled -= OnPressOpenEmoteMenu;
             FavoriteEmoteAction.performed -= OnFavoriteEmote;
-            RotatePlayerEmoteAction.performed -= OnUpdateRotatePlayerEmoteModifier;
-            RotatePlayerEmoteAction.canceled -= OnUpdateRotatePlayerEmoteModifier;
 
             PrevEmotePageAction.Disable();
             NextEmotePageAction.Disable();
@@ -157,6 +167,11 @@ namespace TooManyEmotes.Input
             NextEmotePageAction.performed -= OnNextEmotePage;
             NextEmoteLoadoutUpAction.performed -= OnEmoteLoadoutUp;
             NextEmoteLoadoutDownAction.performed -= OnEmoteLoadoutDown;
+
+            RotatePlayerEmoteAction.performed -= OnUpdateRotatePlayerEmoteModifier;
+            RotatePlayerEmoteAction.canceled -= OnUpdateRotatePlayerEmoteModifier;
+            ZoomInEmoteAction.performed -= ThirdPersonEmoteController.OnZoomInEmote;
+            ZoomOutEmoteAction.performed -= ThirdPersonEmoteController.OnZoomOutEmote;
 
             ForceReloadPlayerModelAction.performed -= OnReloadPlayerModel;
 
@@ -301,7 +316,8 @@ namespace TooManyEmotes.Input
 
         public static void OnUpdateRotatePlayerEmoteModifier(InputAction.CallbackContext context)
         {
-            if (localPlayerController == null || ConfigSync.instance.syncEnableMovingWhileEmoting || !EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote())
+            //if (localPlayerController == null || ConfigSync.instance.syncEnableMovingWhileEmoting || !emoteControllerLocal.IsPerformingCustomEmote())
+            if (localPlayerController == null || !emoteControllerLocal.IsPerformingCustomEmote())
                 return;
             
             if (context.performed)
@@ -318,7 +334,7 @@ namespace TooManyEmotes.Input
 
         public static void OnReloadPlayerModel(InputAction.CallbackContext context)
         {
-            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled || !context.performed)
+            if (localPlayerController == null || !context.performed || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
 
             Log("Reloading local player model.");
