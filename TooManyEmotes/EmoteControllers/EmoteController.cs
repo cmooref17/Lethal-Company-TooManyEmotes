@@ -289,6 +289,7 @@ namespace TooManyEmotes
             if (!isSimpleEmoteController)
                 CreateEmoteSyncGroup(doNotTriggerAudio);
 
+            DiscoBallPatcher.OnPerformEmote(this);
             return true;
         }
 
@@ -376,6 +377,7 @@ namespace TooManyEmotes
             if (!isSimpleEmoteController && emoteController.emoteSyncGroup != null)
                 AddToEmoteSyncGroup(emoteController.emoteSyncGroup);
 
+            DiscoBallPatcher.OnPerformEmote(this);
             return true;
         }
 
@@ -447,6 +449,8 @@ namespace TooManyEmotes
             if (ikLeftFoot != null) ikLeftFoot.localPosition = Vector3.zero;
             if (ikRightFoot != null) ikRightFoot.localPosition = Vector3.zero;
             if (ikHead != null) ikHead.localPosition = Vector3.zero;
+
+            DiscoBallPatcher.OnStopPerformingEmote(this);
         }
 
 

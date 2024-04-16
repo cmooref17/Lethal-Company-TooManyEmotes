@@ -411,11 +411,41 @@ namespace TooManyEmotes.Patches
         }
 
 
-        public static void UpdateControlTip()
+        /*private static void OnUpdateVanillaControlTip()
         {
-            if (!emoteControllerLocal.IsPerformingCustomEmote() || emoteControlTipLines == null)
+            if (!emoteControllerLocal.IsPerformingCustomEmote() || firstPersonEmotesEnabled || emoteControlTipLines == null)
                 return;
 
+            bool missingZoomTip = true;
+            bool missingRotateTip = true;
+            int firstEmptyIndex = -1;
+            for (int i = 0; i < emoteControlTipLines.Length; i++)
+            {
+                if (!missingZoomTip && !missingRotateTip)
+                    break;
+                if (!string.IsNullOrEmpty(emoteControlTipLines[i]))
+                {
+                    if (emoteControlTipLines[i].StartsWith("Zoom: "))
+                        missingZoomTip = false;
+                    else if (emoteControlTipLines[i].Contains("Rotate: "))
+                        missingRotateTip = false;
+                }
+                else if (firstEmptyIndex < 0)
+                    firstEmptyIndex = i;
+            }
+
+            if (missingZoomTip && missingRotateTip && firstEmptyIndex <= controlTipLines.Length - 2)
+                UpdateControlTip(firstEmptyIndex);
+        }*/
+
+
+        public static void UpdateControlTip(int appendToIndex = 0)
+        {
+            if (!emoteControllerLocal.IsPerformingCustomEmote() || firstPersonEmotesEnabled || emoteControlTipLines == null)
+                return;
+
+            if (appendToIndex < 0 || appendToIndex >= controlTipLines.Length - 1)
+                appendToIndex = 0;
             /*if (allowMovingWhileEmoting)
             {
                 HUDManager.Instance.ClearControlTips();
@@ -433,7 +463,7 @@ namespace TooManyEmotes.Patches
             if (rotateDisplayText == "")
                 rotateDisplayText = "Unbound";
 
-            int index = 0;
+            int index = appendToIndex;
             
             string zoomControlText;
             if ((zoomInDisplayText == "Scroll Up" || zoomInDisplayText == "Scroll Down") && (zoomOutDisplayText == "Scroll Up" || zoomOutDisplayText == "Scroll Down") && zoomInDisplayText != zoomOutDisplayText)

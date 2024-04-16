@@ -232,7 +232,7 @@ namespace TooManyEmotesScrap.Props
                 propData.twoHanded = two_handed;
                 propData.minValue = Mathf.Max(value - 20, 0);
                 propData.maxValue = Mathf.Max(value + 20, 0);
-                propData.weight = weight;
+                propData.weight = Mathf.Clamp(weight, 1, 10);
                 propData.positionOffset = positionOffset;
                 propData.rotationOffset = rotationOffset;
                 propData.restingRotation = propData.propPrefab.transform.eulerAngles;

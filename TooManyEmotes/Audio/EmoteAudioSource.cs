@@ -14,10 +14,14 @@ namespace TooManyEmotes.Audio
     public class EmoteAudioSource : MonoBehaviour
     {
         public static HashSet<EmoteAudioSource> allEmoteAudioSources = new HashSet<EmoteAudioSource>();
+        public static HashSet<EmoteAudioSource> playingAudioSources = new HashSet<EmoteAudioSource>();
+        public bool isPlayingAudio {
+            get { return playingAudioSources.Contains(this); }
+            set { if (value) playingAudioSources.Add(this); else playingAudioSources.Remove(this); }
+        }
         public AudioSource audioSource;
         public AudioSource audioLoopSource;
-        public bool isPlayingAudio;
-        float playAudioLoopSourceAtTime = 0;
+        private float playAudioLoopSourceAtTime = 0;
 
         public EmoteSyncGroup currentEmoteSyncGroup;
         public UnlockableEmote currentEmote { get { return currentEmoteSyncGroup?.performingEmote; } }

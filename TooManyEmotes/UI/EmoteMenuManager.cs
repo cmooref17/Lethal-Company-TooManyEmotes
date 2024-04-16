@@ -611,6 +611,7 @@ namespace TooManyEmotes.UI
             AudioManager.muteEmoteAudio = toggle.isOn;
             foreach (var emoteAudioSource in EmoteAudioSource.allEmoteAudioSources)
                 emoteAudioSource.UpdateVolume();
+            DiscoBallPatcher.OnUpdateMuteEmotes();
         }
 
 

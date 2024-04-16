@@ -171,6 +171,7 @@
     <Compile Include="EmoteSyncGroup.cs" />
     <Compile Include="HelperTools.cs" />
     <Compile Include="Networking\SyncPerformingEmoteManager.cs" />
+    <Compile Include="Patches\DiscoBallPatcher.cs" />
     <Compile Include="Patches\CentipedePatcher.cs" />
     <Compile Include="Compatibility\LCVR_Compat.cs" />
     <Compile Include="Compatibility\MirrorDecor_Patcher.cs" />
@@ -184,7 +185,7 @@
     <Compile Include="Props\GrabbableEmotePropManager.cs" />
     <Compile Include="Props\GrabbablePropObject.cs" />
     <Compile Include="UI\AnimationPreviewer.cs" />
-    <Compile Include="UI\EmoteMenu.cs" />
+    <Compile Include="UI\EmoteMenuManager.cs" />
     <Compile Include="Patches\DressGirlVisibilityPatcher.cs" />
     <Compile Include="Props\EmotePropManager.cs" />
     <Compile Include="Patches\LocomotionEmotePatcher.cs" />
