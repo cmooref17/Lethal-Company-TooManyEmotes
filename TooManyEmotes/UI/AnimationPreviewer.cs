@@ -49,9 +49,9 @@ namespace TooManyEmotes.UI
             renderingCamera.allowHDR = false;
             renderingCamera.allowMSAA = false;
             renderingCamera.farClipPlane = 5;
-            renderingCamera.targetTexture = EmoteMenuManager.renderTexture;
+            renderingCamera.targetTexture = EmoteMenu.renderTexture;
             renderingCamera.transform.position = Vector3.down * 1000;
-            EmoteMenuManager.renderTextureImageUI.texture = EmoteMenuManager.renderTexture;
+            EmoteMenu.renderTextureImageUI.texture = EmoteMenu.renderTexture;
 
             Light spotlight = new GameObject("Spotlight").AddComponent<Light>();
             spotlight.type = LightType.Spot;

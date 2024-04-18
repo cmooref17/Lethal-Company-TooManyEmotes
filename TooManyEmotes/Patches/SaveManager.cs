@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using GameNetcodeStuff;
 using HarmonyLib;
+using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
 using static TooManyEmotes.CustomLogging;
 using static TooManyEmotes.HelperTools;
@@ -12,7 +14,21 @@ namespace TooManyEmotes.Patches
     public static class SaveManager
     {
         public static string TooManyEmotesSaveFileName = "TooManyEmotes_LocalSaveData";
-        //private static List<string> globallyUnlockedEmoteNames = new List<string>();
+        private static List<string> globallyUnlockedEmoteNames = new List<string>();
+
+
+        [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
+        [HarmonyPrefix]
+        private static void CheckIfShouldResetLocalSettings()
+        {
+            if (ConfigSettings.resetGloballyUnlockedEmotes)
+                ResetGloballyUnlockedEmotes();
+            if (ConfigSettings.resetFavoriteEmotes)
+                ResetFavoritedEmotes();
+
+            ConfigSettings.resetGloballyUnlockedEmotes = false;
+            ConfigSettings.resetFavoriteEmotes = false;
+        }
 
 
         [HarmonyPatch(typeof(GameNetworkManager), "SaveGameValues")]
@@ -22,12 +38,10 @@ namespace TooManyEmotes.Patches
             if (!__instance.isHostingGame || !StartOfRound.Instance.inShipPhase)
                 return;
 
-            Log("[SaveManager] Saving game values.");
+            Log("Saving game values.");
 
             try
             {
-                //if (!ConfigSync.instance.syncPersistentUnlocksGlobal)
-                //{
                 HashSet<string> usernames = new HashSet<string>(ES3.Load("TooManyEmotes.UnlockedEmotes.PlayersList", currentSaveFileName, new string[0]));
                 foreach (string username in SessionManager.unlockedEmotesByPlayer.Keys)
                     usernames.Add(username);
@@ -35,36 +49,38 @@ namespace TooManyEmotes.Patches
 
                 foreach (string username in usernames)
                 {
-                    // Only save new values
-                    if (!SessionManager.unlockedEmotesByPlayer.ContainsKey(username))
-                        continue;
-
-                    if (SessionManager.unlockedEmotesByPlayer.TryGetValue(username, out var unlockedEmotes))
+                    if (!ConfigSync.instance.syncPersistentUnlocksGlobal)
                     {
-                        Log("Saving " + unlockedEmotes.Count + " emotes for player: " + username);
-                        string[] playerUnlockedEmoteIds = new string[unlockedEmotes.Count];
-                        for (int i = 0; i < unlockedEmotes.Count; i++)
-                            playerUnlockedEmoteIds[i] = unlockedEmotes[i].emoteName;
-                        if (unlockedEmotes == SessionManager.unlockedEmotes)
-                            ES3.Save("TooManyEmotes.UnlockedEmotes", playerUnlockedEmoteIds, currentSaveFileName);
-                        else
-                            ES3.Save("TooManyEmotes.UnlockedEmotes.Player_" + username, playerUnlockedEmoteIds, currentSaveFileName);
+                        // Only save new values
+                        if (!SessionManager.unlockedEmotesByPlayer.ContainsKey(username))
+                            continue;
+
+                        if (SessionManager.unlockedEmotesByPlayer.TryGetValue(username, out var unlockedEmotes))
+                        {
+                            Log("Saving " + unlockedEmotes.Count + " unlocked emotes for player: " + username);
+                            string[] playerUnlockedEmoteIds = new string[unlockedEmotes.Count];
+                            for (int i = 0; i < unlockedEmotes.Count; i++)
+                                playerUnlockedEmoteIds[i] = unlockedEmotes[i].emoteName;
+                            if (unlockedEmotes == SessionManager.unlockedEmotes)
+                                ES3.Save("TooManyEmotes.UnlockedEmotes", playerUnlockedEmoteIds, currentSaveFileName);
+                            else
+                                ES3.Save("TooManyEmotes.UnlockedEmotes.Player_" + username, playerUnlockedEmoteIds, currentSaveFileName);
+                        }
                     }
                     if (TerminalPatcher.currentEmoteCreditsByPlayer.ContainsKey(username))
                     {
                         Log("Saving " + TerminalPatcher.currentEmoteCreditsByPlayer[username] + " emote credits for player: " + username);
+                        string key = "TooManyEmotes.CurrentEmoteCredits" + (ConfigSync.instance.syncPersistentUnlocks ? ".Persistent" : "");
                         if (localPlayerController != null && localPlayerController.playerSteamId != 0 && username == localPlayerController.playerUsername)
-                            ES3.Save("TooManyEmotes.CurrentEmoteCredits", TerminalPatcher.currentEmoteCredits, __instance.currentSaveFileName);
+                            ES3.Save(key, TerminalPatcher.currentEmoteCredits, __instance.currentSaveFileName);
                         else
-                            ES3.Save("TooManyEmotes.CurrentEmoteCredits.Player_" + username, TerminalPatcher.currentEmoteCreditsByPlayer[username], __instance.currentSaveFileName);
+                            ES3.Save(key + ".Player_" + username, TerminalPatcher.currentEmoteCreditsByPlayer[username], __instance.currentSaveFileName);
                     }
                 }
-                //}
-
-                ES3.Save("TooManyEmotes.EmoteStoreSeed", TerminalPatcher.emoteStoreSeed, __instance.currentSaveFileName);
-
                 //Log("Saved " + StartOfRoundPatcher.unlockedEmotes.Count + " unlockable emotes.");
                 //Log("Saved CurrentEmoteCredits: " + TerminalPatcher.currentEmoteCredits);
+
+                ES3.Save("TooManyEmotes.EmoteStoreSeed", TerminalPatcher.emoteStoreSeed, __instance.currentSaveFileName);
                 Log("Saved Seed: " + TerminalPatcher.emoteStoreSeed);
             }
 
@@ -82,18 +98,22 @@ namespace TooManyEmotes.Patches
             if (!GameNetworkManager.Instance.isHostingGame)
                 return;
 
-            Log("[SaveManager] Loading game values.");
-            SessionManager.ResetEmotesLocal();
+            Log("Loading game values.");
 
             try
             {
-                string[] emoteNames = ES3.Load("TooManyEmotes.UnlockedEmotes", currentSaveFileName, new string[0]);
-                foreach (string emoteName in emoteNames)
+                if (!ConfigSync.instance.syncPersistentUnlocksGlobal)
                 {
-                    if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote))
-                        SessionManager.UnlockEmoteLocal(emote);
+                    SessionManager.ResetEmotesLocal();
+                    string[] emoteNames = ES3.Load("TooManyEmotes.UnlockedEmotes", currentSaveFileName, new string[0]);
+                    foreach (string emoteName in emoteNames)
+                    {
+                        if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote))
+                            SessionManager.UnlockEmoteLocal(emote);
+                    }
                 }
-                TerminalPatcher.currentEmoteCredits = ES3.Load("TooManyEmotes.CurrentEmoteCredits", currentSaveFileName, ConfigSync.instance.syncStartingEmoteCredits);
+                string key = "TooManyEmotes.CurrentEmoteCredits" + (ConfigSync.instance.syncPersistentUnlocks ? ".Persistent" : "");
+                TerminalPatcher.currentEmoteCredits = ES3.Load(key, currentSaveFileName, ConfigSync.instance.syncStartingEmoteCredits);
 
                 string[] usernames = ES3.Load("TooManyEmotes.UnlockedEmotes.PlayersList", currentSaveFileName, new string[0]);
                 foreach (string username in usernames)
@@ -101,33 +121,33 @@ namespace TooManyEmotes.Patches
                     if (localPlayerController != null && localPlayerController.playerSteamId != 0 && username == localPlayerController.playerUsername)
                         continue;
 
-
                     if (!SessionManager.unlockedEmotesByPlayer.ContainsKey(username))
                         SessionManager.unlockedEmotesByPlayer.Add(username, new List<UnlockableEmote>());
-                    string key = "TooManyEmotes.UnlockedEmotes.Player_" + username;
-                        
-                    string[] emoteIds = ES3.Load(key, currentSaveFileName, new string[0]);
-                    Log("Loading " + emoteIds.Length + " emotes for player: " + username);
-                    foreach (var emoteId in emoteIds)
+                    key = "TooManyEmotes.UnlockedEmotes.Player_" + username;
+
+                    if (!ConfigSync.instance.syncPersistentUnlocksGlobal)
                     {
-                        if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteId, out var emote))
-                            SessionManager.UnlockEmoteLocal(emote, username);
+                        string[] emoteIds = ES3.Load(key, currentSaveFileName, new string[0]);
+                        Log("Loading " + emoteIds.Length + " unlocked emotes for player: " + username);
+                        foreach (var emoteId in emoteIds)
+                        {
+                            if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteId, out var emote))
+                                SessionManager.UnlockEmoteLocal(emote, playerUsername: username);
+                        }
                     }
 
                     key = "TooManyEmotes.CurrentEmoteCredits.Player_" + username;
+                    if (ConfigSync.instance.syncPersistentUnlocks)
+                        key = key.Replace("CurrentEmoteCredits", "CurrentEmoteCredits.Persistent");
                     int emoteCredits = ES3.Load(key, currentSaveFileName, ConfigSync.instance.syncStartingEmoteCredits);
 
                     Log("Loading " + emoteCredits + " emote credits for player: " + username);
-                    if (!TerminalPatcher.currentEmoteCreditsByPlayer.ContainsKey(username))
-                        TerminalPatcher.currentEmoteCreditsByPlayer.Add(username, emoteCredits);
-                    else
-                        TerminalPatcher.currentEmoteCreditsByPlayer[username] = emoteCredits;
+                    TerminalPatcher.currentEmoteCreditsByPlayer[username] = emoteCredits;
                 }
-                
-                TerminalPatcher.emoteStoreSeed = ES3.Load("TooManyEmotes.EmoteStoreSeed", currentSaveFileName, 0);
+                //Log("Loaded " + SessionManager.unlockedEmotes.Count + " unlockable emotes.");
+                //Log("Loaded CurrentEmoteCredits: " + TerminalPatcher.currentEmoteCredits);
 
-                Log("Loaded " + SessionManager.unlockedEmotes.Count + " unlockable emotes.");
-                Log("Loaded CurrentEmoteCredits: " + TerminalPatcher.currentEmoteCredits);
+                TerminalPatcher.emoteStoreSeed = ES3.Load("TooManyEmotes.EmoteStoreSeed", currentSaveFileName, 0);
                 Log("Loaded Seed: " + TerminalPatcher.emoteStoreSeed);
             }
             catch (Exception e)
@@ -137,27 +157,60 @@ namespace TooManyEmotes.Patches
         }
 
 
+        [HarmonyPatch(typeof(GameNetworkManager), "ResetSavedGameValues")]
+        [HarmonyPostfix]
+        public static void ResetUnlockedEmotesList(GameNetworkManager __instance)
+        {
+            if (!__instance.isHostingGame || StartOfRound.Instance == null || SessionManager.unlockedEmotes == null)
+                return;
+
+            Log("Resetting saved game values.");
+
+            if (!ConfigSync.instance.syncPersistentUnlocks)
+            {
+                ES3.DeleteKey("TooManyEmotes.UnlockedEmotes", __instance.currentSaveFileName);
+                ES3.DeleteKey("TooManyEmotes.CurrentEmoteCredits.Persistent", __instance.currentSaveFileName);
+            }
+            ES3.DeleteKey("TooManyEmotes.CurrentEmoteCredits", __instance.currentSaveFileName);
+            ES3.DeleteKey("TooManyEmotes.EmoteStoreSeed", __instance.currentSaveFileName);
+
+            HashSet<string> usernames = new HashSet<string>(ES3.Load("TooManyEmotes.UnlockedEmotes.PlayersList", __instance.currentSaveFileName, new string[0]));
+            foreach (string username in SessionManager.unlockedEmotesByPlayer.Keys)
+                usernames.Add(username);
+            foreach (string username in usernames)
+            {
+                if (!ConfigSync.instance.syncPersistentUnlocks)
+                {
+                    ES3.DeleteKey("TooManyEmotes.UnlockedEmotes.Player_" + username, __instance.currentSaveFileName);
+                    ES3.DeleteKey("TooManyEmotes.CurrentEmoteCredits.Persistent.Player_" + username, __instance.currentSaveFileName);
+                }
+                ES3.DeleteKey("TooManyEmotes.CurrentEmoteCredits.Player_" + username, __instance.currentSaveFileName); // This is not the persistent key
+            }
+
+            SessionManager.ResetProgressLocal();
+        }
 
 
 
-        /*[HarmonyPatch(typeof(GameNetworkManager), "SaveLocalPlayerValues")]
+
+
+        [HarmonyPatch(typeof(GameNetworkManager), "SaveLocalPlayerValues")]
         [HarmonyPostfix]
         private static void SaveLocalPlayerValues()
         {
-            if (!SyncManager.isSynced || !ConfigSync.instance.syncPersistentUnlocksGlobal || SessionManager.unlockedEmotes == null)
+            if (!isClient || !SyncManager.isSynced || !ConfigSync.instance.syncPersistentUnlocksGlobal || SessionManager.unlockedEmotes == null)
                 return;
 
-            //Log("Saving local player data.");
             try
             {
-                var saveEmoteNames = new List<string>(globallyUnlockedEmoteNames);
-                foreach (var emote in SessionManager.unlockedEmotes)
+                //var saveEmoteNames = new List<string>(globallyUnlockedEmoteNames);
+                foreach (var emote in SessionManager.emotesUnlockedThisSession)
                 {
-                    if (!emote.complementary && !emote.requiresHeldProp && !saveEmoteNames.Contains(emote.emoteName))
-                        saveEmoteNames.Add(emote.emoteName);
+                    if (!emote.complementary && !emote.requiresHeldProp && !globallyUnlockedEmoteNames.Contains(emote.emoteName))
+                        globallyUnlockedEmoteNames.Add(emote.emoteName);
                 }
-                ES3.Save("UnlockedEmotes", saveEmoteNames.ToArray(), TooManyEmotesSaveFileName);
-                Log("Saved " + saveEmoteNames.Count + " globally unlocked emotes for local player.");
+                ES3.Save("UnlockedEmotes", globallyUnlockedEmoteNames.ToArray(), TooManyEmotesSaveFileName);
+                Log("Saved " + globallyUnlockedEmoteNames.Count + " globally unlocked emotes for local player.");
 
             }
             catch (Exception e)
@@ -169,16 +222,15 @@ namespace TooManyEmotes.Patches
 
         internal static void LoadLocalPlayerValues() // Called from SyncManager.OnSynced()
         {
-            if (!SyncManager.isSynced || !ConfigSync.instance.syncPersistentUnlocksGlobal)
+            if (!isClient || !SyncManager.isSynced || !ConfigSync.instance.syncPersistentUnlocksGlobal)
                 return;
             
-            //Log("Loading local saved data.");
             try
             {
                 string[] loadEmoteNames = ES3.Load("UnlockedEmotes", TooManyEmotesSaveFileName, new string[0]);
                 foreach (string emoteName in loadEmoteNames)
                 {
-                    if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote))
+                    if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote) && !emote.complementary && !emote.requiresHeldProp)
                         SessionManager.UnlockEmoteLocal(emote);
                 }
                 globallyUnlockedEmoteNames.Clear();
@@ -197,35 +249,7 @@ namespace TooManyEmotes.Patches
             Log("Resetting globally unlocked emotes for local player.");
             ES3.DeleteKey("UnlockedEmotes", TooManyEmotesSaveFileName);
             globallyUnlockedEmoteNames?.Clear();
-        }*/
-
-
-
-
-
-        [HarmonyPatch(typeof(GameNetworkManager), "ResetSavedGameValues")]
-        [HarmonyPostfix]
-        public static void ResetUnlockedEmotesList(GameNetworkManager __instance)
-        {
-            if (!__instance.isHostingGame || StartOfRound.Instance == null || SessionManager.unlockedEmotes == null)
-                return;
-
-            Log("Resetting saved game values.");
-
-            ES3.DeleteKey("TooManyEmotes.UnlockedEmotes", __instance.currentSaveFileName);
-            ES3.DeleteKey("TooManyEmotes.CurrentEmoteCredits", __instance.currentSaveFileName);
-            ES3.DeleteKey("TooManyEmotes.EmoteStoreSeed", __instance.currentSaveFileName);
-
-            HashSet<string> usernames = new HashSet<string>(ES3.Load("TooManyEmotes.UnlockedEmotes.PlayersList", __instance.currentSaveFileName, new string[0]));
-            foreach (string username in SessionManager.unlockedEmotesByPlayer.Keys)
-                usernames.Add(username);
-            foreach (string username in usernames)
-            {
-                ES3.DeleteKey("TooManyEmotes.UnlockedEmotes.Player_" + username, __instance.currentSaveFileName);
-                ES3.DeleteKey("TooManyEmotes.CurrentEmoteCredits.Player_" + username, __instance.currentSaveFileName);
-            }
-
-            SessionManager.ResetProgressLocal();
+            SessionManager.emotesUnlockedThisSession?.Clear();
         }
 
 
@@ -257,7 +281,7 @@ namespace TooManyEmotes.Patches
         {
             Log("Resetting favorited emotes for local player.");
             ES3.DeleteKey("TooManyEmotes.FavoriteEmotes");
-            SessionManager.unlockedFavoriteEmotes.Clear();
+            SessionManager.unlockedFavoriteEmotes?.Clear();
             SessionManager.UpdateUnlockedFavoriteEmotes();
         }
     }

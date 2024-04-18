@@ -46,7 +46,7 @@ namespace TooManyEmotesScrap.Props
             if (ConfigSync.instance.syncEnableGrabbableEmoteProps)
             {
                 AddGrabbableEmotePropsMoons();
-                RemoveComplementaryEmotesFromPropsFromUnlockedEmotes();
+                RemoveComplementaryPropEmotesFromUnlockedEmotes();
             }
             else
                 RemoveGrabbableEmotePropsMoons(); // Should be unnecessary, but just in case
@@ -380,18 +380,18 @@ namespace TooManyEmotesScrap.Props
         }
 
 
-        public static void RemoveComplementaryEmotesFromPropsFromUnlockedEmotes()
+        public static void RemoveComplementaryPropEmotesFromUnlockedEmotes()
         {
             if (ConfigSync.instance.syncUnlockEverything)
                 return;
 
-            foreach (var emotePropData in emotePropsData)
+            foreach (var emotePropData in grabbableEmotePropsData)
             {
                 if (emotePropData.parentEmotes != null)
                 {
                     foreach (var emote in emotePropData.parentEmotes)
                     {
-                        if (emote != null && emote.complementary)
+                        if (emote != null && emote.complementary && emote.requiresHeldProp)
                         {
                             SessionManager.unlockedEmotes.Remove(emote);
                             EmotesManager.complementaryEmotes.Remove(emote);

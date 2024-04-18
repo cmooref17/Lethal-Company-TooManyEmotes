@@ -16,7 +16,6 @@ namespace TooManyEmotesScrap
     {
         private Harmony _harmony;
         public static Plugin instance;
-
         public static ManualLogSource defaultLogger { get { return instance.Logger; } }
 
         private void Awake()

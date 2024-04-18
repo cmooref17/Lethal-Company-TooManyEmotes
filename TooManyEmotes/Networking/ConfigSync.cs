@@ -1,5 +1,4 @@
-﻿using BepInEx.Configuration;
-using GameNetcodeStuff;
+﻿using GameNetcodeStuff;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
@@ -7,8 +6,6 @@ using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
-using System.Threading.Tasks;
 using TooManyEmotes.Config;
 using TooManyEmotes.Patches;
 using Unity.Collections;
@@ -18,7 +15,6 @@ using TooManyEmotes.Audio;
 using TooManyEmotes.Props;
 using static TooManyEmotes.CustomLogging;
 using static TooManyEmotes.HelperTools;
-using TooManyEmotes.Compatibility;
 
 namespace TooManyEmotes.Networking
 {
@@ -33,10 +29,9 @@ namespace TooManyEmotes.Networking
         public bool syncUnlockEverything;
         public bool syncShareEverything;
         public bool syncPersistentUnlocks;
-        //public bool syncPersistentUnlocksGlobal;
+        public bool syncPersistentUnlocksGlobal;
         public bool syncPersistentEmoteCredits;
         public bool syncSyncUnsharedEmotes;
-        //public bool syncEnableMovingWhileEmoting;
         public bool syncDisableRaritySystem;
         public bool syncEnableGrabbableEmoteProps;
 
@@ -70,7 +65,6 @@ namespace TooManyEmotes.Networking
         public static Vector2 syncMaskedEnemyEmoteRandomDelay;
         public static Vector2 syncMaskedEnemyEmoteRandomDuration;
 
-
         public static HashSet<ulong> syncedClients;
 
 
@@ -79,14 +73,14 @@ namespace TooManyEmotes.Networking
             syncUnlockEverything = ConfigSettings.unlockEverything.Value;
             syncShareEverything = syncUnlockEverything || ConfigSettings.shareEverything.Value;
             syncPersistentUnlocks = !syncUnlockEverything && ConfigSettings.persistentUnlocks.Value;
-            //syncPersistentUnlocksGlobal = syncPersistentUnlocks && ConfigSettings.persistentUnlocksGlobal.Value;
-            syncPersistentEmoteCredits = syncPersistentUnlocks /* && !syncPersistentUnlocksGlobal*/ && ConfigSettings.persistentEmoteCredits.Value;
+            syncPersistentUnlocksGlobal = syncPersistentUnlocks && ConfigSettings.persistentUnlocksGlobal.Value;
+            syncPersistentEmoteCredits = syncPersistentUnlocks && !syncPersistentUnlocksGlobal && ConfigSettings.persistentEmoteCredits.Value;
             syncSyncUnsharedEmotes = ConfigSettings.syncUnsharedEmotes.Value;
             syncDisableRaritySystem = ConfigSettings.disableRaritySystem.Value;
 
             syncEnableGrabbableEmoteProps = ConfigSettings.enableGrabbableEmoteProps.Value;
 
-            syncStartingEmoteCredits = ConfigSettings.startingEmoteCredits.Value;
+            syncStartingEmoteCredits = !syncPersistentUnlocksGlobal ? ConfigSettings.startingEmoteCredits.Value : 0;
             syncAddEmoteCreditsMultiplier = ConfigSettings.addEmoteCreditsMultiplier.Value;
             syncPurchaseEmotesWithDefaultCurrency = ConfigSettings.purchaseEmotesWithDefaultCurrency.Value;
 
@@ -194,7 +188,7 @@ namespace TooManyEmotes.Networking
 
         public static void RequestConfigSync()
         {
-            if (NetworkManager.Singleton.IsClient)
+            if (isClient)
             {
                 Log("Requesting config sync from server");
                 var writer = new FastBufferWriter(0, Allocator.Temp);
@@ -207,7 +201,7 @@ namespace TooManyEmotes.Networking
 
         private static void OnRequestConfigSyncServerRpc(ulong clientId, FastBufferReader reader)
         {
-            if (!NetworkManager.Singleton.IsServer)
+            if (!isServer)
                 return;
 
             Log("Receiving config sync request from client: " + clientId);
@@ -223,7 +217,7 @@ namespace TooManyEmotes.Networking
 
         private static void OnRequestConfigSyncClientRpc(ulong clientId, FastBufferReader reader)
         {
-            if (!NetworkManager.Singleton.IsClient)
+            if (!isClient)
                 return;
 
             int dataLength;
@@ -237,6 +231,7 @@ namespace TooManyEmotes.Networking
                 syncMaskedEnemyEmoteRandomDelay = new Vector2(instance.syncMaskedEnemyEmoteRandomDelayMin, instance.syncMaskedEnemyEmoteRandomDelayMax);
                 syncMaskedEnemyEmoteRandomDuration = new Vector2(instance.syncMaskedEnemyEmoteRandomDurationMin, instance.syncMaskedEnemyEmoteRandomDurationMax);
 
+                isSynced = true;
                 OnSynced();
 
                 if (EmotesManager.allUnlockableEmotes != null && SessionManager.unlockedEmotes != null)
@@ -248,7 +243,6 @@ namespace TooManyEmotes.Networking
                         SessionManager.UnlockEmotesLocal(EmotesManager.complementaryEmotes);
                     SessionManager.UpdateUnlockedFavoriteEmotes();
                 }
-                isSynced = true;
                 return;
             }
             LogError("Error receiving sync from server.");

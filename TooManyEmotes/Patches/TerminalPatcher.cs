@@ -20,6 +20,7 @@ using DunGen;
 using Unity.Netcode;
 using TooManyEmotes.Compatibility;
 using static TooManyEmotes.CustomLogging;
+using static TooManyEmotes.HelperTools;
 
 namespace TooManyEmotes.Patches
 {
@@ -226,7 +227,7 @@ namespace TooManyEmotes.Patches
                 input = input.Replace("emote cheat ", "");
                 if (input.StartsWith("rotate"))
                 {
-                    SyncManager.RotateEmoteSelectionServerRpc();
+                    SyncManager.RotateEmoteSelectionServer();
                     __result = BuildCustomTerminalNode("Rotated emotes.\n------------------------------\n[[[emoteUnlockablesSelectionList]]]\n\n", clearPreviousText: true);
                 }
 
@@ -319,18 +320,16 @@ namespace TooManyEmotes.Patches
         public static void RotateEmoteSelectionPerQuota()
         {
             if (NetworkManager.Singleton.IsServer)
-                SyncManager.RotateEmoteSelectionServerRpc();
+                SyncManager.RotateEmoteSelectionServer();
         }
 
 
         public static void RotateNewEmoteSelection()
         {
-
-            int seed = emoteStoreSeed;
+            int seed = emoteStoreSeed + (ConfigSync.instance.syncPersistentUnlocks ? 1000 : 0);
             if (!ConfigSync.instance.syncShareEverything)
             {
-                int localClientId = StartOfRound.Instance.localPlayerController != null ? (int)StartOfRound.Instance.localPlayerController.playerClientId : 0;
-                Log("EmoteStoreSeed: " + emoteStoreSeed + " LocalPlayerNull: " + (StartOfRound.Instance.localPlayerController == null ? "NULL" : "NOT NULL - ClientId: " + StartOfRound.Instance.localPlayerController.playerClientId) + " GotClientId: " + localClientId);
+                int localClientId = StartOfRound.Instance.localPlayerController != null ? (int)localPlayerController.playerClientId : 0;
                 seed += localClientId;
             }
 
@@ -377,7 +376,7 @@ namespace TooManyEmotes.Patches
             var notUnlocked = new List<UnlockableEmote>();
             foreach (var emote in emoteList)
             {
-                if (!SessionManager.IsEmoteUnlocked(emote) && !emoteSelection.Contains(emote) && emote.purchasable)
+                if (!SessionManager.IsEmoteUnlocked(emote) && !emoteSelection.Contains(emote) && emote.purchasable && !emote.requiresHeldProp)
                     notUnlocked.Add(emote);
             }
             if (notUnlocked.Count > 0)

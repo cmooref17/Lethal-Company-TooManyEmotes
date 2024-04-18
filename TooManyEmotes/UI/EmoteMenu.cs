@@ -19,7 +19,7 @@ using System.Linq;
 namespace TooManyEmotes.UI
 {
     [HarmonyPatch]
-    public static class EmoteMenuManager
+    public static class EmoteMenu
     {
         public static GameObject menuGameObject;
         public static RectTransform menuTransform;
@@ -781,7 +781,7 @@ namespace TooManyEmotes.UI
         public void OnHover(bool hovered = true)
         {
             Color newColor = baseColor * (hovered ? 1f : 0.5f);
-            newColor.a = hovered ? EmoteMenuManager.hoveredAlpha : EmoteMenuManager.unhoveredAlpha;
+            newColor.a = hovered ? EmoteMenu.hoveredAlpha : EmoteMenu.unhoveredAlpha;
             backgroundImage.color = newColor;
         }
     }
@@ -808,20 +808,20 @@ namespace TooManyEmotes.UI
 
         public void OnHover(bool hovered = true)
         {
-            Color newColor = (EmoteMenuManager.currentLoadoutIndex == id ? EmoteMenuManager.selectedLoadoutUIColor : EmoteMenuManager.defaultUIColor) * (hovered ? 1f : 0.5f);
-            newColor.a = hovered ? EmoteMenuManager.hoveredAlpha : EmoteMenuManager.unhoveredAlpha;
+            Color newColor = (EmoteMenu.currentLoadoutIndex == id ? EmoteMenu.selectedLoadoutUIColor : EmoteMenu.defaultUIColor) * (hovered ? 1f : 0.5f);
+            newColor.a = hovered ? EmoteMenu.hoveredAlpha : EmoteMenu.unhoveredAlpha;
             backgroundImage.color = newColor;
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            EmoteMenuManager.OnHoveredNewLoadoutElement(id);
+            EmoteMenu.OnHoveredNewLoadoutElement(id);
             OnHover(true);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            EmoteMenuManager.OnHoveredNewLoadoutElement(-1);
+            EmoteMenu.OnHoveredNewLoadoutElement(-1);
             OnHover(false);
         }
     }

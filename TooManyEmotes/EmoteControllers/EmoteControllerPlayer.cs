@@ -376,8 +376,19 @@ namespace TooManyEmotes
                 sourceGrabbableEmoteProp = sourcePropObject;
 
             bool success = PerformEmote(emote, overrideEmoteId, doNotTriggerAudio);
-            if (!isPerformingEmote)
+            if (isPerformingEmote)
+            {
+                if (!isLocalPlayer)
+                {
+                    if (SyncManager.isSynced && ConfigSync.instance.syncPersistentUnlocksGlobal && !SessionManager.unlockedEmotesByPlayer.TryGetValue(playerController.playerUsername, out var unlockedEmotes) && !unlockedEmotes.Contains(performingEmote))
+                    {
+                        SessionManager.UnlockEmoteLocal(emote.emoteId, playerUsername: playerController.playerUsername);
+                    }
+                }
+            }
+            else
                 StopPerformingEmote();
+
             return success;
         }
 

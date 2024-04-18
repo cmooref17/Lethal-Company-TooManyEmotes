@@ -185,7 +185,7 @@
     <Compile Include="Props\GrabbableEmotePropManager.cs" />
     <Compile Include="Props\GrabbablePropObject.cs" />
     <Compile Include="UI\AnimationPreviewer.cs" />
-    <Compile Include="UI\EmoteMenuManager.cs" />
+    <Compile Include="UI\EmoteMenu.cs" />
     <Compile Include="Patches\DressGirlVisibilityPatcher.cs" />
     <Compile Include="Props\EmotePropManager.cs" />
     <Compile Include="Patches\LocomotionEmotePatcher.cs" />

@@ -44,8 +44,8 @@ namespace TooManyEmotes.Input
 
         public static void UpdateControlTipLines()
         {
-            if (EmoteMenuManager.isMenuOpen)
-                EmoteMenuManager.UpdateControlTipLines();
+            if (EmoteMenu.isMenuOpen)
+                EmoteMenu.UpdateControlTipLines();
 
             for (int i = 0; i < HUDManager.Instance.controlTipLines.Length; i++)
             {

@@ -144,7 +144,7 @@ namespace TooManyEmotes.Input
             PerformSelectedEmoteAction.performed += OnSelectEmoteUI;
 
             ThumbStickAction.Enable();
-            ThumbStickAction.performed += EmoteMenuManager.OnUpdateThumbStickAngle;
+            ThumbStickAction.performed += EmoteMenu.OnUpdateThumbStickAngle;
             RawScrollAction.Enable();
         }
 
@@ -179,40 +179,40 @@ namespace TooManyEmotes.Input
             PerformSelectedEmoteAction.performed -= OnSelectEmoteUI;
 
             ThumbStickAction.Disable();
-            ThumbStickAction.performed -= EmoteMenuManager.OnUpdateThumbStickAngle;
+            ThumbStickAction.performed -= EmoteMenu.OnUpdateThumbStickAngle;
             RawScrollAction.Disable();
         }
 
 
         public static void OnPrevEmotePage(InputAction.CallbackContext context)
         {
-            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || !EmoteMenuManager.isMenuOpen || !context.performed)
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || !EmoteMenu.isMenuOpen || !context.performed)
                 return;
-            EmoteMenuManager.SwapPrevPage();
+            EmoteMenu.SwapPrevPage();
         }
 
 
         public static void OnNextEmotePage(InputAction.CallbackContext context)
         {
-            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || !EmoteMenuManager.isMenuOpen || !context.performed)
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || !EmoteMenu.isMenuOpen || !context.performed)
                 return;
-            EmoteMenuManager.SwapNextPage();
+            EmoteMenu.SwapNextPage();
         }
 
         public static void OnEmoteLoadoutUp(InputAction.CallbackContext context)
         {
-            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || !EmoteMenuManager.isMenuOpen || !context.performed)
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || !EmoteMenu.isMenuOpen || !context.performed)
                 return;
 
-            EmoteMenuManager.SetCurrentEmoteLoadout(EmoteMenuManager.currentLoadoutIndex != 0 ? EmoteMenuManager.currentLoadoutIndex - 1 : EmoteMenuManager.numLoadouts - 1);
+            EmoteMenu.SetCurrentEmoteLoadout(EmoteMenu.currentLoadoutIndex != 0 ? EmoteMenu.currentLoadoutIndex - 1 : EmoteMenu.numLoadouts - 1);
         }
 
         public static void OnEmoteLoadoutDown(InputAction.CallbackContext context)
         {
-            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || !EmoteMenuManager.isMenuOpen || !context.performed)
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || !EmoteMenu.isMenuOpen || !context.performed)
                 return;
 
-            EmoteMenuManager.SetCurrentEmoteLoadout((EmoteMenuManager.currentLoadoutIndex + 1) % EmoteMenuManager.numLoadouts);
+            EmoteMenu.SetCurrentEmoteLoadout((EmoteMenu.currentLoadoutIndex + 1) % EmoteMenu.numLoadouts);
         }
 
 
@@ -222,23 +222,23 @@ namespace TooManyEmotes.Input
             if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
 
-            if (!EmoteMenuManager.isMenuOpen)
+            if (!EmoteMenu.isMenuOpen)
             {
-                if (context.performed && EmoteMenuManager.CanOpenEmoteMenu())
-                    EmoteMenuManager.OpenEmoteMenu();
+                if (context.performed && EmoteMenu.CanOpenEmoteMenu())
+                    EmoteMenu.OpenEmoteMenu();
             }
             else
             {
                 if (ConfigSettings.toggleEmoteMenu.Value || StartOfRound.Instance.localPlayerUsingController)
                 {
                     if (context.performed)
-                        EmoteMenuManager.CloseEmoteMenu();
+                        EmoteMenu.CloseEmoteMenu();
                 }
                 else if (context.canceled)
                 {
-                    if (EmoteMenuManager.hoveredEmoteIndex != -1)
+                    if (EmoteMenu.hoveredEmoteIndex != -1)
                         PerformEmoteLocal(context);
-                    EmoteMenuManager.CloseEmoteMenu();
+                    EmoteMenu.CloseEmoteMenu();
                 }
             }
         }
@@ -248,15 +248,15 @@ namespace TooManyEmotes.Input
         {
             if (localPlayerController == null || !context.performed)
                 return;
-            if (!EmoteMenuManager.isMenuOpen)
+            if (!EmoteMenu.isMenuOpen)
                 return;
 
-            if (EmoteMenuManager.hoveredLoadoutUIIndex != -1 && EmoteMenuManager.hoveredLoadoutUIIndex != EmoteMenuManager.currentLoadoutIndex)
-                EmoteMenuManager.SetCurrentEmoteLoadout(EmoteMenuManager.hoveredLoadoutUIIndex);
-            else if (EmoteMenuManager.hoveredEmoteIndex >= 0 && EmoteMenuManager.hoveredEmoteIndex < EmoteMenuManager.currentLoadoutEmotesList.Count)
+            if (EmoteMenu.hoveredLoadoutUIIndex != -1 && EmoteMenu.hoveredLoadoutUIIndex != EmoteMenu.currentLoadoutIndex)
+                EmoteMenu.SetCurrentEmoteLoadout(EmoteMenu.hoveredLoadoutUIIndex);
+            else if (EmoteMenu.hoveredEmoteIndex >= 0 && EmoteMenu.hoveredEmoteIndex < EmoteMenu.currentLoadoutEmotesList.Count)
             {
                 PerformEmoteLocal(context);
-                EmoteMenuManager.CloseEmoteMenu();
+                EmoteMenu.CloseEmoteMenu();
             }
         }
 
@@ -265,10 +265,10 @@ namespace TooManyEmotes.Input
         {
             if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
-            if (EmoteMenuManager.hoveredEmoteIndex < 0 || EmoteMenuManager.hoveredEmoteIndex >= EmoteMenuManager.currentLoadoutEmotesList.Count || ConfigSettings.disableEmotesForSelf.Value || EmoteControllerPlayer.emoteControllerLocal == null)
+            if (EmoteMenu.hoveredEmoteIndex < 0 || EmoteMenu.hoveredEmoteIndex >= EmoteMenu.currentLoadoutEmotesList.Count || ConfigSettings.disableEmotesForSelf.Value || EmoteControllerPlayer.emoteControllerLocal == null)
                 return;
 
-            UnlockableEmote emote = EmoteMenuManager.currentLoadoutEmotesList[EmoteMenuManager.hoveredEmoteIndex];
+            UnlockableEmote emote = EmoteMenu.currentLoadoutEmotesList[EmoteMenu.hoveredEmoteIndex];
             if (emote != null)
                 EmoteControllerPlayer.emoteControllerLocal.TryPerformingEmoteLocal(emote);
         }
@@ -278,10 +278,10 @@ namespace TooManyEmotes.Input
         {
             if (localPlayerController == null || !context.performed)
                 return;
-            if (!EmoteMenuManager.isMenuOpen || EmoteMenuManager.hoveredEmoteUIIndex == -1 || EmoteMenuManager.previewingEmote == null)
+            if (!EmoteMenu.isMenuOpen || EmoteMenu.hoveredEmoteUIIndex == -1 || EmoteMenu.previewingEmote == null)
                 return;
 
-            EmoteMenuManager.ToggleFavoriteHoveredEmote();
+            EmoteMenu.ToggleFavoriteHoveredEmote();
         }
 
 

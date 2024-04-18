@@ -12,7 +12,7 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<bool> unlockEverything;
         public static ConfigEntry<bool> shareEverything;
         public static ConfigEntry<bool> persistentUnlocks;
-        //public static ConfigEntry<bool> persistentUnlocksGlobal;
+        public static ConfigEntry<bool> persistentUnlocksGlobal;
         public static ConfigEntry<bool> persistentEmoteCredits;
         public static ConfigEntry<bool> syncUnsharedEmotes;
 
@@ -48,7 +48,6 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<string> maskedEnemyEmoteRandomDelay;
         public static ConfigEntry<string> maskedEnemyEmoteRandomDuration;
 
-        //public static ConfigEntry<int> numMysteryEmotesStoreRotation;
         public static ConfigEntry<string> openEmoteMenuKeybind;
         public static ConfigEntry<bool> toggleEmoteMenu;
         public static ConfigEntry<bool> reverseEmoteWheelScrollDirection;
@@ -64,11 +63,6 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<string> quickEmoteFavorite7Keybind;
         public static ConfigEntry<string> quickEmoteFavorite8Keybind;
 
-        public static ConfigEntry<string> emoteNameColorTier0;
-        public static ConfigEntry<string> emoteNameColorTier1;
-        public static ConfigEntry<string> emoteNameColorTier2;
-        public static ConfigEntry<string> emoteNameColorTier3;
-
         public static ConfigEntry<bool> disableBoomboxRequirement;
         public static ConfigEntry<bool> disableAudioShipSpeaker;
         public static ConfigEntry<float> baseEmoteAudioVolume;
@@ -76,14 +70,21 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<float> emoteAudioIncreasePerPlayerSyncing;
         public static ConfigEntry<float> emoteAudioMinDistance;
         public static ConfigEntry<float> emoteAudioMaxDistance;
-        //public static ConfigEntry<bool> scaleEmoteAudioWithBoombox;
+
+        public static ConfigEntry<string> emoteNameColorTier0;
+        public static ConfigEntry<string> emoteNameColorTier1;
+        public static ConfigEntry<string> emoteNameColorTier2;
+        public static ConfigEntry<string> emoteNameColorTier3;
 
         public static ConfigEntry<bool> enableGirlPatch;
         public static ConfigEntry<bool> resetFavoriteOnNextStart;
-        //public static ConfigEntry<bool> resetGlobalUnlocksOnNextStart;
+        public static ConfigEntry<bool> resetGlobalUnlocksOnNextStart;
 
         public static Dictionary<string, ConfigEntryBase> currentConfigEntries = new Dictionary<string, ConfigEntryBase>();
         public static List<string> configSections = new List<string>();
+
+        internal static bool resetFavoriteEmotes = false;
+        internal static bool resetGloballyUnlockedEmotes = false;
 
         public static void BindConfigSettings()
         {
@@ -91,9 +92,9 @@ namespace TooManyEmotes.Config
 
             unlockEverything = AddConfigEntry("Emote Settings", "I am a Party Pooper", false, "[Host only] If true, every emote will be unlocked at the start of the game. (You're not really a party pooper)");
             shareEverything = AddConfigEntry("Emote Settings", "ShareEverything", false, "[Host only] This setting will be ignored if \"I am a Party Pooper\" is enabled. If this setting is set to false, emotes in the store will be different for each player. Unlocking emotes will only unlock for the player that purchased the emote. Each player will have their own emote credits. The amount of emote credits that each player will receive will NOT be reduced.");
-            persistentUnlocks = AddConfigEntry("Emote Settings", "PersistentUnlocks", true, "[Host only] If enabled, emotes will be unlocked per save, and will not reset upon ship resets, unless a new save is created.\nNOTE: This setting (as well as the other persistent settings) will be disabled if UnlockEverything (I am a Party Pooper) is enabled.");
-            //persistentUnlocksGlobal = AddConfigEntry("Emote Settings", "PersistentUnlocksGlobal", true, "[Host only] If enabled, emotes will be permanently unlocked for your character, and will be available when playing on any save. Only applies if PersistentUnlocks is set to true.\nIf ShareEverything is enabled, emotes that the host already has unlocked will NOT unlock for you upon joining the game, unless you also have them unlocked.\nIf ShareEverything is enabled, emotes unlocked by other players will still permanently unlock for your character.");
-            persistentEmoteCredits = AddConfigEntry("Emote Settings", "PersistentEmoteCredits", false, "[Host only] If enabled, emote credits will not reset upon ship resets. Only applies if PersistentUnlocks is enabled."); // This setting will be disabled if PersistentUnlocksGlobal is enabled by the host."
+            persistentUnlocks = AddConfigEntry("Emote Settings", "PersistentUnlocks", false, "[Host only] If enabled, emotes will be unlocked per save, and will not reset upon ship resets, unless a new save is created.\nNOTE: This setting (as well as the other persistent settings) will be disabled if UnlockEverything (I am a Party Pooper) is enabled.");
+            persistentUnlocksGlobal = AddConfigEntry("Emote Settings", "PersistentUnlocksGlobal", false, "[Host only] If enabled, emotes will be permanently unlocked for your character, and will be available when playing on any save. Only applies if PersistentUnlocks is set to true.\nIf ShareEverything is enabled, emotes that the host already has unlocked will NOT unlock for you upon joining the game, unless you also have them unlocked.\nIf ShareEverything is enabled, emotes unlocked by other players DURING the session will still permanently unlock for your character.\nNOTE: If enabled, all config settings are subject to be limited, or forced to their default values, in order to prevent unlocking emotes globally too fast. These settings may include starting emote credits, emote credits earned, number of emotes in store rotation, etc.");
+            persistentEmoteCredits = AddConfigEntry("Emote Settings", "PersistentEmoteCredits", false, "[Host only] If enabled, emote credits will not reset upon ship resets. Only applies if PersistentUnlocks is enabled.\nThis setting will be disabled if PersistentUnlocksGlobal is enabled.");
             syncUnsharedEmotes = AddConfigEntry("Emote Settings", "CanSyncUnsharedEmotes", true, "[Host only] Only applies if ShareEverything is false. If set to true, players will be able to sync emotes with other players, even if they do not have the emote being performed unlocked.");
 
             disableEmotesForSelf = AddConfigEntry("Emote Settings", "DisableEmotingForSelf", false, "Disabling this will not convert your player's animator controller to an AnimatorOverrideController, and you will not be able to perform custom emotes. Disable this in case of specific mod conflicts. You will still be able to see other players emoting.");
@@ -145,11 +146,6 @@ namespace TooManyEmotes.Config
             quickEmoteFavorite8Keybind = AddConfigEntry("Emote Radial Menu", "Perform Favorite Emote 8 Keybind", "", "Hotkey for performing favorite emote 8. This keybind will also be used to assign favorited emotes to a hotkey in the emote menu, favorites tab. NOTE: This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
             */
 
-            emoteNameColorTier0 = AddConfigEntry("Accessibility", "EmoteNameColorCommon", "#00FF00", "The color of the [common] emote name in the terminal.");
-            emoteNameColorTier1 = AddConfigEntry("Accessibility", "EmoteNameColorRare", "#2828FF", "The color of the [rare] emote name in the terminal.");
-            emoteNameColorTier2 = AddConfigEntry("Accessibility", "EmoteNameColorEpic", "#AA00EE", "The color of the [epic] emote name in the terminal.");
-            emoteNameColorTier3 = AddConfigEntry("Accessibility", "EmoteNameColorLegendary", "#FF2222", "The color of the [legendary] emote name in the terminal.");
-
             disableBoomboxRequirement = AddConfigEntry("Emote Audio", "DisableBoomboxRequirement", false, "If set to true, emote audio that normally requires a nearby boombox will be played from your character instead.");
             disableAudioShipSpeaker = AddConfigEntry("Emote Audio", "DisableAudioOnShipSpeaker", false, "[Host only] This does nothing if DisableBoomboxRequirement is true. This setting is host only to ensure no de-synced audio sources.");
             baseEmoteAudioVolume = AddConfigEntry("Emote Audio", "BaseEmoteAudioVolume", 0.25f, "The base emote audio volume. The volume slider in the emote menu will be based off of this value.");
@@ -157,25 +153,29 @@ namespace TooManyEmotes.Config
             emoteAudioIncreasePerPlayerSyncing = AddConfigEntry("Emote Audio", "VolumeGainPerPlayerSyncingEmote", 0.05f, "By how much emote audio volume will increase by per player syncing with that emote.");
             emoteAudioMinDistance = AddConfigEntry("Emote Audio", "MinAudioDistance", 10f, "The range from an emote audio source at which the volume will start to fade.");
             emoteAudioMaxDistance = AddConfigEntry("Emote Audio", "MaxAudioDistance", 40f, "The range from an emote audio source at which the audio can no longer be heard.");
-            //scaleEmoteAudioWithBoombox = AddConfigEntry("Emote Audio", "ScaleEmoteAudioVolumeWithBaseBoombox", true, "If true, emote audio that plays from a boombox will be scaled with the in-game's boombox volume. This may help with compatibility with mods that allow changing the boombox volume.");
+            
+            emoteNameColorTier0 = AddConfigEntry("Accessibility", "EmoteNameColorCommon", "#00FF00", "The color of the [common] emote name in the terminal.");
+            emoteNameColorTier1 = AddConfigEntry("Accessibility", "EmoteNameColorRare", "#2828FF", "The color of the [rare] emote name in the terminal.");
+            emoteNameColorTier2 = AddConfigEntry("Accessibility", "EmoteNameColorEpic", "#AA00EE", "The color of the [epic] emote name in the terminal.");
+            emoteNameColorTier3 = AddConfigEntry("Accessibility", "EmoteNameColorLegendary", "#FF2222", "The color of the [legendary] emote name in the terminal.");
 
             enableGirlPatch = AddConfigEntry("Other", "EnableGirlPatch", true, "If true, this mod will disable the girl's mesh while she's un the \"unrendered\" layer to prevent the third-person emote camera from seeing her when not supposed do. Disable this if this causes conflicts with another mod.");
-            resetFavoriteOnNextStart = AddConfigEntry("Other", "ResetFavoritedEmotesOnNextStart", false, "Set this to true to force remove all emotes from your favorites when the game starts up next. This may resolve any issues that might be related to having favorited emotes that don't exist.");
-            //resetGlobalUnlocksOnNextStart = AddConfigEntry("Other", "ResetGlobalUnlocksOnNextStart", false, "Set this to true to force reset all globally unlocked emotes for your local player. These emotes are only usable when the host has PersistentUnlocksGlobal enabled in the config.");
+            resetFavoriteOnNextStart = AddConfigEntry("Other", "ResetFavoritedEmotesOnNextStart", false, "Set this to true to force remove all emotes from your favorites when the game starts up next. This may resolve any issues that might be related to having favorited emotes that don't exist.\nThis setting will reset back to false once reset.");
+            resetGlobalUnlocksOnNextStart = AddConfigEntry("Other", "ResetGlobalUnlocksOnNextStart", false, "Set this to true to force reset all globally unlocked emotes for your local player. These emotes are only usable when the host has PersistentUnlocksGlobal enabled in the config.\nThis setting will reset back to false once reset.");
 
             if (resetFavoriteOnNextStart.Value)
             {
-                SaveManager.ResetFavoritedEmotes();
+                resetFavoriteEmotes = true;
                 resetFavoriteOnNextStart.Value = false;
                 Plugin.instance.Config.Save();
             }
 
-            /*if (resetGlobalUnlocksOnNextStart.Value)
+            if (resetGlobalUnlocksOnNextStart.Value)
             {
-                SaveManager.ResetGloballyUnlockedEmotes();
+                resetGloballyUnlockedEmotes = true;
                 resetGlobalUnlocksOnNextStart.Value = false;
                 Plugin.instance.Config.Save();
-            }*/
+            }
 
             // fix weights
             float totalChances = rotationChanceEmoteTier0.Value;
@@ -203,12 +203,14 @@ namespace TooManyEmotes.Config
             return configEntry;
         }
 
+
         public static void TryRemoveOldConfigSettings()
         {
             HashSet<string> headers = new HashSet<string>();
             HashSet<string> keys = new HashSet<string>();
 
-            foreach (ConfigEntryBase entry in currentConfigEntries.Values) {
+            foreach (ConfigEntryBase entry in currentConfigEntries.Values)
+            {
                 headers.Add(entry.Definition.Section);
                 keys.Add(entry.Definition.Key);
             }
