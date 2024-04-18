@@ -33,6 +33,7 @@ namespace TooManyEmotes.Networking
         public bool syncUnlockEverything;
         public bool syncShareEverything;
         public bool syncPersistentUnlocks;
+        //public bool syncPersistentUnlocksGlobal;
         public bool syncPersistentEmoteCredits;
         public bool syncSyncUnsharedEmotes;
         //public bool syncEnableMovingWhileEmoting;
@@ -77,10 +78,10 @@ namespace TooManyEmotes.Networking
         {
             syncUnlockEverything = ConfigSettings.unlockEverything.Value;
             syncShareEverything = syncUnlockEverything || ConfigSettings.shareEverything.Value;
-            syncPersistentUnlocks = ConfigSettings.persistentUnlocks.Value;
-            syncPersistentEmoteCredits = syncPersistentUnlocks && ConfigSettings.persistentEmoteCredits.Value;
+            syncPersistentUnlocks = !syncUnlockEverything && ConfigSettings.persistentUnlocks.Value;
+            //syncPersistentUnlocksGlobal = syncPersistentUnlocks && ConfigSettings.persistentUnlocksGlobal.Value;
+            syncPersistentEmoteCredits = syncPersistentUnlocks /* && !syncPersistentUnlocksGlobal*/ && ConfigSettings.persistentEmoteCredits.Value;
             syncSyncUnsharedEmotes = ConfigSettings.syncUnsharedEmotes.Value;
-            //syncEnableMovingWhileEmoting = ConfigSettings.enableMovingWhileEmoting.Value;
             syncDisableRaritySystem = ConfigSettings.disableRaritySystem.Value;
 
             syncEnableGrabbableEmoteProps = ConfigSettings.enableGrabbableEmoteProps.Value;
@@ -111,13 +112,6 @@ namespace TooManyEmotes.Networking
             syncMaskedEnemyEmoteRandomDurationMax = syncMaskedEnemyEmoteRandomDuration.y;
 
             syncDisableAudioShipSpeaker = ConfigSettings.disableAudioShipSpeaker.Value;
-
-            if (syncUnlockEverything)
-            {
-                syncShareEverything = true;
-                syncPersistentUnlocks = false;
-            }
-            //syncNumMysteryEmotesStoreRotation = ConfigSettings.numMysteryEmotesStoreRotation.Value;
 
             if (ConfigSettings.disableRaritySystem.Value)
             {

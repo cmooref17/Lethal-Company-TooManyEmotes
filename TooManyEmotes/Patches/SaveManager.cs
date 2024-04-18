@@ -11,6 +11,10 @@ namespace TooManyEmotes.Patches
     [HarmonyPatch]
     public static class SaveManager
     {
+        public static string TooManyEmotesSaveFileName = "TooManyEmotes_LocalSaveData";
+        //private static List<string> globallyUnlockedEmoteNames = new List<string>();
+
+
         [HarmonyPatch(typeof(GameNetworkManager), "SaveGameValues")]
         [HarmonyPostfix]
         public static void SaveUnlockedEmotes(GameNetworkManager __instance)
@@ -22,6 +26,8 @@ namespace TooManyEmotes.Patches
 
             try
             {
+                //if (!ConfigSync.instance.syncPersistentUnlocksGlobal)
+                //{
                 HashSet<string> usernames = new HashSet<string>(ES3.Load("TooManyEmotes.UnlockedEmotes.PlayersList", currentSaveFileName, new string[0]));
                 foreach (string username in SessionManager.unlockedEmotesByPlayer.Keys)
                     usernames.Add(username);
@@ -53,6 +59,7 @@ namespace TooManyEmotes.Patches
                             ES3.Save("TooManyEmotes.CurrentEmoteCredits.Player_" + username, TerminalPatcher.currentEmoteCreditsByPlayer[username], __instance.currentSaveFileName);
                     }
                 }
+                //}
 
                 ES3.Save("TooManyEmotes.EmoteStoreSeed", TerminalPatcher.emoteStoreSeed, __instance.currentSaveFileName);
 
@@ -61,9 +68,9 @@ namespace TooManyEmotes.Patches
                 Log("Saved Seed: " + TerminalPatcher.emoteStoreSeed);
             }
 
-            catch (Exception arg)
+            catch (Exception e)
             {
-                LogError(string.Format("Error while trying to save TooManyEmotes values when disconnecting as host: {0}", arg));
+                LogError("Error while trying to save TooManyEmotes values when disconnecting as host: " + e);
             }
         }
 
@@ -123,13 +130,79 @@ namespace TooManyEmotes.Patches
                 Log("Loaded CurrentEmoteCredits: " + TerminalPatcher.currentEmoteCredits);
                 Log("Loaded Seed: " + TerminalPatcher.emoteStoreSeed);
             }
-            catch (Exception arg)
+            catch (Exception e)
             {
-                LogError("Error while trying to load TooManyEmotes values: " + arg);
+                LogError("Error while trying to load TooManyEmotes values: " + e);
             }
         }
 
-        
+
+
+
+
+        /*[HarmonyPatch(typeof(GameNetworkManager), "SaveLocalPlayerValues")]
+        [HarmonyPostfix]
+        private static void SaveLocalPlayerValues()
+        {
+            if (!SyncManager.isSynced || !ConfigSync.instance.syncPersistentUnlocksGlobal || SessionManager.unlockedEmotes == null)
+                return;
+
+            //Log("Saving local player data.");
+            try
+            {
+                var saveEmoteNames = new List<string>(globallyUnlockedEmoteNames);
+                foreach (var emote in SessionManager.unlockedEmotes)
+                {
+                    if (!emote.complementary && !emote.requiresHeldProp && !saveEmoteNames.Contains(emote.emoteName))
+                        saveEmoteNames.Add(emote.emoteName);
+                }
+                ES3.Save("UnlockedEmotes", saveEmoteNames.ToArray(), TooManyEmotesSaveFileName);
+                Log("Saved " + saveEmoteNames.Count + " globally unlocked emotes for local player.");
+
+            }
+            catch (Exception e)
+            {
+                LogError("Error while trying to save TooManyEmotes local player data: " + e);
+            }
+        }
+
+
+        internal static void LoadLocalPlayerValues() // Called from SyncManager.OnSynced()
+        {
+            if (!SyncManager.isSynced || !ConfigSync.instance.syncPersistentUnlocksGlobal)
+                return;
+            
+            //Log("Loading local saved data.");
+            try
+            {
+                string[] loadEmoteNames = ES3.Load("UnlockedEmotes", TooManyEmotesSaveFileName, new string[0]);
+                foreach (string emoteName in loadEmoteNames)
+                {
+                    if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote))
+                        SessionManager.UnlockEmoteLocal(emote);
+                }
+                globallyUnlockedEmoteNames.Clear();
+                globallyUnlockedEmoteNames.AddRange(loadEmoteNames);
+                Log("Loaded " + loadEmoteNames.Length + " globally unlocked emotes for local player.");
+            }
+            catch (Exception e)
+            {
+                LogError("Error while trying to load TooManyEmotes local player data: " + e);
+            }
+        }
+
+
+        internal static void ResetGloballyUnlockedEmotes()
+        {
+            Log("Resetting globally unlocked emotes for local player.");
+            ES3.DeleteKey("UnlockedEmotes", TooManyEmotesSaveFileName);
+            globallyUnlockedEmoteNames?.Clear();
+        }*/
+
+
+
+
+
         [HarmonyPatch(typeof(GameNetworkManager), "ResetSavedGameValues")]
         [HarmonyPostfix]
         public static void ResetUnlockedEmotesList(GameNetworkManager __instance)
@@ -137,7 +210,7 @@ namespace TooManyEmotes.Patches
             if (!__instance.isHostingGame || StartOfRound.Instance == null || SessionManager.unlockedEmotes == null)
                 return;
 
-            Log("[SaveManager] Resetting game values.");
+            Log("Resetting saved game values.");
 
             ES3.DeleteKey("TooManyEmotes.UnlockedEmotes", __instance.currentSaveFileName);
             ES3.DeleteKey("TooManyEmotes.CurrentEmoteCredits", __instance.currentSaveFileName);
@@ -158,7 +231,7 @@ namespace TooManyEmotes.Patches
 
         public static void SaveFavoritedEmotes()
         {
-            ES3.Save("TooManyEmotes.FavoriteEmotes", EmotesManager.allFavoriteEmotes.ToArray());
+            ES3.Save("TooManyEmotes.FavoriteEmotes", EmotesManager.allFavoriteEmotes.ToArray(), TooManyEmotesSaveFileName);
         }
 
 
@@ -167,14 +240,24 @@ namespace TooManyEmotes.Patches
             EmotesManager.allFavoriteEmotes.Clear();
             try
             {
-                var addFavoritedEmotes = ES3.Load("TooManyEmotes.FavoriteEmotes", new string[0]);
+                var addFavoritedEmotes = ES3.Load("TooManyEmotes.FavoriteEmotes", TooManyEmotesSaveFileName, new string[0]);
                 EmotesManager.allFavoriteEmotes.AddRange(addFavoritedEmotes);
+                ES3.DeleteKey("TooManyEmotes.FavoriteEmotes"); // Old save location
             }
             catch (Exception e)
             {
                 LogError("Error while trying to load favorited emotes due to possible save corruption? Your favorited emotes will likely be reset.\n" + e);
-                ES3.DeleteKey("TooManyEmotes.FavoriteEmotes");
+                ES3.DeleteKey("TooManyEmotes.FavoriteEmotes", TooManyEmotesSaveFileName);
             }
+            SessionManager.UpdateUnlockedFavoriteEmotes();
+        }
+
+
+        internal static void ResetFavoritedEmotes()
+        {
+            Log("Resetting favorited emotes for local player.");
+            ES3.DeleteKey("TooManyEmotes.FavoriteEmotes");
+            SessionManager.unlockedFavoriteEmotes.Clear();
             SessionManager.UpdateUnlockedFavoriteEmotes();
         }
     }

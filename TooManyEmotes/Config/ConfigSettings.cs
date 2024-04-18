@@ -3,6 +3,7 @@ using TooManyEmotes.Networking;
 using System.Collections.Generic;
 using System.IO;
 using static TooManyEmotes.CustomLogging;
+using TooManyEmotes.Patches;
 
 namespace TooManyEmotes.Config
 {
@@ -11,10 +12,10 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<bool> unlockEverything;
         public static ConfigEntry<bool> shareEverything;
         public static ConfigEntry<bool> persistentUnlocks;
+        //public static ConfigEntry<bool> persistentUnlocksGlobal;
         public static ConfigEntry<bool> persistentEmoteCredits;
-        //public static ConfigEntry<bool> persistentUnlocksGlobally;
         public static ConfigEntry<bool> syncUnsharedEmotes;
-        //public static ConfigEntry<bool> enableMovingWhileEmoting;
+
         public static ConfigEntry<bool> disableEmotesForSelf;
         public static ConfigEntry<bool> toggleRotateCharacterInEmote;
 
@@ -76,8 +77,10 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<float> emoteAudioMinDistance;
         public static ConfigEntry<float> emoteAudioMaxDistance;
         //public static ConfigEntry<bool> scaleEmoteAudioWithBoombox;
+
         public static ConfigEntry<bool> enableGirlPatch;
         public static ConfigEntry<bool> resetFavoriteOnNextStart;
+        //public static ConfigEntry<bool> resetGlobalUnlocksOnNextStart;
 
         public static Dictionary<string, ConfigEntryBase> currentConfigEntries = new Dictionary<string, ConfigEntryBase>();
         public static List<string> configSections = new List<string>();
@@ -88,10 +91,11 @@ namespace TooManyEmotes.Config
 
             unlockEverything = AddConfigEntry("Emote Settings", "I am a Party Pooper", false, "[Host only] If true, every emote will be unlocked at the start of the game. (You're not really a party pooper)");
             shareEverything = AddConfigEntry("Emote Settings", "ShareEverything", false, "[Host only] This setting will be ignored if \"I am a Party Pooper\" is enabled. If this setting is set to false, emotes in the store will be different for each player. Unlocking emotes will only unlock for the player that purchased the emote. Each player will have their own emote credits. The amount of emote credits that each player will receive will NOT be reduced.");
-            persistentUnlocks = AddConfigEntry("Emote Settings", "PersistentUnlocks", true, "[Host only] If enabled, unlocked emotes will be unlocked per save, and will not reset upon ship resets, unless a new save is created.");
-            persistentEmoteCredits = AddConfigEntry("Emote Settings", "PersistentEmoteCredits", false, "[Host only] If enabled, emote credits will not reset upon ship resets. Only applies if PersistentUnlocks is enabled.");
+            persistentUnlocks = AddConfigEntry("Emote Settings", "PersistentUnlocks", true, "[Host only] If enabled, emotes will be unlocked per save, and will not reset upon ship resets, unless a new save is created.\nNOTE: This setting (as well as the other persistent settings) will be disabled if UnlockEverything (I am a Party Pooper) is enabled.");
+            //persistentUnlocksGlobal = AddConfigEntry("Emote Settings", "PersistentUnlocksGlobal", true, "[Host only] If enabled, emotes will be permanently unlocked for your character, and will be available when playing on any save. Only applies if PersistentUnlocks is set to true.\nIf ShareEverything is enabled, emotes that the host already has unlocked will NOT unlock for you upon joining the game, unless you also have them unlocked.\nIf ShareEverything is enabled, emotes unlocked by other players will still permanently unlock for your character.");
+            persistentEmoteCredits = AddConfigEntry("Emote Settings", "PersistentEmoteCredits", false, "[Host only] If enabled, emote credits will not reset upon ship resets. Only applies if PersistentUnlocks is enabled."); // This setting will be disabled if PersistentUnlocksGlobal is enabled by the host."
             syncUnsharedEmotes = AddConfigEntry("Emote Settings", "CanSyncUnsharedEmotes", true, "[Host only] Only applies if ShareEverything is false. If set to true, players will be able to sync emotes with other players, even if they do not have the emote being performed unlocked.");
-            //enableMovingWhileEmoting = AddConfigEntry("Emote Settings", "CanMoveWhileEmoting", false, "[Host only] If set to true, rotating while emoting will be automatic. To cancel an emote, you will press the vanilla menu button.");
+
             disableEmotesForSelf = AddConfigEntry("Emote Settings", "DisableEmotingForSelf", false, "Disabling this will not convert your player's animator controller to an AnimatorOverrideController, and you will not be able to perform custom emotes. Disable this in case of specific mod conflicts. You will still be able to see other players emoting.");
             toggleRotateCharacterInEmote = AddConfigEntry("Emote Settings", "ToggleRotateCharacterInEmote", false, "If true, rotating character while emoting will be toggled, instead of rotating while holding the hotkey.");
 
@@ -111,10 +115,10 @@ namespace TooManyEmotes.Config
             basePriceEmoteTier3 = AddConfigEntry("Emote Store", "PriceLegendaryEmote", 300, "[Host only] The base price of [legendary] emotes in the store.");
 
             numEmotesStoreRotation = AddConfigEntry("Emote Store", "EmotesInStoreRotation", 6, "[Host only] The number of emotes that will be available at a time in the store. Only applies if UnlockEverythingAtStart is false.");
-            rotationChanceEmoteTier0 = AddConfigEntry("Emote Store", "RotationWeightCommonEmote", 0.55f, "[Host only] The likelyhood of [common] emotes appearing (per slot) in the store rotation.");
+            rotationChanceEmoteTier0 = AddConfigEntry("Emote Store", "RotationWeightCommonEmote", 0.5f, "[Host only] The likelyhood of [common] emotes appearing (per slot) in the store rotation.");
             rotationChanceEmoteTier1 = AddConfigEntry("Emote Store", "RotationWeightRareEmote", 0.35f, "[Host only] The likelyhood of [rare] emotes appearing (per slot) in the store rotation.");
-            rotationChanceEmoteTier2 = AddConfigEntry("Emote Store", "RotationWeightEpicEmote", 0.09f, "[Host only] The likelyhood of [epic] emotes appearing (per slot) in the store rotation.");
-            rotationChanceEmoteTier3 = AddConfigEntry("Emote Store", "RotationWeightLegendaryEmote", 0.01f, "[Host only] The likelyhood of [legendary] emotes appearing (per slot) in the store rotation.");
+            rotationChanceEmoteTier2 = AddConfigEntry("Emote Store", "RotationWeightEpicEmote", 0.135f, "[Host only] The likelyhood of [epic] emotes appearing (per slot) in the store rotation.");
+            rotationChanceEmoteTier3 = AddConfigEntry("Emote Store", "RotationWeightLegendaryEmote", 0.015f, "[Host only] The likelyhood of [legendary] emotes appearing (per slot) in the store rotation.");
 
             enableMaskedEnemiesEmoting = AddConfigEntry("Masked Enemy Emotes", "EnableMaskedEnemiesEmoting", true, "[Host only] Enabling this alone does not change the behaviour of the Masked Enemies, and shouldn't conflict with other mods.");
             maskedEnemiesEmoteChanceOnEncounter = AddConfigEntry("Masked Enemy Emotes", "EmoteChanceOnEncounter", 0.25f, "[Host only] Chance per encounter with a Masked Enemy, for them to perform an emote. Use values between 0 and 1.");
@@ -124,7 +128,6 @@ namespace TooManyEmotes.Config
             overrideStopAndStareDuration = AddConfigEntry("Masked Enemy Emotes", "OverrideStopAndStareDuration", true, "[Host only] Enabling this will allow this mod to extend the stop and stare duration for longer emotes. If disabled, emotes may end very quickly. Disable this setting if you run into mod conflicts.");
             maskedEnemyEmoteRandomDuration = AddConfigEntry("Masked Enemy Emotes", "RandomEmoteDuration", "2.0,4.0", "[Host only] Random range on how long Masked Enemies will emote for. This will extend the Masked Enemies' stop and stare duration by this amount. Only applies if OverrideStopAndStareDuration is true.");
 
-            // numMysteryEmotesStoreRotation = "Server settings", "NumMysteryEmotesInStoreRotation", 1, "[Host only] The number of \"mystery\" emotes that will be available at a time in the store. These emotes will be a mystery until unlocked. Only applies if UnlockEverythingAtStart is false.");
             openEmoteMenuKeybind = AddConfigEntry("Emote Radial Menu", "OpenEmoteMenuKeybind", "<Keyboard>/backquote", "NOTE: This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
             toggleEmoteMenu = AddConfigEntry("Emote Radial Menu", "ToggleEmoteMenu", false, "If set to false, the emote menu will open upon pressing the related keybind, and close upon releasing, and will play the currently hovered emote.");
             reverseEmoteWheelScrollDirection = AddConfigEntry("Emote Radial Menu", "ReverseEmoteWheelScrollDirection", false, "Reverses the page swapping direction in your emote when scrolling.");
@@ -158,15 +161,21 @@ namespace TooManyEmotes.Config
 
             enableGirlPatch = AddConfigEntry("Other", "EnableGirlPatch", true, "If true, this mod will disable the girl's mesh while she's un the \"unrendered\" layer to prevent the third-person emote camera from seeing her when not supposed do. Disable this if this causes conflicts with another mod.");
             resetFavoriteOnNextStart = AddConfigEntry("Other", "ResetFavoritedEmotesOnNextStart", false, "Set this to true to force remove all emotes from your favorites when the game starts up next. This may resolve any issues that might be related to having favorited emotes that don't exist.");
+            //resetGlobalUnlocksOnNextStart = AddConfigEntry("Other", "ResetGlobalUnlocksOnNextStart", false, "Set this to true to force reset all globally unlocked emotes for your local player. These emotes are only usable when the host has PersistentUnlocksGlobal enabled in the config.");
 
             if (resetFavoriteOnNextStart.Value)
             {
-                LogWarning("Favorited emotes were successfully reset. (this is not a warning)");
-                ES3.DeleteKey("TooManyEmotes.FavoriteEmotes");
+                SaveManager.ResetFavoritedEmotes();
                 resetFavoriteOnNextStart.Value = false;
                 Plugin.instance.Config.Save();
             }
 
+            /*if (resetGlobalUnlocksOnNextStart.Value)
+            {
+                SaveManager.ResetGloballyUnlockedEmotes();
+                resetGlobalUnlocksOnNextStart.Value = false;
+                Plugin.instance.Config.Save();
+            }*/
 
             // fix weights
             float totalChances = rotationChanceEmoteTier0.Value;
