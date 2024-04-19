@@ -15,7 +15,8 @@ namespace TooManyEmotes.Audio
     {
         public static HashSet<EmoteAudioSource> allEmoteAudioSources = new HashSet<EmoteAudioSource>();
         public static HashSet<EmoteAudioSource> playingAudioSources = new HashSet<EmoteAudioSource>();
-        public bool isPlayingAudio {
+        public bool isPlayingAudio
+        {
             get { return playingAudioSources.Contains(this); }
             set { if (value) playingAudioSources.Add(this); else playingAudioSources.Remove(this); }
         }
@@ -287,8 +288,6 @@ namespace TooManyEmotes.Audio
 
         public virtual void StopAudio()
         {
-            if (isPlayingAudio)
-                Log("Stopping audio on emote audio source.");
             if (audioSource != null)
             {
                 audioSource.Stop();

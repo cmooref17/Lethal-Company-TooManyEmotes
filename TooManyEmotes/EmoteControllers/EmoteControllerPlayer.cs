@@ -437,37 +437,7 @@ namespace TooManyEmotes
             return success;
         }
 
-
-        /*public override void StopPerformingEmote()
-        {
-            if (playerController == null || (isLocalPlayer && ConfigSettings.disableEmotesForSelf.Value))
-                return;
-
-            base.StopPerformingEmote();
-            cameraContainerLerp.SetPositionAndRotation(cameraContainerTarget.position, cameraContainerTarget.rotation);
-
-            var heldProp = playerController.ItemSlots[playerController.currentItemSlot] as GrabbablePropObject;
-            if (heldProp)
-                heldProp.EnableItemMeshes(true);
-
-            playerController.playerBodyAnimator.SetInteger("emote_number", 0);
-            playerController.performingEmote = false;
-            if (isLocalPlayer)
-            {
-                playerController.StopPerformingEmoteServerRpc();
-                StartCoroutine(StopEmoteCameraEndOfFrame());
-            }
-        }
-
-
-        IEnumerator StopEmoteCameraEndOfFrame()
-        {
-            yield return new WaitForEndOfFrame();
-            if (!isPerformingEmote)
-                ThirdPersonEmoteController.OnStopCustomEmoteLocal();
-        }*/
-
-
+        
         /// <summary>
         /// Stops emoting, and switches camera back to the player's view immediately.
         /// </summary>
@@ -497,19 +467,27 @@ namespace TooManyEmotes
             if (isLocalPlayer)
             {
                 ThirdPersonEmoteController.OnStopCustomEmoteLocal();
-                playerController.StartCoroutine(TryStopPerformingEmoteEndOfFrame());
+                playerController.StopPerformingEmoteServerRpc();
             }
         }
 
+
         /// <summary>
-        /// Will tell the server that this player has stopped emoting, unless isPerformingEmote is true.
+        /// Stops emoting, but stays on the emote camera.
+        /// This method should be used when swapping from one emote to another. (e.g. when performing an emote while already performing an emote)
         /// </summary>
-        /// <returns></returns>
-        IEnumerator TryStopPerformingEmoteEndOfFrame()
+        public override void ResetPerformingEmote()
         {
-            yield return new WaitForEndOfFrame();
-            if (!isPerformingEmote && isLocalPlayer)
-                playerController.StopPerformingEmoteServerRpc();
+            if (playerController == null || (isLocalPlayer && ConfigSettings.disableEmotesForSelf.Value))
+                return;
+
+            base.ResetPerformingEmote();
+            if (sourceGrabbableEmoteProp != null)
+            {
+                if (sourceGrabbableEmoteProp.isPerformingEmote)
+                    sourceGrabbableEmoteProp.StopEmote();
+                sourceGrabbableEmoteProp = null;
+            }
         }
 
 

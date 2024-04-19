@@ -84,16 +84,30 @@ namespace TooManyEmotes.Patches
         internal static void SavePreferences()
         {
             Log("Saving ThirdPersonEmoteController preferences.");
-            ES3.Save("TooManyEmotes.EnableFirstPersonEmotes", firstPersonEmotesEnabled);
-            ES3.Save("TooManyEmotes.AllowMovingWhileEmoting", allowMovingWhileEmoting);
+            ES3.Save("TooManyEmotes.EnableFirstPersonEmotes", firstPersonEmotesEnabled, SaveManager.TooManyEmotesSaveFileName);
+            ES3.Save("TooManyEmotes.AllowMovingWhileEmoting", allowMovingWhileEmoting, SaveManager.TooManyEmotesSaveFileName);
         }
 
 
         internal static void LoadPreferences()
         {
             Log("Loading ThirdPersonEmoteController preferences.");
-            firstPersonEmotesEnabled = ES3.Load("TooManyEmotes.EnableFirstPersonEmotes", false);
-            allowMovingWhileEmoting = ES3.Load("TooManyEmotes.AllowMovingWhileEmoting", false);
+
+            if (ES3.KeyExists("TooManyEmotes.EnableFirstPersonEmotes"))
+            {
+                bool value = ES3.Load("TooManyEmotes.EnableFirstPersonEmotes", false);
+                ES3.DeleteKey("TooManyEmotes.EnableFirstPersonEmotes");
+                ES3.Save("TooManyEmotes.EnableFirstPersonEmotes", value, SaveManager.TooManyEmotesSaveFileName);
+            }
+            if (ES3.KeyExists("TooManyEmotes.AllowMovingWhileEmoting"))
+            {
+                bool value = ES3.Load("TooManyEmotes.AllowMovingWhileEmoting", false);
+                ES3.DeleteKey("TooManyEmotes.AllowMovingWhileEmoting");
+                ES3.Save("TooManyEmotes.AllowMovingWhileEmoting", value, SaveManager.TooManyEmotesSaveFileName);
+            }
+
+            firstPersonEmotesEnabled = ES3.Load("TooManyEmotes.EnableFirstPersonEmotes", SaveManager.TooManyEmotesSaveFileName, false);
+            allowMovingWhileEmoting = ES3.Load("TooManyEmotes.AllowMovingWhileEmoting", SaveManager.TooManyEmotesSaveFileName, false);
         }
 
 
@@ -396,7 +410,9 @@ namespace TooManyEmotes.Patches
             if (localPlayerController.serverItemHolder == localPlayerController.currentlyHeldObjectServer?.parentObject)
                 localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.localItemHolder;
 
-            localPlayerController.StartCoroutine(ResetCameraTransformEndOfFrame());
+            //localPlayerController.StartCoroutine(ResetCameraTransformEndOfFrame());
+            emoteCameraPivot.eulerAngles = localPlayerCameraContainer.eulerAngles;
+            isPerformingEmote = false;
         }
 
 

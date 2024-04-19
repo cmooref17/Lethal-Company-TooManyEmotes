@@ -14,6 +14,7 @@ namespace TooManyEmotes
         public static List<UnlockableEmote> allUnlockableEmotes;
         public static Dictionary<string, UnlockableEmote> allUnlockableEmotesDict;
         public static List<UnlockableEmote> complementaryEmotes;
+        internal static List<UnlockableEmote> complementaryEmotesDefault;
         public static List<string> allFavoriteEmotes;
 
         public static List<UnlockableEmote> allEmotesTier0;
@@ -27,7 +28,7 @@ namespace TooManyEmotes
             allUnlockableEmotes = new List<UnlockableEmote>();
             allUnlockableEmotesDict = new Dictionary<string, UnlockableEmote>();
 
-            complementaryEmotes = new List<UnlockableEmote>();
+            complementaryEmotesDefault = new List<UnlockableEmote>();
             allFavoriteEmotes = new List<string>();
 
             allEmotesTier0 = new List<UnlockableEmote>();
@@ -178,7 +179,7 @@ namespace TooManyEmotes
                 if (Plugin.complementaryAnimationClips.Contains(clip) && emote.purchasable)
                 {
                     emote.complementary = true;
-                    complementaryEmotes.Add(emote);
+                    complementaryEmotesDefault.Add(emote);
                 }
             }
 
@@ -201,6 +202,7 @@ namespace TooManyEmotes
                     allEmotesTier3.Add(emote);
             }
 
+            complementaryEmotes = new List<UnlockableEmote>(complementaryEmotesDefault);
             SaveManager.LoadFavoritedEmotes();
         }
     }

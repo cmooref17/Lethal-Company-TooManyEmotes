@@ -39,6 +39,7 @@ namespace TooManyEmotes
             EmoteControllerPlayer.allPlayerEmoteControllers?.Clear();
             EmoteControllerMaskedEnemy.allMaskedEnemyEmoteControllers?.Clear();
             EmoteAudioSource.allEmoteAudioSources?.Clear();
+            EmotesManager.complementaryEmotes = new List<UnlockableEmote>(EmotesManager.complementaryEmotesDefault);
         }
 
 
@@ -193,6 +194,16 @@ namespace TooManyEmotes
             if (emote == null)
                 return;
 
+            if (emote.requiresHeldProp)
+            {
+                LogWarning("PROP: " + emote.emoteName);
+                if (ConfigSync.instance.syncRemoveGrabbableEmotesPartyPooperMode)
+                {
+                    LogWarning("RETURNING");
+                    return;
+                }
+            }
+
             var _unlockedEmotes = unlockedEmotes;
 
             if (playerUsername != "" && playerUsername != localPlayerUsername)
@@ -209,6 +220,7 @@ namespace TooManyEmotes
             // Check if one of the emotes in the sync group is already unlocked
             if (IsEmoteUnlocked(emote, playerUsername))
                 return;
+
             if (emote.emoteSyncGroup != null)
             {
                 foreach (var syncEmote in emote.emoteSyncGroup)
@@ -242,6 +254,20 @@ namespace TooManyEmotes
         }
 
 
+        public static void RemoveEmoteLocal(UnlockableEmote emote)
+        {
+            unlockedEmotes.Remove(emote);
+            unlockedEmotesTier0.Remove(emote);
+            unlockedEmotesTier1.Remove(emote);
+            unlockedEmotesTier2.Remove(emote);
+            unlockedEmotesTier3.Remove(emote);
+            unlockedFavoriteEmotes.Remove(emote);
+            emotesUnlockedThisSession.Remove(emote);
+            foreach (var playerEmotes in unlockedEmotesByPlayer.Values)
+                playerEmotes.Remove(emote);
+        }
+
+
         public static void ResetEmotesLocal()
         {
             Log("Resetting unlocked emotes.");
@@ -250,12 +276,13 @@ namespace TooManyEmotes
             unlockedEmotesTier1.Clear();
             unlockedEmotesTier2.Clear();
             unlockedEmotesTier3.Clear();
+            emotesUnlockedThisSession.Clear();
 
             unlockedEmotesByPlayer.Clear();
             foreach (var playerController in StartOfRound.Instance.allPlayerScripts)
             {
                 if (playerController.playerSteamId != 0)
-                    unlockedEmotesByPlayer.Add(playerController.playerUsername, (playerController == StartOfRound.Instance.localPlayerController || ConfigSync.instance.syncShareEverything) ? unlockedEmotes : new List<UnlockableEmote>());
+                    unlockedEmotesByPlayer.Add(playerController.playerUsername, (playerController == localPlayerController || ConfigSync.instance.syncShareEverything) ? unlockedEmotes : new List<UnlockableEmote>());
             }
             UnlockEmotesLocal(ConfigSync.instance.syncUnlockEverything ? EmotesManager.allUnlockableEmotes : EmotesManager.complementaryEmotes);
             UpdateUnlockedFavoriteEmotes();
@@ -282,6 +309,6 @@ namespace TooManyEmotes
         }
 
 
-        public static void SortUnlockedEmotes() => unlockedEmotes = unlockedEmotes.OrderBy(item => item.rarity).ThenBy(item => item.emoteName).ToList();
+        //public static void SortUnlockedEmotes() => unlockedEmotes = unlockedEmotes.OrderBy(item => item.rarity).ThenBy(item => item.emoteName).ToList();
     }
 }

@@ -47,20 +47,47 @@ namespace TooManyEmotes.Audio
         public static void SavePreferences()
         {
             Log("Saving AudioManager preferences.");
-            ES3.Save("TooManyEmotes.EmoteAudioVolume", emoteVolumeMultiplier);
-            ES3.Save("TooManyEmotes.MuteEmoteAudio", muteEmoteAudio);
-            ES3.Save("TooManyEmotes.EmoteOnlyMode", emoteOnlyMode);
-            ES3.Save("TooManyEmotes.DmcaFreeMode", dmcaFreeMode);
+            ES3.Save("TooManyEmotes.EmoteAudioVolume", emoteVolumeMultiplier, SaveManager.TooManyEmotesSaveFileName);
+            ES3.Save("TooManyEmotes.MuteEmoteAudio", muteEmoteAudio, SaveManager.TooManyEmotesSaveFileName);
+            ES3.Save("TooManyEmotes.EmoteOnlyMode", emoteOnlyMode, SaveManager.TooManyEmotesSaveFileName);
+            ES3.Save("TooManyEmotes.DmcaFreeMode", dmcaFreeMode, SaveManager.TooManyEmotesSaveFileName);
         }
 
 
         public static void LoadPreferences()
         {
             Log("Loading AudioManager preferences.");
-            emoteVolumeMultiplier = ES3.Load("TooManyEmotes.EmoteAudioVolume", 1.0f);
-            muteEmoteAudio = ES3.Load("TooManyEmotes.MuteEmoteAudio", false);
-            emoteOnlyMode = ES3.Load("TooManyEmotes.EmoteOnlyMode", false);
-            dmcaFreeMode = ES3.Load("TooManyEmotes.DmcaFreeMode", false);
+
+            // Reload from old save location
+            if (ES3.KeyExists("TooManyEmotes.EmoteAudioVolume"))
+            {
+                float value = ES3.Load("TooManyEmotes.EmoteAudioVolume", 1.0f);
+                ES3.DeleteKey("TooManyEmotes.EmoteAudioVolume");
+                ES3.Save("TooManyEmotes.EmoteAudioVolume", value, SaveManager.TooManyEmotesSaveFileName);
+            }
+            if (ES3.KeyExists("TooManyEmotes.MuteEmoteAudio"))
+            {
+                bool value = ES3.Load("TooManyEmotes.MuteEmoteAudio", false);
+                ES3.DeleteKey("TooManyEmotes.MuteEmoteAudio");
+                ES3.Save("TooManyEmotes.MuteEmoteAudio", value, SaveManager.TooManyEmotesSaveFileName);
+            }
+            if (ES3.KeyExists("TooManyEmotes.EmoteOnlyMode"))
+            {
+                bool value = ES3.Load("TooManyEmotes.EmoteOnlyMode", false);
+                ES3.DeleteKey("TooManyEmotes.EmoteOnlyMode");
+                ES3.Save("TooManyEmotes.EmoteOnlyMode", value, SaveManager.TooManyEmotesSaveFileName);
+            }
+            if (ES3.KeyExists("TooManyEmotes.DmcaFreeMode"))
+            {
+                bool value = ES3.Load("TooManyEmotes.DmcaFreeMode", false);
+                ES3.DeleteKey("TooManyEmotes.DmcaFreeMode");
+                ES3.Save("TooManyEmotes.DmcaFreeMode", value, SaveManager.TooManyEmotesSaveFileName);
+            }
+
+            emoteVolumeMultiplier = ES3.Load("TooManyEmotes.EmoteAudioVolume", SaveManager.TooManyEmotesSaveFileName, 1.0f);
+            muteEmoteAudio = ES3.Load("TooManyEmotes.MuteEmoteAudio", SaveManager.TooManyEmotesSaveFileName, false);
+            emoteOnlyMode = ES3.Load("TooManyEmotes.EmoteOnlyMode", SaveManager.TooManyEmotesSaveFileName, false);
+            dmcaFreeMode = ES3.Load("TooManyEmotes.DmcaFreeMode", SaveManager.TooManyEmotesSaveFileName, false);
         }
 
 

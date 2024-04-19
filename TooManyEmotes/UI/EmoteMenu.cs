@@ -472,7 +472,7 @@ namespace TooManyEmotes.UI
                     allUnlockedEmotesFiltered.Add(SessionManager.unlockedFavoriteEmotes[i]);
             }
 
-            allUnlockedEmotesFiltered.OrderBy(item => item.displayName).ToList();
+            allUnlockedEmotesFiltered.Sort((item1, item2) => item1.displayName.CompareTo(item2.displayName));
         }
 
 
@@ -531,6 +531,9 @@ namespace TooManyEmotes.UI
             currentEmoteOnlyMode = AudioManager.emoteOnlyMode;
             currentDmcaFreeSetting = AudioManager.dmcaFreeMode;
             currentVolumeSetting = AudioManager.emoteVolumeMultiplier;
+
+            currentFirstPersonEmotes = ThirdPersonEmoteController.firstPersonEmotesEnabled;
+            currentAllowMovingWhileEmoting = ThirdPersonEmoteController.allowMovingWhileEmoting;
             // emoteLoadouts, menuGameObject, quickMenuManager, HUDManager.Instance?.controlTipLines
 
             if (Assert(menuGameObject != null, "Error opening emote menu. Menu gameobject is null!"))

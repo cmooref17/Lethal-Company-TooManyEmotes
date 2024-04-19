@@ -26,7 +26,7 @@ namespace TooManyEmotesScrap
             this._harmony = new Harmony("TooManyEmotesScrap");
 
             PatchAll();
-            Log("TooManyEmotesScrap loaded");
+            Log("TooManyEmotesScrap finished loading!");
             LogWarning("NOTE: You will be unable to join other players (and they will be unable to join you) unless you either both have this mod enabled, or both have this mod disabled.\nIf you are hosting a lobby for random players to join, or you are looking to join random servers, it might be best to disable this mod for the best compatibility.");
         }
 

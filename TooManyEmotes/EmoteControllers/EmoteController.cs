@@ -256,7 +256,7 @@ namespace TooManyEmotes
                 Log("[" + emoteControllerName + "] Performing emote: " + emote.emoteName);
 
             if (isPerformingEmote)
-                StopPerformingEmote();
+                ResetPerformingEmote();
 
             if (emote.emoteSyncGroup != null)
             {
@@ -303,7 +303,7 @@ namespace TooManyEmotes
                 Log("[" + emoteControllerName + "] Attempting to sync with emote controller: " + emoteController.name + " Emote: " + emoteController.performingEmote.emoteName + " PlayEmoteAtTimeNormalized: " + (emoteController.currentAnimationTimeNormalized % 1));
 
             if (isPerformingEmote)
-                StopPerformingEmote();
+                ResetPerformingEmote();
 
             var syncGroup = emoteController.emoteSyncGroup;
 
@@ -451,6 +451,27 @@ namespace TooManyEmotes
             if (ikHead != null) ikHead.localPosition = Vector3.zero;
 
             DiscoBallPatcher.OnStopPerformingEmote(this);
+        }
+
+
+        public virtual void ResetPerformingEmote()
+        {
+            if (!initialized)
+                return;
+
+            isPerformingEmote = false;
+
+            animatorController["emote"] = null;
+            animatorController["emote_loop"] = null;
+
+            RemoveFromEmoteSyncGroup();
+            UnloadEmoteProps();
+
+            if (ikLeftHand != null) ikLeftHand.localPosition = Vector3.zero;
+            if (ikRightHand != null) ikRightHand.localPosition = Vector3.zero;
+            if (ikLeftFoot != null) ikLeftFoot.localPosition = Vector3.zero;
+            if (ikRightFoot != null) ikRightFoot.localPosition = Vector3.zero;
+            if (ikHead != null) ikHead.localPosition = Vector3.zero;
         }
 
 

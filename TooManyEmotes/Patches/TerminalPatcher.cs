@@ -200,7 +200,7 @@ namespace TooManyEmotes.Patches
                         terminalInstance.groupCredits += dGroupCredits;
 
                         if (!ConfigSync.instance.syncShareEverything)
-                            SessionManager.UnlockEmoteLocal(purchasingEmote);
+                            SessionManager.UnlockEmoteLocal(purchasingEmote, purchased: true);
                         SyncManager.SendOnUnlockEmoteUpdate(purchasingEmote.emoteId, currentEmoteCredits);
                         if (dGroupCredits > 0)
                             terminalInstance.SyncGroupCreditsServerRpc(terminalInstance.groupCredits, terminalInstance.numberOfItemsInDropship);

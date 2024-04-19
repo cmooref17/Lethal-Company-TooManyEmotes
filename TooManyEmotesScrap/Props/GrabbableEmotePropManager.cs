@@ -39,17 +39,12 @@ namespace TooManyEmotesScrap.Props
         }
 
 
-        [HarmonyPatch(typeof(ConfigSync), "OnSynced")]
+        [HarmonyPatch(typeof(TooManyEmotes.Networking.ConfigSync), "OnSynced")]
         [HarmonyPostfix]
         private static void OnConfigSynced()
         {
-            if (ConfigSync.instance.syncEnableGrabbableEmoteProps)
-            {
-                AddGrabbableEmotePropsMoons();
-                RemoveComplementaryPropEmotesFromUnlockedEmotes();
-            }
-            else
-                RemoveGrabbableEmotePropsMoons(); // Should be unnecessary, but just in case
+            AddGrabbableEmotePropsMoons();
+            CheckIfShouldRemovePropEmotesFromUnlockedEmotes();
         }
 
         
@@ -342,6 +337,17 @@ namespace TooManyEmotesScrap.Props
                     {
                         emote.purchasable = false;
                         emote.requiresHeldProp = true;
+
+                        if (emote.emoteSyncGroup != null)
+                        {
+                            foreach (var emote2 in emote.emoteSyncGroup)
+                            {
+                                if (emote2 == emote)
+                                    continue;
+
+                                emote2.purchasable = false;
+                            }
+                        }
                     }
                 }
 
@@ -380,9 +386,9 @@ namespace TooManyEmotesScrap.Props
         }
 
 
-        public static void RemoveComplementaryPropEmotesFromUnlockedEmotes()
+        public static void CheckIfShouldRemovePropEmotesFromUnlockedEmotes()
         {
-            if (ConfigSync.instance.syncUnlockEverything)
+            if (ConfigSync.instance.syncUnlockEverything && !ConfigSync.instance.syncRemoveGrabbableEmotesPartyPooperMode)
                 return;
 
             foreach (var emotePropData in grabbableEmotePropsData)
@@ -391,10 +397,23 @@ namespace TooManyEmotesScrap.Props
                 {
                     foreach (var emote in emotePropData.parentEmotes)
                     {
-                        if (emote != null && emote.complementary && emote.requiresHeldProp)
+                        if (emote != null && emote.requiresHeldProp)
                         {
-                            SessionManager.unlockedEmotes.Remove(emote);
-                            EmotesManager.complementaryEmotes.Remove(emote);
+                            SessionManager.RemoveEmoteLocal(emote);
+                            if (emote.complementary)
+                                EmotesManager.complementaryEmotes.Remove(emote);
+                            if (emote.emoteSyncGroup != null)
+                            {
+                                foreach (var emote2 in emote.emoteSyncGroup)
+                                {
+                                    if (emote2 == emote)
+                                        continue;
+
+                                    SessionManager.RemoveEmoteLocal(emote2);
+                                    if (emote2.complementary)
+                                        EmotesManager.complementaryEmotes.Remove(emote2);
+                                }
+                            }
                         }
                     }
                 }

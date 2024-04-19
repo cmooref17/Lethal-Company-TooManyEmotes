@@ -69,7 +69,7 @@ namespace TooManyEmotes
 
             this._harmony = new Harmony("TooManyEmotes");
             PatchAll();
-            Log("TooManyEmotes loaded");
+            Log("TooManyEmotes finished loading!");
         }
 
 

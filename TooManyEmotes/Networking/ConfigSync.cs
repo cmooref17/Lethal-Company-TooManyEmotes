@@ -33,7 +33,7 @@ namespace TooManyEmotes.Networking
         public bool syncPersistentEmoteCredits;
         public bool syncSyncUnsharedEmotes;
         public bool syncDisableRaritySystem;
-        public bool syncEnableGrabbableEmoteProps;
+        public bool syncRemoveGrabbableEmotesPartyPooperMode;
 
         public int syncStartingEmoteCredits;
         public float syncAddEmoteCreditsMultiplier;
@@ -76,22 +76,56 @@ namespace TooManyEmotes.Networking
             syncPersistentUnlocksGlobal = syncPersistentUnlocks && ConfigSettings.persistentUnlocksGlobal.Value;
             syncPersistentEmoteCredits = syncPersistentUnlocks && !syncPersistentUnlocksGlobal && ConfigSettings.persistentEmoteCredits.Value;
             syncSyncUnsharedEmotes = ConfigSettings.syncUnsharedEmotes.Value;
-            syncDisableRaritySystem = ConfigSettings.disableRaritySystem.Value;
+            syncDisableRaritySystem = ConfigSettings.disableRaritySystem.Value && !syncPersistentUnlocksGlobal;
 
-            syncEnableGrabbableEmoteProps = ConfigSettings.enableGrabbableEmoteProps.Value;
+            if (!syncPersistentUnlocksGlobal)
+            {
+                syncStartingEmoteCredits = ConfigSettings.startingEmoteCredits.Value;
+                syncAddEmoteCreditsMultiplier = ConfigSettings.addEmoteCreditsMultiplier.Value;
+                syncPriceMultiplierEmotesStore = ConfigSettings.priceMultiplierEmotesStore.Value;
+                syncNumEmotesStoreRotation = ConfigSettings.numEmotesStoreRotation.Value;
+                syncRotationChanceEmoteTier0 = ConfigSettings.rotationChanceEmoteTier0.Value;
+                syncRotationChanceEmoteTier1 = ConfigSettings.rotationChanceEmoteTier1.Value;
+                syncRotationChanceEmoteTier2 = ConfigSettings.rotationChanceEmoteTier2.Value;
+                syncRotationChanceEmoteTier3 = ConfigSettings.rotationChanceEmoteTier3.Value;
+                syncPurchaseEmotesWithDefaultCurrency = ConfigSettings.purchaseEmotesWithDefaultCurrency.Value;
+            }
+            else
+            {
+                syncStartingEmoteCredits = (int)ConfigSettings.basePriceEmoteTier0.DefaultValue - 1;
+                syncAddEmoteCreditsMultiplier = (float)ConfigSettings.addEmoteCreditsMultiplier.DefaultValue;
+                syncPriceMultiplierEmotesStore = Mathf.Max(syncPriceMultiplierEmotesStore, (float)ConfigSettings.priceMultiplierEmotesStore.DefaultValue);
+                syncNumEmotesStoreRotation = Mathf.Min(ConfigSettings.numEmotesStoreRotation.Value, (int)ConfigSettings.numEmotesStoreRotation.DefaultValue);
+                syncRotationChanceEmoteTier0 = (float)ConfigSettings.rotationChanceEmoteTier0.DefaultValue;
+                syncRotationChanceEmoteTier1 = (float)ConfigSettings.rotationChanceEmoteTier1.DefaultValue;
+                syncRotationChanceEmoteTier2 = (float)ConfigSettings.rotationChanceEmoteTier2.DefaultValue;
+                syncRotationChanceEmoteTier3 = (float)ConfigSettings.rotationChanceEmoteTier3.DefaultValue;
+                syncPurchaseEmotesWithDefaultCurrency = false;
+            }
 
-            syncStartingEmoteCredits = !syncPersistentUnlocksGlobal ? ConfigSettings.startingEmoteCredits.Value : 0;
-            syncAddEmoteCreditsMultiplier = ConfigSettings.addEmoteCreditsMultiplier.Value;
-            syncPurchaseEmotesWithDefaultCurrency = ConfigSettings.purchaseEmotesWithDefaultCurrency.Value;
+            if (syncPersistentUnlocksGlobal)
+            {
+                syncBasePriceEmoteTier0 = (int)ConfigSettings.basePriceEmoteTier0.DefaultValue;
+                syncBasePriceEmoteTier1 = (int)ConfigSettings.basePriceEmoteTier1.DefaultValue;
+                syncBasePriceEmoteTier2 = (int)ConfigSettings.basePriceEmoteTier2.DefaultValue;
+                syncBasePriceEmoteTier3 = (int)ConfigSettings.basePriceEmoteTier3.DefaultValue;
+            }
+            else if (syncDisableRaritySystem)
+            {
+                syncBasePriceEmoteTier0 = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
+                syncBasePriceEmoteTier1 = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
+                syncBasePriceEmoteTier2 = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
+                syncBasePriceEmoteTier3 = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
+            }
+            else
+            {
+                syncBasePriceEmoteTier0 = ConfigSettings.basePriceEmoteTier0.Value;
+                syncBasePriceEmoteTier1 = ConfigSettings.basePriceEmoteTier1.Value;
+                syncBasePriceEmoteTier2 = ConfigSettings.basePriceEmoteTier2.Value;
+                syncBasePriceEmoteTier3 = ConfigSettings.basePriceEmoteTier3.Value;
+            }
 
-            syncPriceMultiplierEmotesStore = ConfigSettings.priceMultiplierEmotesStore.Value;
-
-            syncNumEmotesStoreRotation = ConfigSettings.numEmotesStoreRotation.Value;
-            syncRotationChanceEmoteTier0 = ConfigSettings.rotationChanceEmoteTier0.Value;
-            syncRotationChanceEmoteTier1 = ConfigSettings.rotationChanceEmoteTier1.Value;
-            syncRotationChanceEmoteTier2 = ConfigSettings.rotationChanceEmoteTier2.Value;
-            syncRotationChanceEmoteTier3 = ConfigSettings.rotationChanceEmoteTier3.Value;
-
+            syncRemoveGrabbableEmotesPartyPooperMode = ConfigSettings.removeGrabbableEmotesPartyPooperMode.Value;
             syncEnableMaskedEnemiesEmoting = ConfigSettings.enableMaskedEnemiesEmoting.Value;
             syncMaskedEnemiesEmoteChanceOnEncounter = ConfigSettings.maskedEnemiesEmoteChanceOnEncounter.Value;
             syncMaskedEnemiesAlwaysEmoteOnFirstEncounter = ConfigSettings.maskedEnemiesAlwaysEmoteOnFirstEncounter.Value;
@@ -106,21 +140,6 @@ namespace TooManyEmotes.Networking
             syncMaskedEnemyEmoteRandomDurationMax = syncMaskedEnemyEmoteRandomDuration.y;
 
             syncDisableAudioShipSpeaker = ConfigSettings.disableAudioShipSpeaker.Value;
-
-            if (ConfigSettings.disableRaritySystem.Value)
-            {
-                syncBasePriceEmoteTier0 = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
-                syncBasePriceEmoteTier1 = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
-                syncBasePriceEmoteTier2 = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
-                syncBasePriceEmoteTier3 = ConfigSettings.basePriceEmoteRaritySystemDisabled.Value;
-            }
-            else
-            {
-                syncBasePriceEmoteTier0 = ConfigSettings.basePriceEmoteTier0.Value;
-                syncBasePriceEmoteTier1 = ConfigSettings.basePriceEmoteTier1.Value;
-                syncBasePriceEmoteTier2 = ConfigSettings.basePriceEmoteTier2.Value;
-                syncBasePriceEmoteTier3 = ConfigSettings.basePriceEmoteTier3.Value;
-            }
         }
 
 
