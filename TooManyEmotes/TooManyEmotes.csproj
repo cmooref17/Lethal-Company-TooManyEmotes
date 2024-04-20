@@ -201,7 +201,7 @@
     <Compile Include="UnlockableEmote.cs" />
     <Compile Include="Config\ConfigSettings.cs" />
     <Compile Include="Input\Keybinds.cs" />
-    <Compile Include="Patches\SaveManager.cs" />
+    <Compile Include="SaveManager.cs" />
     <Compile Include="Patches\TerminalPatcher.cs" />
     <Compile Include="Patches\PlayerPatcher.cs" />
     <Compile Include="Plugin.cs" />
@@ -212,6 +212,7 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /Y "$(TargetDir)$(TargetName).dll" "C:\Users\cmoor\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\plugins\FlipMods-TooManyEmotes\"</PostBuildEvent>
+    <PostBuildEvent>xcopy /Y "$(TargetDir)$(TargetName).dll" "C:\Users\cmoor\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\plugins\FlipMods-TooManyEmotes\"
+xcopy /Y "$(TargetDir)$(TargetName).dll" "C:\Program Files (x86)\Steam\steamapps\common\Lethal Company\BepInEx\plugins\FlipMods-TooManyEmotes\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

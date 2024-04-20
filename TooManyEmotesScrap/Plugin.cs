@@ -10,7 +10,7 @@ using BepInEx.Logging;
 
 namespace TooManyEmotesScrap
 {
-    [BepInPlugin("FlipMods.TooManyEmotesScrap", "TooManyEmotesScrap", "1.0.3")]
+    [BepInPlugin("FlipMods.TooManyEmotesScrap", "TooManyEmotesScrap", "1.0.4")]
     [BepInDependency("FlipMods.TooManyEmotes", BepInDependency.DependencyFlags.HardDependency)]
     public class Plugin : BaseUnityPlugin
     {

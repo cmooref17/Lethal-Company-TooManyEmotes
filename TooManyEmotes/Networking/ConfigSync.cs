@@ -15,6 +15,7 @@ using TooManyEmotes.Audio;
 using TooManyEmotes.Props;
 using static TooManyEmotes.CustomLogging;
 using static TooManyEmotes.HelperTools;
+using TooManyEmotes.UI;
 
 namespace TooManyEmotes.Networking
 {
@@ -32,6 +33,8 @@ namespace TooManyEmotes.Networking
         public bool syncPersistentUnlocksGlobal;
         public bool syncPersistentEmoteCredits;
         public bool syncSyncUnsharedEmotes;
+        public bool syncForceDisableMovingWhileEmoting;
+
         public bool syncDisableRaritySystem;
         public bool syncRemoveGrabbableEmotesPartyPooperMode;
 
@@ -125,6 +128,7 @@ namespace TooManyEmotes.Networking
                 syncBasePriceEmoteTier3 = ConfigSettings.basePriceEmoteTier3.Value;
             }
 
+            syncForceDisableMovingWhileEmoting = ConfigSettings.forceDisableMovingWhileEmoting.Value;
             syncRemoveGrabbableEmotesPartyPooperMode = ConfigSettings.removeGrabbableEmotesPartyPooperMode.Value;
             syncEnableMaskedEnemiesEmoting = ConfigSettings.enableMaskedEnemiesEmoting.Value;
             syncMaskedEnemiesEmoteChanceOnEncounter = ConfigSettings.maskedEnemiesEmoteChanceOnEncounter.Value;

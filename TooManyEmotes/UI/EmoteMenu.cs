@@ -14,6 +14,7 @@ using TooManyEmotes.Audio;
 using static TooManyEmotes.HelperTools;
 using static TooManyEmotes.CustomLogging;
 using System.Linq;
+using TooManyEmotes.Networking;
 
 
 namespace TooManyEmotes.UI
@@ -61,6 +62,7 @@ namespace TooManyEmotes.UI
         private static Toggle enableDmcaFreeToggle;
 
         // ThirdPersonEmoteController preferences
+        private static GameObject allowMovingWhileEmotingGameObject;
         private static Toggle enableFirstPersonEmoteToggle;
         private static Toggle allowMovingWhileEmotingToggle;
         
@@ -227,7 +229,8 @@ namespace TooManyEmotes.UI
             enableFirstPersonEmoteToggle.onValueChanged.AddListener(delegate { OnUpdateToggleFirstPerson(enableFirstPersonEmoteToggle); });
             currentFirstPersonEmotes = enableFirstPersonEmoteToggle.isOn;
 
-            allowMovingWhileEmotingToggle = additionalUIParent.Find("MoveWhileEmotingPanel")?.GetComponentInChildren<Toggle>();
+            allowMovingWhileEmotingGameObject = additionalUIParent.Find("MoveWhileEmotingPanel")?.gameObject;
+            allowMovingWhileEmotingToggle = allowMovingWhileEmotingGameObject?.GetComponentInChildren<Toggle>();
             allowMovingWhileEmotingToggle.isOn = ThirdPersonEmoteController.allowMovingWhileEmoting;
             allowMovingWhileEmotingToggle.onValueChanged.AddListener(delegate { OnUpdateToggleAllowMovingWhileEmoting(allowMovingWhileEmotingToggle); });
             currentAllowMovingWhileEmoting = allowMovingWhileEmotingToggle.isOn;
@@ -534,7 +537,9 @@ namespace TooManyEmotes.UI
 
             currentFirstPersonEmotes = ThirdPersonEmoteController.firstPersonEmotesEnabled;
             currentAllowMovingWhileEmoting = ThirdPersonEmoteController.allowMovingWhileEmoting;
-            // emoteLoadouts, menuGameObject, quickMenuManager, HUDManager.Instance?.controlTipLines
+
+            if (ConfigSync.instance.syncForceDisableMovingWhileEmoting && allowMovingWhileEmotingGameObject)
+                allowMovingWhileEmotingGameObject.SetActive(false);
 
             if (Assert(menuGameObject != null, "Error opening emote menu. Menu gameobject is null!"))
                 menuGameObject.SetActive(true);

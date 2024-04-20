@@ -51,7 +51,7 @@ namespace TooManyEmotes.Patches
         public static bool allowMovingWhileEmoting { get; internal set; } = false;
 
         //private static bool isMovingWhileEmoting { get { return emoteControllerLocal.IsPerformingCustomEmote() && (ConfigSync.instance.syncEnableMovingWhileEmoting || emoteControllerLocal.performingEmote.canMoveWhileEmoting); } }
-        internal static bool isMovingWhileEmoting { get { return emoteControllerLocal.IsPerformingCustomEmote() && (allowMovingWhileEmoting || emoteControllerLocal.performingEmote.canMoveWhileEmoting); } }
+        internal static bool isMovingWhileEmoting { get { return !ConfigSync.instance.syncForceDisableMovingWhileEmoting && emoteControllerLocal.IsPerformingCustomEmote() && (allowMovingWhileEmoting || emoteControllerLocal.performingEmote.canMoveWhileEmoting); } }
 
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
@@ -462,7 +462,7 @@ namespace TooManyEmotes.Patches
 
             if (appendToIndex < 0 || appendToIndex >= controlTipLines.Length - 1)
                 appendToIndex = 0;
-            /*if (allowMovingWhileEmoting)
+            /*if (isMovingWhileEmoting)
             {
                 HUDManager.Instance.ClearControlTips();
                 return; // For now until I can finish updating the control tips while the allow emoting while moving setting is enabled
@@ -490,12 +490,12 @@ namespace TooManyEmotes.Patches
                 zoomControlText = "Unbound";
 
             emoteControlTipLines[index] = "Zoom : ";
-            if (allowMovingWhileEmoting)
+            if (isMovingWhileEmoting)
                 emoteControlTipLines[index] += "[" + rotateDisplayText + "] + ";
             emoteControlTipLines[index++] += zoomControlText;
-
+            
             //if (!ConfigSync.instance.syncEnableMovingWhileEmoting)
-            emoteControlTipLines[index++] = string.Format((allowMovingWhileEmoting ? "Freeze" : "Rotate") + " : " + (ConfigSettings.toggleRotateCharacterInEmote.Value ? "Toggle" : "Hold") + " [{0}]", rotateDisplayText);
+            emoteControlTipLines[index++] = string.Format((isMovingWhileEmoting ? "Freeze" : "Rotate") + " : " + (ConfigSettings.toggleRotateCharacterInEmote.Value ? "Toggle" : "Hold") + " [{0}]", rotateDisplayText);
 
             for (; index < emoteControlTipLines.Length; index++)
                 emoteControlTipLines[index] = "";

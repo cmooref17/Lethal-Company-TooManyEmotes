@@ -43,8 +43,15 @@ namespace TooManyEmotesScrap.Props
         [HarmonyPostfix]
         private static void OnConfigSynced()
         {
-            AddGrabbableEmotePropsMoons();
-            CheckIfShouldRemovePropEmotesFromUnlockedEmotes();
+            try
+            {
+                AddGrabbableEmotePropsMoons();
+                CheckIfShouldRemovePropEmotesFromUnlockedEmotes();
+            }
+            catch (Exception e)
+            {
+                LogError("Error initializing mod with TooManyEmotes. Maybe you aren't running the minimum version of TME that this mod's version requires?");
+            }
         }
 
         

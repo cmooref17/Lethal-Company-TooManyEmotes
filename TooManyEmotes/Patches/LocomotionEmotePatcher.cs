@@ -23,10 +23,9 @@ namespace TooManyEmotes.Patches
                 return;
 
             //if (EmoteController.allEmoteControllers.TryGetValue(__instance.gameObject, out var emoteController) && emoteController.IsPerformingCustomEmote() && (ConfigSync.instance.syncEnableMovingWhileEmoting || emoteController.performingEmote.canMoveWhileEmoting))
-            if (EmoteController.allEmoteControllers.TryGetValue(__instance.gameObject, out var emoteController) && emoteController.IsPerformingCustomEmote() && (ThirdPersonEmoteController.allowMovingWhileEmoting || emoteController.performingEmote.canMoveWhileEmoting))
+            if (EmoteController.allEmoteControllers.TryGetValue(__instance.gameObject, out var emoteController) && emoteController.IsPerformingCustomEmote() && (ThirdPersonEmoteController.isMovingWhileEmoting || emoteController.performingEmote.canMoveWhileEmoting))
             {
-                bool isJumping = (bool)Traverse.Create(__instance).Field("isJumping").GetValue();
-                bool result = !(__instance.inSpecialInteractAnimation || __instance.isPlayerDead || isJumping || __instance.isCrouching || __instance.isClimbingLadder || __instance.isGrabbingObjectAnimation || __instance.inTerminalMenu || __instance.isTypingChat);
+                bool result = !(__instance.inSpecialInteractAnimation || __instance.isPlayerDead || __instance.isCrouching || __instance.isClimbingLadder || __instance.isGrabbingObjectAnimation || __instance.inTerminalMenu || __instance.isTypingChat);
                 if (result)
                     __result = true;
             }
@@ -37,12 +36,12 @@ namespace TooManyEmotes.Patches
         [HarmonyPrefix]
         public static bool CancelMovingEmote()
         {
-            //if (emoteControllerLocal.IsPerformingCustomEmote() && ConfigSync.instance.syncEnableMovingWhileEmoting)
-            if (emoteControllerLocal.IsPerformingCustomEmote() && ThirdPersonEmoteController.allowMovingWhileEmoting)
+            if (localPlayerController == null || emoteControllerLocal == null)
+                return true;
+
+            if (emoteControllerLocal.IsPerformingCustomEmote() && ThirdPersonEmoteController.isMovingWhileEmoting)
             {
-                localPlayerController.performingEmote = false;
                 emoteControllerLocal.StopPerformingEmote();
-                localPlayerController.StopPerformingEmoteServerRpc();
                 return false;
             }
             return true;

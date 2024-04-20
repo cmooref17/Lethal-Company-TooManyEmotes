@@ -158,7 +158,7 @@ namespace TooManyEmotes
 
                 //playerController.cameraContainerTransform.position = cameraContainerLerp.position;
                 //playerController.cameraContainerTransform.rotation = cameraContainerLerp.rotation;
-                if (!isLocalPlayer || (!ThirdPersonEmoteController.firstPersonEmotesEnabled && !ThirdPersonEmoteController.isMovingWhileEmoting))
+                if (!isLocalPlayer || !ThirdPersonEmoteController.isMovingWhileEmoting)
                 {
                     playerController.cameraContainerTransform.position = cameraContainerLerp.position;
                     playerController.cameraContainerTransform.rotation = cameraContainerLerp.rotation;
@@ -454,8 +454,6 @@ namespace TooManyEmotes
             if (heldProp)
                 heldProp.EnableItemMeshes(true);
 
-            playerController.playerBodyAnimator.SetInteger("emote_number", 0);
-            playerController.performingEmote = false;
 
             if (sourceGrabbableEmoteProp != null)
             {
@@ -464,6 +462,9 @@ namespace TooManyEmotes
                 sourceGrabbableEmoteProp = null;
             }
 
+            playerController.playerBodyAnimator.SetInteger("emote_number", 0);
+            playerController.performingEmote = false;
+            playerController.playerBodyAnimator.Update(0);
             if (isLocalPlayer)
             {
                 ThirdPersonEmoteController.OnStopCustomEmoteLocal();

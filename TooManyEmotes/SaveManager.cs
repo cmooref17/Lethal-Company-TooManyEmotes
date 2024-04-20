@@ -5,10 +5,11 @@ using GameNetcodeStuff;
 using HarmonyLib;
 using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
+using TooManyEmotes.Patches;
 using static TooManyEmotes.CustomLogging;
 using static TooManyEmotes.HelperTools;
 
-namespace TooManyEmotes.Patches
+namespace TooManyEmotes
 {
     [HarmonyPatch]
     public static class SaveManager
@@ -294,6 +295,7 @@ namespace TooManyEmotes.Patches
                         if (!EmotesManager.allFavoriteEmotes.Contains(emote))
                             EmotesManager.allFavoriteEmotes.Add(emote);
                     }
+                    SaveFavoritedEmotes();
                 }
             }
             catch (Exception e)
