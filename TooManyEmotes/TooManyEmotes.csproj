@@ -36,7 +36,7 @@
       <HintPath>..\..\..\..\..\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\core\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
@@ -182,7 +182,6 @@
     <Compile Include="EmoteControllers\EmoteController.cs" />
     <Compile Include="EmoteGifts.cs" />
     <Compile Include="Props\EmotePropData.cs" />
-    <Compile Include="Props\GrabbableEmotePropManager.cs" />
     <Compile Include="Props\GrabbablePropObject.cs" />
     <Compile Include="UI\AnimationPreviewer.cs" />
     <Compile Include="UI\EmoteMenu.cs" />
@@ -212,7 +211,6 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /Y "$(TargetDir)$(TargetName).dll" "C:\Users\cmoor\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\plugins\FlipMods-TooManyEmotes\"
-xcopy /Y "$(TargetDir)$(TargetName).dll" "C:\Program Files (x86)\Steam\steamapps\common\Lethal Company\BepInEx\plugins\FlipMods-TooManyEmotes\"</PostBuildEvent>
+    <PostBuildEvent>xcopy /Y "$(TargetDir)$(TargetName).dll" "C:\Users\cmoor\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\plugins\FlipMods-TooManyEmotes\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

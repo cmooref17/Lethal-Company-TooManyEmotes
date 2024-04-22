@@ -21,6 +21,7 @@ namespace TooManyEmotes.Props
                 InitializeEmoteProp();
             foreach (var collider in GetComponentsInChildren<Collider>())
                 GameObject.Destroy(collider);
+            GameObject.Destroy(GetComponentInChildren<ScanNodeProperties>());
         }
 
 

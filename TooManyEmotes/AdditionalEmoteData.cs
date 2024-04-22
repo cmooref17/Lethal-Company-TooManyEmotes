@@ -38,6 +38,7 @@ namespace TooManyEmotes
             AssignPropToEmote("baseball_bat.prop", "miracle_trickshot");
             AssignPropToEmote("dumbbell.prop", "pumping_iron");
             AssignPropToEmote("paddle.prop", "paddle_royale");
+            AssignPropToEmote("gamepad.prop", "controller_crew");
         }
 
 

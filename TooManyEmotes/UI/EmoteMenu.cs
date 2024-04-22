@@ -15,6 +15,8 @@ using static TooManyEmotes.HelperTools;
 using static TooManyEmotes.CustomLogging;
 using System.Linq;
 using TooManyEmotes.Networking;
+using System.Xml.Linq;
+using System.Collections;
 
 
 namespace TooManyEmotes.UI
@@ -148,6 +150,7 @@ namespace TooManyEmotes.UI
                 EmoteUIElement uiElement = new EmoteUIElement
                 {
                     uiGameObject = uiObject.gameObject,
+                    uiRectTransform = uiObject as RectTransform,
                     id = i,
                     backgroundImage = uiObject.GetComponentInChildren<Image>(),
                     textContainer = uiObject.GetComponentInChildren<TextMeshPro>()
@@ -275,23 +278,25 @@ namespace TooManyEmotes.UI
             else
             {
                 Vector2 direction;
+                RectTransform referenceElement = emoteUIElementsList[0].uiRectTransform;
+                float distanceThreshold = Vector2.Distance(menuGameObject.transform.position, referenceElement.position) * 0.815f;
                 if (!usingController)
                 {
-                    Vector2 mousePosition = Mouse.current.position.ReadValue();
-                    Vector2 screenCenter = new Vector2(Screen.width / 2, Screen.height / 2);
-                    direction = mousePosition - screenCenter;
+                    Vector3 rawMousePosition = Mouse.current.position.ReadValue();
+                    Camera uiCamera = HUDManager.Instance.HUDContainer.GetComponentInParent<Canvas>().worldCamera;
+                    rawMousePosition.z = Mathf.Abs(uiCamera.transform.position.z - menuTransform.position.z);
+                    direction = uiCamera.ScreenToWorldPoint(rawMousePosition) - menuTransform.position;
                 }
                 else
                     direction = currentThumbstickPosition;
 
                 int emoteIndex = -1;
-                if ((!usingController && direction.magnitude / Screen.height >= 0.17f) || (usingController && currentThumbstickPosition != Vector2.zero))
+                if ((!usingController && direction.magnitude >= distanceThreshold/*0.425f*/) || (usingController && currentThumbstickPosition != Vector2.zero))
                 {
                     float angle = Mathf.Atan2(direction.y, -direction.x) * Mathf.Rad2Deg - 67.5f;
                     if (angle < 0) angle += 360;
                     emoteIndex = Mathf.FloorToInt(angle / 45);
                 }
-
                 if (emoteIndex != hoveredEmoteUIIndex)
                     OnHoveredNewElement(emoteIndex);
             }
@@ -780,6 +785,7 @@ namespace TooManyEmotes.UI
     public class EmoteUIElement
     {
         public GameObject uiGameObject;
+        public RectTransform uiRectTransform;
         public int id;
         public Image backgroundImage;
         public TextMeshPro textContainer;

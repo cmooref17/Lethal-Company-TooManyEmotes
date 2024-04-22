@@ -41,14 +41,12 @@ namespace TooManyEmotes.Patches
             isMuted = false;
             nearbyPerformingEmoteControllers.Clear();
 
-            var cozyLights = gameObject.GetComponentInChildren<CozyLights>();
-            if (cozyLights && cozyLights.turnOnAudio)
+            audioSource = gameObject.GetComponentInChildren<AudioSource>();
+            if (audioSource)
             {
                 discoBallTransform = gameObject.transform;
-                audioSource = cozyLights.turnOnAudio;
+                Log("Found disco ball.");
             }
-
-            Log("Found disco ball.");
         }
 
 
@@ -93,19 +91,6 @@ namespace TooManyEmotes.Patches
                     foreach (var removeElement in elementsToRemove)
                         OnStopPerformingEmote(removeElement);
                 }
-            }
-        }
-
-
-        [HarmonyPatch(typeof(AutoParentToShip), "Awake")]
-        [HarmonyPrefix]
-        private static void OnDestroyDiscoBall(AutoParentToShip __instance)
-        {
-            if (discoBallTransform == __instance.transform)
-            {
-                discoBallTransform = null;
-                audioSource = null;
-                isMuted = false;
             }
         }
 

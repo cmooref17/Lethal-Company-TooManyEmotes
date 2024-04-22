@@ -125,6 +125,7 @@
     <Compile Include="PluginInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Props\GrabbableEmotePropManager.cs" />
+    <Compile Include="TooManyEmotesEvents.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TooManyEmotes\TooManyEmotes.csproj">
@@ -134,7 +135,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /Y "$(TargetDir)$(TargetName).dll" "C:\Users\cmoor\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\plugins\FlipMods-TooManyEmotesScrap\"
-xcopy /Y "$(TargetDir)$(TargetName).dll" "C:\Program Files (x86)\Steam\steamapps\common\Lethal Company\BepInEx\plugins\FlipMods-TooManyEmotesScrap\"</PostBuildEvent>
+    <PostBuildEvent>xcopy /Y "$(TargetDir)$(TargetName).dll" "C:\Users\cmoor\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\plugins\FlipMods-TooManyEmotesScrap\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

@@ -17,11 +17,14 @@ namespace TooManyEmotesScrap.Props
 {
     public static class GrabbableEmotePropManager
     {
+        private static Dictionary<string, Item> originalItems = new Dictionary<string, Item>();
         public static List<EmotePropData> emotePropsData { get { return EmotePropManager.emotePropsData; } }
         public static Dictionary<string, EmotePropData> emotePropsDataDict { get { return EmotePropManager.emotePropsDataDict; } }
 
         public static List<EmotePropData> grabbableEmotePropsData = new List<EmotePropData>();
 
+        private static string defaultItemName = "dust pan";
+        private static string defaultTwoHandedItemName = "v-type engine";
         private static Item defaultPropItemData;
         private static Item defaultPropItemDataTwoHanded;
         private static GameObject scanNodePrefab;
@@ -38,22 +41,6 @@ namespace TooManyEmotesScrap.Props
             RemoveGrabbableEmotePropsMoons();
         }
 
-
-        [HarmonyPatch(typeof(TooManyEmotes.Networking.ConfigSync), "OnSynced")]
-        [HarmonyPostfix]
-        private static void OnConfigSynced()
-        {
-            try
-            {
-                AddGrabbableEmotePropsMoons();
-                CheckIfShouldRemovePropEmotesFromUnlockedEmotes();
-            }
-            catch (Exception e)
-            {
-                LogError("Error initializing mod with TooManyEmotes. Maybe you aren't running the minimum version of TME that this mod's version requires?");
-            }
-        }
-
         
         [HarmonyPatch(typeof(GameNetworkManager), "Start")]
         [HarmonyPostfix]
@@ -65,13 +52,14 @@ namespace TooManyEmotesScrap.Props
                 {
                     foreach (var networkPrefab in NetworkManager.Singleton.NetworkConfig.Prefabs.Prefabs)
                     {
-                        if (defaultPropItemData != null && defaultPropItemDataTwoHanded != null)
-                            break;
-
-                        if (networkPrefab?.Prefab != null && networkPrefab.Prefab.TryGetComponent<GrabbableObject>(out var grabbableObject) && grabbableObject.itemProperties != null)
+                        if (networkPrefab?.Prefab != null && networkPrefab.Prefab.TryGetComponent<GrabbableObject>(out var grabbableObject) && grabbableObject?.itemProperties != null && !string.IsNullOrEmpty(grabbableObject.itemProperties.itemName))
                         {
                             string itemName = grabbableObject.itemProperties.itemName.ToLower();
-                            if (itemName == "airhorn" || itemName == "v-type engine")
+                            if (!originalItems.ContainsKey(itemName))
+                                originalItems.Add(itemName, grabbableObject.itemProperties);
+
+
+                            if (itemName == defaultItemName || itemName == defaultTwoHandedItemName)
                             {
                                 var itemData = Item.Instantiate(grabbableObject.itemProperties);
                                 itemData.itemName = "";
@@ -87,18 +75,17 @@ namespace TooManyEmotesScrap.Props
                                 itemData.weight = 1;
                                 itemData.toolTips = new string[] { "Perform emote [RMB]" };
 
-                                if (itemName == "airhorn" && defaultPropItemData == null)
+                                if (itemName == defaultItemName && defaultPropItemData == null)
                                 {
                                     itemData.twoHanded = false;
                                     defaultPropItemData = itemData;
                                     if (scanNodePrefab == null)
                                     {
-                                        scanNodePrefab = grabbableObject.transform.Find("ScanNode").gameObject;
-                                        if (scanNodePrefab == null)
-                                            LogError("Failed to find scanNodePrefab!");
-                                        else
+                                        scanNodePrefab = grabbableObject.GetComponentInChildren<ScanNodeProperties>()?.gameObject;
+                                        if (scanNodePrefab != null)
                                         {
                                             scanNodePrefab = GameObject.Instantiate(scanNodePrefab);
+                                            scanNodePrefab.name = "ScanNode";
                                             scanNodePrefab.layer = 22; // ScanNode layer
                                             var scanNode = scanNodePrefab.GetComponentInChildren<ScanNodeProperties>();
                                             scanNode.headerText = "Prop";
@@ -109,7 +96,7 @@ namespace TooManyEmotesScrap.Props
                                         }
                                     }
                                 }
-                                else if (itemName == "v-type engine" && defaultPropItemDataTwoHanded == null)
+                                else if (itemName == defaultTwoHandedItemName && defaultPropItemDataTwoHanded == null)
                                 {
                                     itemData.twoHanded = true;
                                     defaultPropItemDataTwoHanded = itemData;
@@ -118,6 +105,8 @@ namespace TooManyEmotesScrap.Props
                         }
                     }
 
+                    if (scanNodePrefab == null)
+                        LogError("Failed to create ScanNode prefab.");
                     if (!defaultPropItemData)
                         LogError("Failed to create default prop item data.");
                     if (!defaultPropItemDataTwoHanded)
@@ -125,22 +114,24 @@ namespace TooManyEmotesScrap.Props
                 }
             }
 
-            CreateGrabbablePropData("sexy_saxophone.sexy_sax.prop", value: 120, rarity: 10, weight: 1.05f, positionOffset: new Vector3(-0.15f, 0.08f, -0.055f), rotationOffset: new Vector3(0, 100, 80));
-            CreateGrabbablePropData("trombone.prop", value: 80, rarity: 12, weight: 1.05f, positionOffset: new Vector3(-0.155f, 0.325f, -0.015f), rotationOffset: new Vector3(-90, -80, 0));
-            CreateGrabbablePropData("baseball_bat.prop", value: 80, rarity: 12, weight: 1.03f, positionOffset: new Vector3(0.3f, 0.2f, 0.02f), rotationOffset: new Vector3(0, 0, -160));
+            CreateGrabbablePropData("sexy_saxophone.sexy_sax.prop", value: 120, rarity: 10, weight: 1.05f, positionOffset: new Vector3(-0.15f, 0.08f, -0.055f), rotationOffset: new Vector3(0, 100, 80), copySfxFromItem: "big bolt");
+            CreateGrabbablePropData("trombone.prop", value: 80, rarity: 12, weight: 1.05f, positionOffset: new Vector3(-0.155f, 0.325f, -0.015f), rotationOffset: new Vector3(-90, -80, 0), copySfxFromItem: "big bolt");
+            CreateGrabbablePropData("baseball_bat.prop", value: 80, rarity: 12, weight: 1.03f, positionOffset: new Vector3(0.3f, 0.2f, 0.02f), rotationOffset: new Vector3(0, 0, -160), copySfxFromItem: "dust pan");
 
             CreateGrabbablePropData("junk_food.prop", value: 60, rarity: 15, weight: 0, positionOffset: new Vector3(-0.02f, 0.05f, -0.03f), rotationOffset: new Vector3(-10, 110, -10));
             CreateGrabbablePropData("red_card.prop", value: 60, rarity: 15, weight: 0, positionOffset: new Vector3(0.08f, 0.075f, -0.075f), rotationOffset: new Vector3(-10, 100, -10));
 
-            CreateGrabbablePropData("perfect_score.prop", value: 60, rarity: 15, weight: 1.05f, positionOffset: new Vector3(-0.1f, 0.025f, -0.027f), rotationOffset: new Vector3(-10, 110, -10));
-            CreateGrabbablePropData("old_chair.prop", value: 100, rarity: 12, weight: 1.15f, two_handed: true, positionOffset: new Vector3(0, 0.1f, 0.6f), rotationOffset: new Vector3(85, 180, 0));
+            CreateGrabbablePropData("perfect_score.prop", value: 60, rarity: 15, weight: 1.05f, positionOffset: new Vector3(-0.1f, 0.025f, -0.027f), rotationOffset: new Vector3(-10, 110, -10), copySfxFromItem: "toy robot");
+            CreateGrabbablePropData("old_chair.prop", value: 100, rarity: 12, weight: 1.15f, two_handed: true, positionOffset: new Vector3(0, 0.1f, 0.6f), rotationOffset: new Vector3(85, 180, 0), copySfxFromItem: "toy robot");
 
-            CreateGrabbablePropData("paddle.prop", value: 60, rarity: 15, weight: 1.01f, positionOffset: new Vector3(0.15f, 0.08f, -0.01f), rotationOffset: new Vector3(0, 95, -10));
-            CreateGrabbablePropData("dumbbell.prop", value: 120, rarity: 10, weight: 1.2f, positionOffset: new Vector3(0.015f, -0.08f, 0.02f), rotationOffset: new Vector3(0, 10, 0));
+            CreateGrabbablePropData("paddle.prop", value: 60, rarity: 15, weight: 1.01f, positionOffset: new Vector3(0.15f, 0.08f, -0.01f), rotationOffset: new Vector3(0, 95, -10), copySfxFromItem: "airhorn");
+            CreateGrabbablePropData("dumbbell.prop", value: 120, rarity: 10, weight: 1.2f, positionOffset: new Vector3(0.015f, -0.08f, 0.02f), rotationOffset: new Vector3(0, 10, 0), copySfxFromItem: "big bolt");
+
+            CreateGrabbablePropData("gamepad.prop", value: 120, rarity: 10, weight: 1.01f, positionOffset: new Vector3(-0.03f, 0.15f, -0.09f), rotationOffset: new Vector3(160, 104, 0), copySfxFromItem: "airhorn");
         }
 
 
-        private static void CreateGrabbablePropData(string propName, bool isScrap = true, int purchasePrice = 0, int value = 100, int rarity = 10, float weight = 1, bool two_handed = false, Vector3 positionOffset = default, Vector3 rotationOffset = default)
+        private static void CreateGrabbablePropData(string propName, bool isScrap = true, int purchasePrice = 0, int value = 100, int rarity = 10, float weight = 1, bool two_handed = false, Vector3 positionOffset = default, Vector3 rotationOffset = default, string copySfxFromItem = "")
         {
             if (!emotePropsDataDict.TryGetValue(propName, out var propData))
             {
@@ -153,6 +144,23 @@ namespace TooManyEmotesScrap.Props
                 if (!grabbableEmotePropsData.Contains(propData))
                     grabbableEmotePropsData.Add(propData);
                 return;
+            }
+
+            AudioClip grabSfx = null;
+            AudioClip dropSfx = null;
+            AudioClip pocketSfx = null;
+            AudioClip throwSfx = null;
+            if (copySfxFromItem != "")
+            {
+                if (originalItems.TryGetValue(copySfxFromItem, out var copySfxItemData))
+                {
+                    grabSfx = copySfxItemData.grabSFX;
+                    dropSfx = copySfxItemData.dropSFX;
+                    pocketSfx = copySfxItemData.pocketSFX;
+                    throwSfx = copySfxItemData.throwSFX;
+                }
+                else
+                    LogError("Could not copy item SFX from item: \"" + copySfxFromItem + "\". Item does not exist? This is okay.");
             }
 
             propData.isGrabbableObject = false; // for now
@@ -197,6 +205,10 @@ namespace TooManyEmotesScrap.Props
                 grabbableEmoteProp.gameObject.layer = 6; // Props layer
 
                 grabbableEmoteProp.sfxAudioSource = propData.propPrefab.AddComponent<AudioSource>();
+                grabbableEmoteProp.sfxAudioSource.minDistance = 4;
+                grabbableEmoteProp.sfxAudioSource.maxDistance = 18;
+                grabbableEmoteProp.sfxAudioSource.spatialBlend = 1;
+                grabbableEmoteProp.sfxAudioSource.dopplerLevel = 0;
 
                 var scanNode = propData.propPrefab.GetComponentInChildren<ScanNodeProperties>();
                 if (scanNode == null)
@@ -269,6 +281,10 @@ namespace TooManyEmotesScrap.Props
                 itemData.rotationOffset = propData.rotationOffset;
                 itemData.restingRotation = propData.restingRotation;
                 itemData.verticalOffset = propData.verticalOffset;
+                itemData.grabSFX = grabSfx;
+                itemData.dropSFX = dropSfx;
+                itemData.pocketSFX = pocketSfx;
+                itemData.throwSFX = throwSfx;
 
                 NetworkManager.Singleton.AddNetworkPrefab(propData.propPrefab);
                 propData.isGrabbableObject = true;

@@ -15,7 +15,7 @@ using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes
 {
-    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "2.1.8")]
+    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "2.1.10")]
     [BepInDependency("com.rune580.LethalCompanyInputUtils", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("me.swipez.melonloader.morecompany", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
@@ -190,7 +190,13 @@ namespace TooManyEmotes
                 types = e.Types.Where(t => t != null);
             }
             foreach (var type in types)
-                this._harmony.PatchAll(type);
+            {
+                try
+                {
+                    this._harmony.PatchAll(type);
+                }
+                catch { }
+            }
         }
 
 

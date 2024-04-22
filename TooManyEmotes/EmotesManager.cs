@@ -161,7 +161,7 @@ namespace TooManyEmotes
                     emote.animationClip.name = emote.emoteName;
                 }
 
-                if (emote.transitionsToClip != null || emote.animationClip.isLooping || emote.isPose || emote.emoteSyncGroup != null)
+                if (emote.transitionsToClip != null || emote.animationClip.isLooping || emote.isPose || emote.emoteSyncGroup != null || true) // Temporarily allowing all emotes to be syncable
                     emote.canSyncEmote = true;
 
                 if (emote.displayName == "")
