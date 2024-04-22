@@ -204,7 +204,6 @@ namespace TooManyEmotes
 
             try
             {
-                //var saveEmoteNames = new List<string>(globallyUnlockedEmoteNames);
                 foreach (var emote in SessionManager.emotesUnlockedThisSession)
                 {
                     if (!emote.complementary && !emote.requiresHeldProp && !globallyUnlockedEmoteNames.Contains(emote.emoteName))
@@ -215,7 +214,8 @@ namespace TooManyEmotes
             }
             catch (Exception e)
             {
-                LogError("Error while trying to save TooManyEmotes local player data: " + e);
+                LogErrorVerbose("Error while trying to save TooManyEmotes local player data.");
+                LogErrorVerbose(e.ToString());
             }
         }
 
@@ -227,7 +227,7 @@ namespace TooManyEmotes
             
             try
             {
-                string[] loadEmoteNames = ES3.Load("UnlockedEmotes", TooManyEmotesSaveFileName, new string[0]);
+                var loadEmoteNames = ES3.Load("UnlockedEmotes", TooManyEmotesSaveFileName, new string[0]);
                 foreach (string emoteName in loadEmoteNames)
                 {
                     if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote) && !emote.complementary && !emote.requiresHeldProp)
@@ -239,17 +239,26 @@ namespace TooManyEmotes
             }
             catch (Exception e)
             {
-                LogError("Error while trying to load TooManyEmotes local player data: " + e);
+                LogErrorVerbose("Error while trying to load TooManyEmotes local player data.");
+                LogErrorVerbose(e.ToString());
             }
         }
 
 
         internal static void ResetGloballyUnlockedEmotes()
         {
-            Log("Resetting globally unlocked emotes for local player.");
-            ES3.DeleteKey("UnlockedEmotes", TooManyEmotesSaveFileName);
-            globallyUnlockedEmoteNames?.Clear();
-            SessionManager.emotesUnlockedThisSession?.Clear();
+            LogWarning("Resetting globally unlocked emotes for local player.");
+            try
+            {
+                globallyUnlockedEmoteNames?.Clear();
+                SessionManager.emotesUnlockedThisSession?.Clear();
+                ES3.DeleteKey("UnlockedEmotes", TooManyEmotesSaveFileName);
+            }
+            catch (Exception e)
+            {
+                LogErrorVerbose("Error resetting globally unlocked emotes?");
+                LogErrorVerbose(e.ToString());
+            }
         }
 
 
@@ -259,7 +268,17 @@ namespace TooManyEmotes
         public static void SaveFavoritedEmotes()
         {
             if (EmotesManager.allFavoriteEmotes != null)
-                ES3.Save("TooManyEmotes.FavoriteEmotes", EmotesManager.allFavoriteEmotes.ToArray(), TooManyEmotesSaveFileName);
+            {
+                try
+                {
+                    ES3.Save("TooManyEmotes.FavoriteEmotes", EmotesManager.allFavoriteEmotes.ToArray(), TooManyEmotesSaveFileName);
+                }
+                catch (Exception e)
+                {
+                    LogErrorVerbose("Error saving favorited emotes?");
+                    LogErrorVerbose(e.ToString());
+                }
+            }
         }
 
 
@@ -270,22 +289,15 @@ namespace TooManyEmotes
 
             // Try to transfer old save data to new save location
             List<string> oldFavoriteEmotes = null;
-            if (ES3.KeyExists("TooManyEmotes.FavoriteEmotes"))
+            try // Not sure why I'm putting a try block here and inside the method, but it stays. For now
             {
-                try
-                {
-                    oldFavoriteEmotes = ES3.Load("TooManyEmotes.FavoriteEmotes", new string[0]).ToList();
-                    ES3.DeleteKey("TooManyEmotes.FavoriteEmotes");
-                }
-                catch
-                {
-                    ES3.DeleteKey("TooManyEmotes.FavoriteEmotes");
-                }
+                oldFavoriteEmotes = LoadOldFavoritedEmotes()?.ToList();
             }
+            catch { }
 
+            EmotesManager.allFavoriteEmotes.Clear();
             try
             {
-                EmotesManager.allFavoriteEmotes.Clear();
                 var addFavoritedEmotes = ES3.Load("TooManyEmotes.FavoriteEmotes", TooManyEmotesSaveFileName, new string[0]);
                 EmotesManager.allFavoriteEmotes.AddRange(addFavoritedEmotes);
                 if (oldFavoriteEmotes != null)
@@ -302,17 +314,47 @@ namespace TooManyEmotes
             {
                 LogError("Error while trying to load favorited emotes due to possible save corruption? Your favorited emotes will likely be reset.\n" + e);
                 ES3.DeleteKey("TooManyEmotes.FavoriteEmotes", TooManyEmotesSaveFileName);
+                LogErrorVerbose("Deleted key: TooManyEmotes.FavoriteEmotes from save: " + TooManyEmotesSaveFileName);
             }
             SessionManager.UpdateUnlockedFavoriteEmotes();
         }
 
 
+        private static string[] LoadOldFavoritedEmotes()
+        { 
+            try
+            {
+                if (ES3.KeyExists("TooManyEmotes.FavoriteEmotes"))
+                {
+                    var emoteNames = ES3.Load<string[]>("TooManyEmotes.FavoriteEmotes");
+                    return emoteNames;
+                }
+            }
+            catch (Exception e)
+            {
+                LogErrorVerbose("Error loading old favorited emotes?");
+                LogErrorVerbose(e.ToString());
+                ES3.DeleteKey("TooManyEmotes.FavoriteEmotes");
+                LogErrorVerbose("Deleted key: TooManyEmotes.FavoriteEmotes");
+            }
+            return null;
+        }
+
+
         internal static void ResetFavoritedEmotes()
         {
-            Log("Resetting favorited emotes for local player.");
-            ES3.DeleteKey("TooManyEmotes.FavoriteEmotes", TooManyEmotesSaveFileName);
-            SessionManager.unlockedFavoriteEmotes?.Clear();
-            SessionManager.UpdateUnlockedFavoriteEmotes();
+            LogWarning("Resetting favorited emotes for local player.");
+            try
+            {
+                ES3.DeleteKey("TooManyEmotes.FavoriteEmotes", TooManyEmotesSaveFileName);
+                SessionManager.unlockedFavoriteEmotes?.Clear();
+                SessionManager.UpdateUnlockedFavoriteEmotes();
+            }
+            catch (Exception e)
+            {
+                LogErrorVerbose("Error resetting favorite emotes?");
+                LogErrorVerbose(e.ToString());
+            }
         }
     }
 }

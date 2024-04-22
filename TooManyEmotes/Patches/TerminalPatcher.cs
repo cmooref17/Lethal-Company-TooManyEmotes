@@ -45,7 +45,7 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(Terminal), "Awake")]
         [HarmonyPostfix]
-        public static void InitializeTerminal(Terminal __instance)
+        private static void InitializeTerminal(Terminal __instance)
         {
             terminalInstance = __instance;
             initializedTerminalNodes = false;
@@ -58,7 +58,7 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(Terminal), "BeginUsingTerminal")]
         [HarmonyPostfix]
-        public static void OnBeginUsingTerminal(Terminal __instance)
+        private static void OnBeginUsingTerminal(Terminal __instance)
         {
             if (!initializedTerminalNodes && ConfigSync.isSynced)
                 EditExistingTerminalNodes();
@@ -66,7 +66,7 @@ namespace TooManyEmotes.Patches
         }
 
 
-        public static void EditExistingTerminalNodes()
+        private static void EditExistingTerminalNodes()
         {
             initializedTerminalNodes = true;
 
@@ -106,7 +106,7 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(Terminal), "TextPostProcess")]
         [HarmonyPrefix]
-        public static void TextPostProcess(ref string modifiedDisplayText, TerminalNode node)
+        private static void TextPostProcess(ref string modifiedDisplayText, TerminalNode node)
         {
             if (modifiedDisplayText.Length <= 0)
                 return;
@@ -123,7 +123,7 @@ namespace TooManyEmotes.Patches
                 else
                 {
                     replacementText += "Remaining emote credit balance: $" + currentEmoteCredits + ".\n";
-                    if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything)
+                    if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency)
                         replacementText += "Remaining group credit balance: $" + terminalInstance.groupCredits + ".\n";
                     replacementText += "\n";
 
@@ -145,7 +145,7 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(Terminal), "ParsePlayerSentence")]
         [HarmonyPrefix]
-        public static bool ParsePlayerSentence(ref TerminalNode __result, Terminal __instance)
+        private static bool ParsePlayerSentence(ref TerminalNode __result, Terminal __instance)
         {
             if (__instance.screenText.text.Length <= 0)
                 return true;
@@ -164,7 +164,7 @@ namespace TooManyEmotes.Patches
             {
                 if (input.StartsWith("emote"))
                 {
-                    __result = BuildTerminalNodeHostDoesNotHaveMod();
+                    __result = BuildTerminalNodeNotSynced();
                     return false;
                 }
                 else
@@ -181,9 +181,9 @@ namespace TooManyEmotes.Patches
                         Debug.Log("Attempted to confirm purchase on emote that was already unlocked. Emote: " + purchasingEmote.displayName);
                         __result = BuildTerminalNodeAlreadyUnlocked(purchasingEmote);
                     }
-                    else if (Mathf.Max(currentEmoteCredits, 0) + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? Mathf.Max(terminalInstance.groupCredits, 0) : 0) < purchasingEmote.price)
+                    else if (Mathf.Max(currentEmoteCredits, 0) + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency ? Mathf.Max(terminalInstance.groupCredits, 0) : 0) < purchasingEmote.price)
                     {
-                        Debug.Log("Attempted to confirm purchase with insufficient emote credits. Current credits: " + currentEmoteCredits + ". " + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? ("Group credits: " + terminalInstance.groupCredits + ". ") : "") + "Emote price: " + purchasingEmote.price);
+                        Debug.Log("Attempted to confirm purchase with insufficient emote credits. Current credits: " + currentEmoteCredits + ". " + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency ? ("Group credits: " + terminalInstance.groupCredits + ". ") : "") + "Emote price: " + purchasingEmote.price);
                         __result = BuildTerminalNodeInsufficientFunds(purchasingEmote);
                     }
                     else
@@ -194,7 +194,7 @@ namespace TooManyEmotes.Patches
                         int oldGroupCredits = terminalInstance.groupCredits;
 
                         int dEmoteCredits = -Mathf.Min(Mathf.Max(currentEmoteCredits, 0), purchasingEmote.price);
-                        int dGroupCredits = ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? -Mathf.Min(Mathf.Max(terminalInstance.groupCredits, 0), purchasingEmote.price + dEmoteCredits) : 0;
+                        int dGroupCredits = ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency ? -Mathf.Min(Mathf.Max(terminalInstance.groupCredits, 0), purchasingEmote.price + dEmoteCredits) : 0;
 
                         currentEmoteCredits += dEmoteCredits;
                         terminalInstance.groupCredits += dGroupCredits;
@@ -279,9 +279,9 @@ namespace TooManyEmotes.Patches
                     Log("Attempted to start purchase on emote that was already unlocked. Emote: " + emote.displayName);
                     __result = BuildTerminalNodeAlreadyUnlocked(emote);
                 }
-                else if (Mathf.Max(currentEmoteCredits, 0) + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? Mathf.Max(terminalInstance.groupCredits, 0) : 0) < emote.price)
+                else if (Mathf.Max(currentEmoteCredits, 0) + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency ? Mathf.Max(terminalInstance.groupCredits, 0) : 0) < emote.price)
                 {
-                    Log("Attempted to start purchase with insufficient emote credits. Current credits: " + currentEmoteCredits + ". " + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything ? ("Group credits: " + terminalInstance.groupCredits + ". ") : "") + "Emote price: " + emote.price);
+                    Log("Attempted to start purchase with insufficient emote credits. Current credits: " + currentEmoteCredits + ". " + (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency ? ("Group credits: " + terminalInstance.groupCredits + ". ") : "") + "Emote price: " + emote.price);
                     __result = BuildTerminalNodeInsufficientFunds(emote);
                 }
                 else
@@ -301,11 +301,13 @@ namespace TooManyEmotes.Patches
         }
 
 
+        /*
         [HarmonyPatch(typeof(DepositItemsDesk), "SellItemsClientRpc")]
         [HarmonyPostfix]
-        public static void GainEmoteCredits(int itemProfit, int newGroupCredits, int itemsSold, float buyingRate, DepositItemsDesk __instance)
+        private static void GainEmoteCredits(int itemProfit, int newGroupCredits, int itemsSold, float buyingRate, DepositItemsDesk __instance)
         {
-            if (((int)Traverse.Create(__instance).Field("__rpc_exec_stage").GetValue()) == 2 && (NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsHost))
+            int execStage = (int)Traverse.Create(__instance).Field("__rpc_exec_stage").GetValue();
+            if (execStage == 2 && (isClient || isHost))
             {
                 int emoteCreditsProfit = (int)(itemProfit * ConfigSync.instance.syncAddEmoteCreditsMultiplier);
                 Log("Gained " + itemProfit + " group credits.");
@@ -313,13 +315,29 @@ namespace TooManyEmotes.Patches
                 currentEmoteCredits += emoteCreditsProfit;
             }
         }
+        */
+
+
+        [HarmonyPatch(typeof(DepositItemsDesk), "SellAndDisplayItemProfits")]
+        [HarmonyPrefix]
+        private static void OnGainGroupCredits(int profit, int newGroupCredits, DepositItemsDesk __instance)
+        {
+            profit = Mathf.Max(profit, 0);
+            if (profit <= 0)
+                return;
+
+            int emoteCreditsProfit = (int)(profit * ConfigSync.instance.syncAddEmoteCreditsMultiplier);
+            Log("Gained " + profit + " group credits.");
+            Log("Gained " + emoteCreditsProfit + " emote credits. GainEmoteCreditsMultiplier: " + ConfigSync.instance.syncAddEmoteCreditsMultiplier);
+            currentEmoteCredits += emoteCreditsProfit;
+        }
 
 
         [HarmonyPatch(typeof(TimeOfDay), "SetNewProfitQuota")]
         [HarmonyPostfix]
-        public static void RotateEmoteSelectionPerQuota()
+        private static void RotateEmoteSelectionPerQuota()
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (isServer)
                 SyncManager.RotateEmoteSelectionServer();
         }
 
@@ -388,7 +406,7 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static TerminalNode BuildTerminalNodeHome() {
+        private static TerminalNode BuildTerminalNodeHome() {
 
             TerminalNode homeTerminalNode = new TerminalNode {
                 displayText = "[TooManyEmotes]\n\n" +
@@ -403,7 +421,7 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static TerminalNode BuildTerminalNodeConfirmDenyPurchase(UnlockableEmote emote)
+        private static TerminalNode BuildTerminalNodeConfirmDenyPurchase(UnlockableEmote emote)
         {
             TerminalNode terminalNode = new TerminalNode {
                 displayText = confirmEmoteOpeningText + "\n" +
@@ -414,7 +432,7 @@ namespace TooManyEmotes.Patches
             };
 
             terminalNode.displayText += "Emote credit balance: $" + currentEmoteCredits + "\n";
-            if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything)
+            if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency)
                 terminalNode.displayText += "Group credit balance: $" + terminalInstance.groupCredits + "\n";
             terminalNode.displayText += "\n";
             terminalNode.displayText += "Please CONFIRM or DENY.\n\n";
@@ -423,7 +441,7 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static TerminalNode BuildTerminalNodeOnPurchased(UnlockableEmote emote, int newEmoteCredits, int newGroupCredits)
+        private static TerminalNode BuildTerminalNodeOnPurchased(UnlockableEmote emote, int newEmoteCredits, int newGroupCredits)
         {
             TerminalNode terminalNode = new TerminalNode {
                 displayText = "You have successfully purchased a new emote!\n" +
@@ -436,21 +454,19 @@ namespace TooManyEmotes.Patches
 
             if (newEmoteCredits != -1)
                 terminalNode.displayText += "New emote credit balance: $" + newEmoteCredits + "\n";
-            if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything && newGroupCredits != -1)
+            if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && newGroupCredits != -1)
                 terminalNode.displayText += "New group credit balance: $" + newGroupCredits + "\n";
             terminalNode.displayText += "\n";
 
             int page = Mathf.Max((SessionManager.unlockedEmotes.Count - 1) / 8) + 1;
             int slot = SessionManager.unlockedEmotes.Count % 8;
-            terminalNode.displayText += "Your new emote is registered in your emote menu.\n" +
-                "Page: " + page + "\n" +
-                "Slot: " + slot + ".\n\n";
+            terminalNode.displayText += "Your new emote has been added to the emote menu!\n\n";
 
             return terminalNode;
         }
 
 
-        static TerminalNode BuildTerminalNodeAlreadyUnlocked(UnlockableEmote emote)
+        private static TerminalNode BuildTerminalNodeAlreadyUnlocked(UnlockableEmote emote)
         {
             TerminalNode terminalNode = new TerminalNode {
                 displayText = "You have already purchased this emote!\n" +
@@ -463,7 +479,7 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static TerminalNode BuildTerminalNodeInsufficientFunds(UnlockableEmote emote)
+        private static TerminalNode BuildTerminalNodeInsufficientFunds(UnlockableEmote emote)
         {
             TerminalNode terminalNode = new TerminalNode {
                 displayText = "You could not afford this emote!\n" +
@@ -473,7 +489,7 @@ namespace TooManyEmotes.Patches
                 acceptAnything = false
             };
 
-            if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency && ConfigSync.instance.syncShareEverything)
+            if (ConfigSync.instance.syncPurchaseEmotesWithDefaultCurrency)
                 terminalNode.displayText += "Group credit balance is $" + terminalInstance.groupCredits + "\n";
 
             terminalNode.displayText += "Cost of emote is $" + emote.price + "\n\n";
@@ -481,7 +497,7 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static TerminalNode BuildTerminalNodeInvalidEmote(string emoteName = "")
+        private static TerminalNode BuildTerminalNodeInvalidEmote(string emoteName = "")
         {
             TerminalNode terminalNode = new TerminalNode {
                 displayText = "Emote does not exist, or is not available in the current rotation.",
@@ -495,7 +511,7 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static TerminalNode BuildTerminalNodeHostDoesNotHaveMod(string emoteName = "")
+        private static TerminalNode BuildTerminalNodeNotSynced(string emoteName = "")
         {
             TerminalNode terminalNode = new TerminalNode
             {
@@ -512,7 +528,7 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static TerminalNode BuildCustomTerminalNode(string displayText, bool clearPreviousText = false, bool acceptAnything = false, bool isConfirmationNode = false)
+        private static TerminalNode BuildCustomTerminalNode(string displayText, bool clearPreviousText = false, bool acceptAnything = false, bool isConfirmationNode = false)
         {
             TerminalNode terminalNode = new TerminalNode
             {
@@ -525,7 +541,7 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static bool IsAmbiguousKeyword(string keyword)
+        private static bool IsAmbiguousKeyword(string keyword)
         {
             keyword = keyword.ToLower();
             foreach (string ignoreKeyword in ignoreTerminalKeywords)
@@ -537,7 +553,7 @@ namespace TooManyEmotes.Patches
         }
 
 
-        static UnlockableEmote TryGetEmote(string emoteNameInput, IEnumerable<UnlockableEmote> emoteList = null, bool reliable = false)
+        private static UnlockableEmote TryGetEmote(string emoteNameInput, IEnumerable<UnlockableEmote> emoteList = null, bool reliable = false)
         {
             if (emoteList == null)
                 emoteList = EmotesManager.allUnlockableEmotes;
@@ -563,7 +579,7 @@ namespace TooManyEmotes.Patches
             }
             return getEmote;
         }
-        static UnlockableEmote TryGetEmoteCurrentSelection(string emoteNameInput, bool reliable = false) => TryGetEmote(emoteNameInput, emoteSelection, reliable);
-        static UnlockableEmote TryGetEmoteUnlockedEmotes(string emoteNameInput, bool reliable = false) => TryGetEmote(emoteNameInput, SessionManager.unlockedEmotes, reliable);
+        private static UnlockableEmote TryGetEmoteCurrentSelection(string emoteNameInput, bool reliable = false) => TryGetEmote(emoteNameInput, emoteSelection, reliable);
+        private static UnlockableEmote TryGetEmoteUnlockedEmotes(string emoteNameInput, bool reliable = false) => TryGetEmote(emoteNameInput, SessionManager.unlockedEmotes, reliable);
     }
 }

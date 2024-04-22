@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TooManyEmotes.Config;
 
 namespace TooManyEmotes
 {
@@ -20,6 +21,9 @@ namespace TooManyEmotes
         public static void Log(string message) => logger.LogInfo(message);
         public static void LogError(string message) => logger.LogError(message);
         public static void LogWarning(string message) => logger.LogWarning(message);
+        public static void LogVerbose(string message) { if (ConfigSettings.verboseLogs.Value) logger.LogInfo("[VERBOSE] " + message); }
+        public static void LogErrorVerbose(string message) { if (ConfigSettings.verboseLogs.Value) logger.LogError("[VERBOSE] " + message); }
+        public static void LogWarningVerbose(string message) { if (ConfigSettings.verboseLogs.Value) logger.LogWarning("[VERBOSE] " + message); }
         /// <summary>
         /// Returns true if it succeeds
         /// </summary>

@@ -4,11 +4,14 @@ using System.Collections.Generic;
 using System.IO;
 using static TooManyEmotes.CustomLogging;
 using TooManyEmotes.Patches;
+using System;
 
 namespace TooManyEmotes.Config
 {
     public static class ConfigSettings
     {
+        public static ConfigFile config { get { return Plugin.instance.Config; } }
+
         public static ConfigEntry<bool> unlockEverything;
         public static ConfigEntry<bool> shareEverything;
         public static ConfigEntry<bool> persistentUnlocks;
@@ -77,6 +80,7 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<string> emoteNameColorTier2;
         public static ConfigEntry<string> emoteNameColorTier3;
 
+        public static ConfigEntry<bool> verboseLogs;
         public static ConfigEntry<bool> enableGirlPatch;
         public static ConfigEntry<bool> resetFavoriteOnNextStart;
         public static ConfigEntry<bool> resetGlobalUnlocksOnNextStart;
@@ -109,7 +113,7 @@ namespace TooManyEmotes.Config
 
             startingEmoteCredits = AddConfigEntry("Emote Store", "StartingEmoteCredits", 100, "[Host only] The number of emote credits you start each game with.");
             addEmoteCreditsMultiplier = AddConfigEntry("Emote Store", "AddEmoteCreditsMultiplier", 0.3333f, "[Host only] You gain emote credits based off this multiplier of normal group credits earned. Example: If set to the default, 0.25, and you earn 200 group credits, you will also gain 50 emote credits.");
-            purchaseEmotesWithDefaultCurrency = AddConfigEntry("Emote Store", "PurchaseEmotesWithDefaultCredits", true, "[Host only] Setting this to true will allow you to purchase emotes with normal group credits once you run out of emote credits. This setting will automatically be disabled if ShareEverything is false.");
+            purchaseEmotesWithDefaultCurrency = AddConfigEntry("Emote Store", "PurchaseEmotesWithDefaultCredits", true, "[Host only] Setting this to true will allow you to purchase emotes with normal group credits once you run out of emote credits. NOTE: This setting will automatically be disabled if ShareEverything is false.");
 
             priceMultiplierEmotesStore = AddConfigEntry("Emote Store", "PriceMultiplierEmotesStore", 1.0f, "[Host only] Price multiplier for emotes in the store. Only applies if UnlockEverythingAtStart is false.");
             basePriceEmoteTier0 = AddConfigEntry("Emote Store", "PriceCommonEmote", 50, "[Host only] The base price of [common]emotes in the store.");
@@ -161,38 +165,43 @@ namespace TooManyEmotes.Config
             emoteNameColorTier2 = AddConfigEntry("Accessibility", "EmoteNameColorEpic", "#AA00EE", "The color of the [epic] emote name in the terminal.");
             emoteNameColorTier3 = AddConfigEntry("Accessibility", "EmoteNameColorLegendary", "#FF2222", "The color of the [legendary] emote name in the terminal.");
 
+            verboseLogs = AddConfigEntry("Other", "VerboseLogs", false, "Set to true if you want to receive ALL logs. Most of the time, you will want to keep this disabled unless troubleshooting a specific issue.");
             enableGirlPatch = AddConfigEntry("Other", "EnableGirlPatch", true, "If true, this mod will disable the girl's mesh while she's un the \"unrendered\" layer to prevent the third-person emote camera from seeing her when not supposed do. Disable this if this causes conflicts with another mod.");
             resetFavoriteOnNextStart = AddConfigEntry("Other", "ResetFavoritedEmotesOnNextStart", false, "Set this to true to force remove all emotes from your favorites when the game starts up next. This may resolve any issues that might be related to having favorited emotes that don't exist.\nThis setting will reset back to false once reset.");
             resetGlobalUnlocksOnNextStart = AddConfigEntry("Other", "ResetGlobalUnlocksOnNextStart", false, "Set this to true to force reset all globally unlocked emotes for your local player. These emotes are only usable when the host has PersistentUnlocksGlobal enabled in the config.\nThis setting will reset back to false once reset.");
 
+            bool saveConfig = false;
             if (resetFavoriteOnNextStart.Value)
             {
-                resetFavoriteEmotes = true;
                 resetFavoriteOnNextStart.Value = false;
-                Plugin.instance.Config.Save();
+                resetFavoriteEmotes = true;
+                saveConfig = true;
             }
 
             if (resetGlobalUnlocksOnNextStart.Value)
             {
-                resetGloballyUnlockedEmotes = true;
                 resetGlobalUnlocksOnNextStart.Value = false;
-                Plugin.instance.Config.Save();
+                resetGloballyUnlockedEmotes = true;
+                saveConfig = true;
             }
 
-            // fix weights
             float totalChances = rotationChanceEmoteTier0.Value;
             totalChances += rotationChanceEmoteTier1.Value;
             totalChances += rotationChanceEmoteTier2.Value;
             totalChances += rotationChanceEmoteTier3.Value;
 
+            // Fix weights (if needed)
             if (totalChances != 1 && totalChances != 0)
             {
                 rotationChanceEmoteTier0.Value /= totalChances;
                 rotationChanceEmoteTier1.Value /= totalChances;
                 rotationChanceEmoteTier2.Value /= totalChances;
                 rotationChanceEmoteTier3.Value /= totalChances;
-                Plugin.instance.Config.Save();
+                saveConfig = true;
             }
+
+            if (saveConfig)
+                config.Save();
 
             TryRemoveOldConfigSettings();
         }
@@ -200,7 +209,7 @@ namespace TooManyEmotes.Config
 
         public static ConfigEntry<T> AddConfigEntry<T>(string section, string name, T defaultValue, string description)
         {
-            ConfigEntry<T> configEntry = Plugin.instance.Config.Bind(section, name, defaultValue, description);
+            ConfigEntry<T> configEntry = config.Bind(section, name, defaultValue, description);
             currentConfigEntries.Add(configEntry.Definition.Key, configEntry);
             return configEntry;
         }
@@ -219,13 +228,12 @@ namespace TooManyEmotes.Config
 
             try
             {
-                ConfigFile config = Plugin.instance.Config;
                 string filepath = config.ConfigFilePath;
 
                 if (File.Exists(filepath))
                 {
                     string contents = File.ReadAllText(filepath);
-                    string[] lines = File.ReadAllLines(filepath); // Because contents.Split('\n') is adding strange characters...
+                    string[] lines = File.ReadAllLines(filepath);
 
                     string currentHeader = "";
 
@@ -286,7 +294,11 @@ namespace TooManyEmotes.Config
                     config.Reload();
                 }
             }
-            catch { } // Probably okay
+            catch (Exception e) // Probably okay
+            {
+                LogErrorVerbose("Error in TryRemoveOldConfigSettings?");
+                LogErrorVerbose(e.ToString());
+            }
         }
     }
 }

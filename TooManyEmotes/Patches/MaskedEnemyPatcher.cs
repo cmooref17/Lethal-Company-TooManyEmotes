@@ -11,6 +11,7 @@ using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using static TooManyEmotes.CustomLogging;
+using static TooManyEmotes.HelperTools;
 
 namespace TooManyEmotes.Patches
 {
@@ -26,7 +27,7 @@ namespace TooManyEmotes.Patches
         [HarmonyPostfix]
         public static void Init(StartOfRound __instance)
         {
-            if (!NetworkManager.Singleton.IsServer)
+            if (!isServer)
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.OnMaskedEnemyEmoteClientRpc", OnMaskedEnemyEmoteClientRpc);
         }
 
@@ -67,8 +68,7 @@ namespace TooManyEmotes.Patches
             if (!ConfigSync.instance.syncEnableMaskedEnemiesEmoting || __instance.isEnemyDead || !EmoteControllerMaskedEnemy.allMaskedEnemyEmoteControllers.TryGetValue(__instance, out var emoteController))
                 return;
 
-
-            if (NetworkManager.Singleton.IsServer && !emoteController.stoppedAndStaring && emoteController.CanPerformEmote())
+            if (isServer && !emoteController.stoppedAndStaring && emoteController.CanPerformEmote())
             {
                 emoteController.stoppedAndStaring = true;
                 if (!CalculateShouldEmoteChance(emoteController))
@@ -94,10 +94,14 @@ namespace TooManyEmotes.Patches
 
         public static bool CalculateShouldEmoteChance(EmoteControllerMaskedEnemy emoteController)
         {
-            var random = new System.Random(currentLevelSeed + 1550 + 100 * emoteController.id + emoteController.emoteCount);
-            float value = (float)random.NextDouble();
-            bool shouldEmote = !playersEmotedWithThisRound.Contains(emoteController.lookingAtPlayer) || value <= ConfigSync.instance.syncMaskedEnemiesEmoteChanceOnEncounter;
-            Log("Calculating if masked enemy should emote: " + emoteController.maskedEnemy.name + ". Should emote: " + shouldEmote);
+            bool shouldEmote = ConfigSync.instance.syncMaskedEnemiesAlwaysEmoteOnFirstEncounter && !playersEmotedWithThisRound.Contains(emoteController.lookingAtPlayer);
+            if (!shouldEmote)
+            {
+                var random = new System.Random(currentLevelSeed + 1550 + 100 * emoteController.id + emoteController.emoteCount);
+                float value = (float)random.NextDouble();
+                shouldEmote = value <= ConfigSync.instance.syncMaskedEnemiesEmoteChanceOnEncounter;
+            }
+            Log("Calculating if the masked enemy (" + emoteController.maskedEnemy.name + ") should emote: " + shouldEmote);
             return shouldEmote;
         }
 
@@ -131,7 +135,7 @@ namespace TooManyEmotes.Patches
                 return null;
 
             var emotesList = SessionManager.unlockedEmotes;
-            if (!ConfigSync.instance.syncShareEverything && playerController != StartOfRound.Instance.localPlayerController)
+            if (!ConfigSync.instance.syncShareEverything && playerController != localPlayerController)
                 SessionManager.unlockedEmotesByPlayer.TryGetValue(playerController.playerUsername, out emotesList);
             if (emotesList == null)
                 emotesList = SessionManager.unlockedEmotes;
@@ -147,25 +151,23 @@ namespace TooManyEmotes.Patches
 
         private static void SendUpdateMaskedEnemyEmoteToClients(EmoteControllerMaskedEnemy emoteController, int emoteId)
         {
-            if (!NetworkManager.Singleton.IsServer)
+            if (!isServer)
                 return;
 
-            var writer = new FastBufferWriter(sizeof(ulong) + sizeof(int), Allocator.Temp);
+            var writer = new FastBufferWriter(sizeof(ulong) + sizeof(short), Allocator.Temp);
             writer.WriteValueSafe(emoteController.maskedEnemy.NetworkObjectId);
-            writer.WriteValueSafe(emoteId);
+            writer.WriteValueSafe((short)emoteId);
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes.OnMaskedEnemyEmoteClientRpc", writer);
         }
 
 
         private static void OnMaskedEnemyEmoteClientRpc(ulong clientId, FastBufferReader reader)
         {
-            if (!NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsServer)
+            if (!isClient || isServer)
                 return;
 
-            ulong maskedEnemyNetworkId;
-            int emoteId;
-            reader.ReadValue(out maskedEnemyNetworkId);
-            reader.ReadValue(out emoteId);
+            reader.ReadValue(out ulong maskedEnemyNetworkId);
+            reader.ReadValue(out short emoteId);
 
             Log("Receiving update for masked enemy emote from server. Masked enemy id: " + maskedEnemyNetworkId + " EmoteId: " + emoteId);
             foreach (var emoteController in EmoteControllerMaskedEnemy.allMaskedEnemyEmoteControllers.Values)
@@ -199,8 +201,11 @@ namespace TooManyEmotes.Patches
                     else
                     {
                         emoteController.PerformEmote(emote);
-                        if (NetworkManager.Singleton.IsServer)
-                            SendUpdateMaskedEnemyEmoteToClients(emoteController, emote.emoteId);
+                        if (isServer)
+                        {
+                            SyncPerformingEmoteManager.ServerSendPerformingEmoteUpdateToClients(emoteController, emote);
+                            //SendUpdateMaskedEnemyEmoteToClients(emoteController, emote.emoteId);
+                        }
                     }
                 }
                 else

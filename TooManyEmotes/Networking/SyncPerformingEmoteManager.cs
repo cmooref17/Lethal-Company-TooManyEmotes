@@ -88,6 +88,8 @@ namespace TooManyEmotes.Networking
             bool doNotTriggerAudio = false;
             if (reader.TryBeginRead(sizeof(bool)))
                 reader.ReadValue(out doNotTriggerAudio);
+            else if (doNotTriggerAudioDict.ContainsKey(emoteController))
+                doNotTriggerAudio = doNotTriggerAudioDict[emoteController];
 
             var emote = EmotesManager.allUnlockableEmotes[emoteId];
             int overrideEmoteId = -1;
@@ -114,9 +116,9 @@ namespace TooManyEmotes.Networking
                 return;
 
             if (!doNotTriggerAudioDict.ContainsKey(emoteController))
-                doNotTriggerAudioDict[emoteControllerLocal] = !doNotTriggerAudio;
+                doNotTriggerAudioDict[emoteController] = !doNotTriggerAudio;
 
-            bool sendTriggerAudioUpdate = doNotTriggerAudioDict[emoteControllerLocal] != doNotTriggerAudio;
+            bool sendTriggerAudioUpdate = doNotTriggerAudioDict[emoteController] != doNotTriggerAudio;
 
             int bufferSize = sizeof(ushort) + sizeof(short) + (sendTriggerAudioUpdate ? sizeof(bool) : 0);
             var writer = new FastBufferWriter(bufferSize, Allocator.Temp);
@@ -159,13 +161,11 @@ namespace TooManyEmotes.Networking
             }
 
             bool doNotTriggerAudio = false;
-            if (!reader.TryBeginRead(sizeof(bool)))
-            {
-                if (doNotTriggerAudioDict.ContainsKey(emoteController))
-                    doNotTriggerAudio = doNotTriggerAudioDict[emoteController];
-            }
-            else
+            if (reader.TryBeginRead(sizeof(bool)))
                 reader.ReadValue(out doNotTriggerAudio);
+            else if (doNotTriggerAudioDict.ContainsKey(emoteController))
+                doNotTriggerAudio = doNotTriggerAudioDict[emoteController];
+
             doNotTriggerAudioDict[emoteController] = doNotTriggerAudio;
 
             var emote = EmotesManager.allUnlockableEmotes[emoteId];
