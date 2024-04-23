@@ -442,7 +442,7 @@ namespace TooManyEmotes.UI
                         emoteUI.emote = emote;
                         emoteUI.textContainer.text = emote.displayName;
                         //emoteTextColor = emote.favorite ? Color.green : Color.white;
-                        if (ColorUtility.TryParseHtmlString(UnlockableEmote.rarityColorCodes[emote.rarity], out var emoteColor))
+                        if (!emote.complementary && ColorUtility.TryParseHtmlString(UnlockableEmote.rarityColorCodes[emote.rarity], out var emoteColor))
                         {
                             if (ConfigSettings.colorCodeEmoteBackgroundInRadialMenu.Value)
                                 emoteBackgroundColor = emoteColor;
