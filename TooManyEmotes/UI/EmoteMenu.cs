@@ -644,7 +644,7 @@ namespace TooManyEmotes.UI
         
         public static void OnUpdateToggleFirstPerson(Toggle toggle)
         {
-            ThirdPersonEmoteController.firstPersonEmotesEnabled = toggle.isOn;
+            ThirdPersonEmoteController.UpdateFirstPersonEmoteMode(toggle.isOn);
         }
 
 

@@ -41,7 +41,10 @@ namespace TooManyEmotes.Patches
         public static int localPlayerBodyLayer = 0;
         public static ShadowCastingMode defaultShadowCastingMode = ShadowCastingMode.On;
 
-        public static string[] emoteControlTipLines = new string[] { "Hold [ALT] : Rotate", "[Mouse Scroll] : Zoom" };
+        public static RectTransform defaultControlTipLinesParent;
+        public static RectTransform customControlTipLinesParent;
+        public static TextMeshProUGUI[] customControlTipLines;
+        private static Vector3 defaultControlTipLinesPosition = Vector3.one;
 
         public static Vector3 firstPersonCameraLocalPosition;
         public static Quaternion firstPersonCameraLocalRotation;
@@ -65,6 +68,29 @@ namespace TooManyEmotes.Patches
                 emoteCamera = new GameObject("EmoteCamera").AddComponent<Camera>();
                 emoteCamera.CopyFrom(gameplayCamera);
             }
+
+            defaultControlTipLinesParent = HUDManager.Instance.controlTipLines[0].transform.parent.GetComponent<RectTransform>();
+            defaultControlTipLinesPosition = defaultControlTipLinesParent.position;
+
+            customControlTipLinesParent = GameObject.Instantiate(defaultControlTipLinesParent, defaultControlTipLinesParent.parent);
+            customControlTipLinesParent.name = "ThirdPersonEmotesControlTips";
+            customControlTipLinesParent.SetSiblingIndex(defaultControlTipLinesParent.GetSiblingIndex() + 1);
+            customControlTipLinesParent.SetPositionAndRotation(Vector3.one * 100, defaultControlTipLinesParent.rotation);
+            customControlTipLinesParent.localScale = defaultControlTipLinesParent.localScale;
+
+            customControlTipLines = new TextMeshProUGUI[HUDManager.Instance.controlTipLines.Length];
+            int index = 0;
+            foreach (var element in customControlTipLinesParent.GetComponentsInChildren<TextMeshProUGUI>())
+            {
+                if (element != null)
+                {
+                    if (element.name.ToLower().Contains("controltip"))
+                        customControlTipLines[index++] = element;
+                    else
+                        GameObject.Destroy(element.gameObject);
+                }
+            }
+
             LoadPreferences();
             ResetCamera(); // Calling again in case corporate restructure (or another mod) is enabled and throws an error that blocks the SpawnPlayerAnimation method
         }
@@ -273,6 +299,19 @@ namespace TooManyEmotes.Patches
         }
 
 
+        internal static void UpdateFirstPersonEmoteMode(bool value)
+        {
+            if (firstPersonEmotesEnabled == value)
+                return;
+
+            firstPersonEmotesEnabled = value;
+
+            if (!emoteControllerLocal.IsPerformingCustomEmote())
+                return;
+
+            UpdateControlTip();
+            ShowCustomControlTips(!firstPersonEmotesEnabled);
+        }
         /*internal static void UpdateFirstPersonEmoteMode(bool value)
         {
             if (firstPersonEmotesEnabled == value)
@@ -381,8 +420,9 @@ namespace TooManyEmotes.Patches
                     localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.serverItemHolder;
             }
 
-            HUDManager.Instance.ClearControlTips();
+            //HUDManager.Instance.ClearControlTips();
             UpdateControlTip();
+            ShowCustomControlTips(!firstPersonEmotesEnabled);
 
             isPerformingEmote = true;
         }
@@ -402,10 +442,13 @@ namespace TooManyEmotes.Patches
                 CallChangeAudioListenerToObject(gameplayCamera.gameObject);
 
             localPlayerController.thisPlayerModel.shadowCastingMode = defaultShadowCastingMode;
-            if (localPlayerController.currentlyHeldObjectServer != null)
+
+            ShowCustomControlTips(false);
+
+            /*if (localPlayerController.currentlyHeldObjectServer != null)
                 localPlayerController.currentlyHeldObjectServer.SetControlTipsForItem();
             else
-                HUDManager.Instance.ClearControlTips();
+                HUDManager.Instance.ClearControlTips();*/
 
             if (localPlayerController.serverItemHolder == localPlayerController.currentlyHeldObjectServer?.parentObject)
                 localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.localItemHolder;
@@ -413,17 +456,6 @@ namespace TooManyEmotes.Patches
             //localPlayerController.StartCoroutine(ResetCameraTransformEndOfFrame());
             emoteCameraPivot.eulerAngles = localPlayerCameraContainer.eulerAngles;
             isPerformingEmote = false;
-        }
-
-
-        private static IEnumerator ResetCameraTransformEndOfFrame()
-        {
-            yield return new WaitForEndOfFrame();
-            if (!EmoteControllerPlayer.emoteControllerLocal.IsPerformingCustomEmote())
-            {
-                emoteCameraPivot.eulerAngles = localPlayerCameraContainer.eulerAngles;
-                isPerformingEmote = false;
-            }
         }
 
 
@@ -455,9 +487,19 @@ namespace TooManyEmotes.Patches
         }*/
 
 
+        internal static void ShowCustomControlTips(bool show)
+        {
+            if (customControlTipLinesParent == null || defaultControlTipLinesParent == null)
+                return;
+
+            customControlTipLinesParent.position = show ? defaultControlTipLinesPosition : Vector3.one * 100;
+            defaultControlTipLinesParent.position = show ? Vector3.one * 100 : defaultControlTipLinesPosition;
+        }
+
+
         public static void UpdateControlTip(int appendToIndex = 0)
         {
-            if (!emoteControllerLocal.IsPerformingCustomEmote() || firstPersonEmotesEnabled || emoteControlTipLines == null)
+            if (!emoteControllerLocal.IsPerformingCustomEmote() || customControlTipLines == null)
                 return;
 
             if (appendToIndex < 0 || appendToIndex >= controlTipLines.Length - 1)
@@ -489,19 +531,21 @@ namespace TooManyEmotes.Patches
             else
                 zoomControlText = "Unbound";
 
-            emoteControlTipLines[index] = "Zoom : ";
+            customControlTipLines[index].text = "Zoom : ";
             if (isMovingWhileEmoting)
-                emoteControlTipLines[index] += "[" + rotateDisplayText + "] + ";
-            emoteControlTipLines[index++] += zoomControlText;
-            
+                customControlTipLines[index].text += "[" + rotateDisplayText + "] + ";
+            customControlTipLines[index++].text += zoomControlText;
+
             //if (!ConfigSync.instance.syncEnableMovingWhileEmoting)
-            emoteControlTipLines[index++] = string.Format((isMovingWhileEmoting ? "Freeze" : "Rotate") + " : " + (ConfigSettings.toggleRotateCharacterInEmote.Value ? "Toggle" : "Hold") + " [{0}]", rotateDisplayText);
+            customControlTipLines[index++].text = string.Format((isMovingWhileEmoting ? "Freeze" : "Rotate") + " : " + (ConfigSettings.toggleRotateCharacterInEmote.Value ? "Toggle" : "Hold") + " [{0}]", rotateDisplayText);
 
-            for (; index < emoteControlTipLines.Length; index++)
-                emoteControlTipLines[index] = "";
+            for (; index < customControlTipLines.Length; index++)
+                customControlTipLines[index].text = "";
 
-            if (emoteCamera.enabled && emoteControllerLocal != null && emoteControllerLocal.IsPerformingCustomEmote())
-                HUDManager.Instance.ChangeControlTipMultiple(emoteControlTipLines);
+            //customControlTipLinesParent.localScale = defaultControlTipLinesScale;
+            //defaultControlTipLinesParent.localScale = Vector3.zero;
+            //if (emoteCamera.enabled && emoteControllerLocal != null && emoteControllerLocal.IsPerformingCustomEmote())
+            //HUDManager.Instance.ChangeControlTipMultiple(emoteControlTipLines);
         }
 
 
