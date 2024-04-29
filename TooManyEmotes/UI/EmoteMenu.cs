@@ -1,4 +1,4 @@
-﻿using GameNetcodeStuff;
+﻿ using GameNetcodeStuff;
 using HarmonyLib;
 using System.Collections.Generic;
 using UnityEngine.UI;
@@ -17,6 +17,7 @@ using System.Linq;
 using TooManyEmotes.Networking;
 using System.Xml.Linq;
 using System.Collections;
+using System;
 
 
 namespace TooManyEmotes.UI
@@ -53,7 +54,8 @@ namespace TooManyEmotes.UI
         public static int hoveredLoadoutUIIndex = -1;
 
         public static Vector2 currentThumbstickPosition = Vector2.zero;
-        public static TextMeshProUGUI[] controlTipLines;
+        private static Transform customControlTipLinesParent;
+        public static TextMeshProUGUI[] customControlTipLines;
         public static bool usingController { get { return StartOfRound.Instance.localPlayerUsingController; } }
         private static bool firstTimeOpeningMenu;
         
@@ -127,19 +129,28 @@ namespace TooManyEmotes.UI
             currentEmoteText.text = "";
             emoteUIElementsList = new List<EmoteUIElement>();
 
-            controlTipLines = new TextMeshProUGUI[__instance.controlTipLines.Length];
 
-            for (int i = 0; i < __instance.controlTipLines.Length; i++)
+            var defaultControlTipLinesParent = HUDManager.Instance.controlTipLines[0].transform.parent.GetComponent<RectTransform>();
+
+            customControlTipLinesParent = GameObject.Instantiate(defaultControlTipLinesParent, defaultControlTipLinesParent.parent);
+            customControlTipLinesParent.name = "EmoteMenuControlTips";
+            customControlTipLinesParent.SetSiblingIndex(defaultControlTipLinesParent.GetSiblingIndex() + 1);
+            customControlTipLinesParent.SetPositionAndRotation(defaultControlTipLinesParent.position, defaultControlTipLinesParent.rotation);
+            customControlTipLinesParent.localScale = defaultControlTipLinesParent.localScale;
+
+            customControlTipLines = new TextMeshProUGUI[HUDManager.Instance.controlTipLines.Length];
+            int index = 0;
+            foreach (var element in customControlTipLinesParent.GetComponentsInChildren<TextMeshProUGUI>())
             {
-                var newControlTipLine = GameObject.Instantiate(__instance.controlTipLines[i], __instance.controlTipLines[0].transform.parent);
-                newControlTipLine.transform.localScale = __instance.controlTipLines[0].transform.localScale;
-                newControlTipLine.transform.SetParent(menuTransform);
-                newControlTipLine.transform.SetPositionAndRotation(__instance.controlTipLines[i].transform.position, __instance.controlTipLines[i].transform.rotation);
-                newControlTipLine.text = "";
-                newControlTipLine.overflowMode = TextOverflowModes.Overflow;
-                newControlTipLine.enableWordWrapping = false;
-                controlTipLines[i] = newControlTipLine;
+                if (element != null)
+                {
+                    if (element.name.ToLower().Contains("controltip"))
+                        customControlTipLines[index++] = element;
+                    else
+                        GameObject.Destroy(element.gameObject);
+                }
             }
+            customControlTipLinesParent.SetParent(menuTransform, true);
 
             currentPage = 0;
             hoveredEmoteUIIndex = -1;
@@ -378,17 +389,17 @@ namespace TooManyEmotes.UI
 
             int index = 0;
             if (!usingController)
-                controlTipLines[index++].text = "Swap Page: [Scroll Mouse]";
+                customControlTipLines[index++].text = "Swap Page: [Scroll Mouse]";
             else if (prevPageKeybind != "" || nextPageKeybind != "")
-                controlTipLines[index++].text = string.Format("Swap Page: [{0}/{1}]", prevPageKeybind, nextPageKeybind);
+                customControlTipLines[index++].text = string.Format("Swap Page: [{0}/{1}]", prevPageKeybind, nextPageKeybind);
                 
             if (usingController || nextEmoteLoadoutUpKeybind != "" || nextEmoteLoadoutDownKeybind != "")
-                controlTipLines[index++].text = string.Format("Swap Loadout: [{0}/{1}]", nextEmoteLoadoutUpKeybind, nextEmoteLoadoutDownKeybind);
-            controlTipLines[index++].text = string.Format("Favorite Emote: [{0}]", favoriteEmoteKeybind);
+                customControlTipLines[index++].text = string.Format("Swap Loadout: [{0}/{1}]", nextEmoteLoadoutUpKeybind, nextEmoteLoadoutDownKeybind);
+            customControlTipLines[index++].text = string.Format("Favorite Emote: [{0}]", favoriteEmoteKeybind);
             //if (usingController) controlTipLines[index++].text = string.Format("Perform Emote: [{0}]", performEmoteKeybind);
 
-            for (; index < controlTipLines.Length; index++)
-                controlTipLines[index].text = "";
+            for (; index < customControlTipLines.Length; index++)
+                customControlTipLines[index].text = "";
         }
 
 
@@ -532,6 +543,7 @@ namespace TooManyEmotes.UI
                 SetCurrentEmoteLoadout(loadoutIndex);
                 if (currentLoadoutIndex < emoteLoadouts.Count - 1)
                     SortFilteredEmotes();
+                customControlTipLinesParent.position = HUDManager.Instance.controlTipLines[0].transform.parent.position;
                 firstTimeOpeningMenu = false;
             }
 
@@ -556,16 +568,20 @@ namespace TooManyEmotes.UI
             AnimationPreviewer.UpdatePlayerSuit();
             currentThumbstickPosition = Vector2.zero;
 
-            var controlTipLines = HUDManager.Instance?.controlTipLines;
-            if (controlTipLines != null)
+            var defaultControlTipLines = HUDManager.Instance?.controlTipLines;
+            if (defaultControlTipLines != null)
             {
-                foreach (var controlTipLine in controlTipLines)
+                foreach (var controlTipLine in defaultControlTipLines)
                 {
-                    if (controlTipLine)
+                    if (controlTipLine != null)
                         controlTipLine.enabled = false;
                 }
             }
-
+            foreach (var controlTipLine in ThirdPersonEmoteController.customControlTipLines)
+            {
+                if (controlTipLine != null)
+                    controlTipLine.enabled = false;
+            }
             UpdateControlTipLines();
             UpdateEmoteWheel();
             if (currentLoadoutEmotesList != allUnlockedEmotesFiltered) // UpdateEmoteWheel will do this
@@ -593,14 +609,19 @@ namespace TooManyEmotes.UI
             if (AudioManager.muteEmoteAudio != currentMuteSetting || AudioManager.emoteOnlyMode != currentEmoteOnlyMode || AudioManager.dmcaFreeMode != currentDmcaFreeSetting || AudioManager.emoteVolumeMultiplier != currentVolumeSetting)
                 AudioManager.SavePreferences();
 
-            var controlTipLines = HUDManager.Instance?.controlTipLines;
-            if (controlTipLines != null)
+            var defaultControlTipLines = HUDManager.Instance?.controlTipLines;
+            if (defaultControlTipLines != null)
             {
-                foreach (var controlTipLine in controlTipLines)
+                foreach (var controlTipLine in defaultControlTipLines)
                 {
-                    if (controlTipLine)
+                    if (controlTipLine != null)
                         controlTipLine.enabled = true;
                 }
+            }
+            foreach (var controlTipLine in ThirdPersonEmoteController.customControlTipLines)
+            {
+                if (controlTipLine != null)
+                    controlTipLine.enabled = true;
             }
         }
 
@@ -671,28 +692,45 @@ namespace TooManyEmotes.UI
 
         public static void SaveFilterPreferences()
         {
-            ES3.Save("TooManyEmotes.HideEmotesComplementary", hideEmotesComplementaryToggle.isOn);
-            ES3.Save("TooManyEmotes.HideEmotes0", hideEmotes0Toggle.isOn);
-            ES3.Save("TooManyEmotes.HideEmotes1", hideEmotes1Toggle.isOn);
-            ES3.Save("TooManyEmotes.HideEmotes2", hideEmotes2Toggle.isOn);
-            ES3.Save("TooManyEmotes.HideEmotes3", hideEmotes3Toggle.isOn);
+            ES3.Save("TooManyEmotes.HideEmotesComplementary", hideEmotesComplementaryToggle.isOn, SaveManager.TooManyEmotesSaveFileName);
+            ES3.Save("TooManyEmotes.HideEmotes0", hideEmotes0Toggle.isOn, SaveManager.TooManyEmotesSaveFileName);
+            ES3.Save("TooManyEmotes.HideEmotes1", hideEmotes1Toggle.isOn, SaveManager.TooManyEmotesSaveFileName);
+            ES3.Save("TooManyEmotes.HideEmotes2", hideEmotes2Toggle.isOn, SaveManager.TooManyEmotesSaveFileName);
+            ES3.Save("TooManyEmotes.HideEmotes3", hideEmotes3Toggle.isOn, SaveManager.TooManyEmotesSaveFileName);
         }
 
 
         public static void LoadFilterPreferences()
         {
-            // Old keys
-            ES3.DeleteKey("hideEmotesComplementary");
-            ES3.DeleteKey("hideEmotes0");
-            ES3.DeleteKey("hideEmotes1");
-            ES3.DeleteKey("hideEmotes2");
-            ES3.DeleteKey("hideEmotes3");
+            try
+            {
+                // This code will be removed eventually
+                ES3.DeleteKey("TooManyEmotes.HideEmotesComplementary");
+                ES3.DeleteKey("TooManyEmotes.HideEmotes0");
+                ES3.DeleteKey("TooManyEmotes.HideEmotes1");
+                ES3.DeleteKey("TooManyEmotes.HideEmotes2");
+                ES3.DeleteKey("TooManyEmotes.HideEmotes3");
+            } catch { }
 
-            hideEmotesComplementaryToggle.isOn = ES3.Load("TooManyEmotes.HideEmotesComplementary", false);
-            hideEmotes0Toggle.isOn = ES3.Load("TooManyEmotes.HideEmotes0", false);
-            hideEmotes1Toggle.isOn = ES3.Load("TooManyEmotes.HideEmotes1", false);
-            hideEmotes2Toggle.isOn = ES3.Load("TooManyEmotes.HideEmotes2", false);
-            hideEmotes3Toggle.isOn = ES3.Load("TooManyEmotes.HideEmotes3", false);
+            try
+            {
+                hideEmotesComplementaryToggle.isOn = ES3.Load("TooManyEmotes.HideEmotesComplementary", SaveManager.TooManyEmotesSaveFileName, false);
+                hideEmotes0Toggle.isOn = ES3.Load("TooManyEmotes.HideEmotes0", SaveManager.TooManyEmotesSaveFileName, false);
+                hideEmotes1Toggle.isOn = ES3.Load("TooManyEmotes.HideEmotes1", SaveManager.TooManyEmotesSaveFileName, false);
+                hideEmotes2Toggle.isOn = ES3.Load("TooManyEmotes.HideEmotes2", SaveManager.TooManyEmotesSaveFileName, false);
+                hideEmotes3Toggle.isOn = ES3.Load("TooManyEmotes.HideEmotes3", SaveManager.TooManyEmotesSaveFileName, false);
+            }
+            catch
+            {
+                try
+                {
+                    ES3.DeleteKey("TooManyEmotes.HideEmotesComplementary", SaveManager.TooManyEmotesSaveFileName);
+                    ES3.DeleteKey("TooManyEmotes.HideEmotes0", SaveManager.TooManyEmotesSaveFileName);
+                    ES3.DeleteKey("TooManyEmotes.HideEmotes1", SaveManager.TooManyEmotesSaveFileName);
+                    ES3.DeleteKey("TooManyEmotes.HideEmotes2", SaveManager.TooManyEmotesSaveFileName);
+                    ES3.DeleteKey("TooManyEmotes.HideEmotes3", SaveManager.TooManyEmotesSaveFileName);
+                } catch { }
+            }
         }
 
 

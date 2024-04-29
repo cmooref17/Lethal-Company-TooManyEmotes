@@ -58,36 +58,51 @@ namespace TooManyEmotes.Audio
         {
             Log("Loading AudioManager preferences.");
 
-            // Reload from old save location
-            if (ES3.KeyExists("TooManyEmotes.EmoteAudioVolume"))
+            try // I hate this block
             {
-                float value = ES3.Load("TooManyEmotes.EmoteAudioVolume", 1.0f);
-                ES3.DeleteKey("TooManyEmotes.EmoteAudioVolume");
-                ES3.Save("TooManyEmotes.EmoteAudioVolume", value, SaveManager.TooManyEmotesSaveFileName);
+                if (ES3.KeyExists("TooManyEmotes.EmoteAudioVolume"))
+                    ES3.DeleteKey("TooManyEmotes.EmoteAudioVolume");
+                if (ES3.KeyExists("TooManyEmotes.MuteEmoteAudio"))
+                    ES3.DeleteKey("TooManyEmotes.MuteEmoteAudio");
+                if (ES3.KeyExists("TooManyEmotes.EmoteOnlyMode"))
+                    ES3.DeleteKey("TooManyEmotes.EmoteOnlyMode");
+                if (ES3.KeyExists("TooManyEmotes.DmcaFreeMode"))
+                    ES3.DeleteKey("TooManyEmotes.DmcaFreeMode");
             }
-            if (ES3.KeyExists("TooManyEmotes.MuteEmoteAudio"))
+            catch
             {
-                bool value = ES3.Load("TooManyEmotes.MuteEmoteAudio", false);
-                ES3.DeleteKey("TooManyEmotes.MuteEmoteAudio");
-                ES3.Save("TooManyEmotes.MuteEmoteAudio", value, SaveManager.TooManyEmotesSaveFileName);
-            }
-            if (ES3.KeyExists("TooManyEmotes.EmoteOnlyMode"))
-            {
-                bool value = ES3.Load("TooManyEmotes.EmoteOnlyMode", false);
-                ES3.DeleteKey("TooManyEmotes.EmoteOnlyMode");
-                ES3.Save("TooManyEmotes.EmoteOnlyMode", value, SaveManager.TooManyEmotesSaveFileName);
-            }
-            if (ES3.KeyExists("TooManyEmotes.DmcaFreeMode"))
-            {
-                bool value = ES3.Load("TooManyEmotes.DmcaFreeMode", false);
-                ES3.DeleteKey("TooManyEmotes.DmcaFreeMode");
-                ES3.Save("TooManyEmotes.DmcaFreeMode", value, SaveManager.TooManyEmotesSaveFileName);
+                try
+                {
+                    ES3.DeleteKey("TooManyEmotes.EmoteAudioVolume");
+                    ES3.DeleteKey("TooManyEmotes.MuteEmoteAudio");
+                    ES3.DeleteKey("TooManyEmotes.EmoteOnlyMode");
+                    ES3.DeleteKey("TooManyEmotes.DmcaFreeMode");
+                } catch { }
             }
 
-            emoteVolumeMultiplier = ES3.Load("TooManyEmotes.EmoteAudioVolume", SaveManager.TooManyEmotesSaveFileName, 1.0f);
-            muteEmoteAudio = ES3.Load("TooManyEmotes.MuteEmoteAudio", SaveManager.TooManyEmotesSaveFileName, false);
-            emoteOnlyMode = ES3.Load("TooManyEmotes.EmoteOnlyMode", SaveManager.TooManyEmotesSaveFileName, false);
-            dmcaFreeMode = ES3.Load("TooManyEmotes.DmcaFreeMode", SaveManager.TooManyEmotesSaveFileName, false);
+            try
+            {
+                emoteVolumeMultiplier = ES3.Load("TooManyEmotes.EmoteAudioVolume", SaveManager.TooManyEmotesSaveFileName, 1.0f);
+                muteEmoteAudio = ES3.Load("TooManyEmotes.MuteEmoteAudio", SaveManager.TooManyEmotesSaveFileName, false);
+                emoteOnlyMode = ES3.Load("TooManyEmotes.EmoteOnlyMode", SaveManager.TooManyEmotesSaveFileName, false);
+                dmcaFreeMode = ES3.Load("TooManyEmotes.DmcaFreeMode", SaveManager.TooManyEmotesSaveFileName, false);
+            }
+            catch (Exception e)
+            {
+                LogErrorVerbose("Failed to load audio preferences. Preferences will be reset.\n" + e);
+                emoteVolumeMultiplier = 1;
+                muteEmoteAudio = false;
+                emoteOnlyMode = false;
+                dmcaFreeMode = false;
+                try
+                {
+                    ES3.DeleteKey("TooManyEmotes.EmoteAudioVolume", SaveManager.TooManyEmotesSaveFileName);
+                    ES3.DeleteKey("TooManyEmotes.MuteEmoteAudio", SaveManager.TooManyEmotesSaveFileName);
+                    ES3.DeleteKey("TooManyEmotes.EmoteOnlyMode", SaveManager.TooManyEmotesSaveFileName);
+                    ES3.DeleteKey("TooManyEmotes.DmcaFreeMode", SaveManager.TooManyEmotesSaveFileName);
+                }
+                catch { LogErrorVerbose("Failed to reset audio preferences. I recommend deleting this file: \"" + SaveManager.TooManyEmotesSaveFileName + "\" located at this path: \"C:\\Users\\YOUR_USER\\AppData\\LocalLow\\ZeekerssRBLX\\Lethal Company\""); }
+            }
         }
 
 
@@ -136,7 +151,6 @@ namespace TooManyEmotes.Audio
             {
                 string assetsPath = Path.Combine(Path.GetDirectoryName(Plugin.instance.Info.Location), "Assets/compressed_audio");
                 audioAssetBundle = AssetBundle.LoadFromFile(assetsPath);
-                //audioAssetNames.UnionWith(audioAssetBundle.GetAllAssetNames());
             }
             catch
             {
@@ -147,8 +161,6 @@ namespace TooManyEmotes.Audio
             {
                 string assetsPath = Path.Combine(Path.GetDirectoryName(Plugin.instance.Info.Location), "Assets/compressed_audio_dmca");
                 dmcaAudioAssetBundle = AssetBundle.LoadFromFile(assetsPath);
-                //audioAssetNamesDmcaFree.UnionWith(dmcaAudioAssetBundle.GetAllAssetNames());
-                //audioAssetNames.UnionWith(dmcaAudioAssetBundle.GetAllAssetNames());
             }
             catch
             {

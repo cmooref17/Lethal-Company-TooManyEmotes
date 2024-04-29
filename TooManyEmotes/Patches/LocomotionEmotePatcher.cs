@@ -9,6 +9,7 @@ using TooManyEmotes.Networking;
 using TooManyEmotes.Patches;
 using static TooManyEmotes.HelperTools;
 using static TooManyEmotes.CustomLogging;
+using TooManyEmotes.Input;
 
 namespace TooManyEmotes.Patches
 {
@@ -23,7 +24,7 @@ namespace TooManyEmotes.Patches
                 return;
 
             //if (EmoteController.allEmoteControllers.TryGetValue(__instance.gameObject, out var emoteController) && emoteController.IsPerformingCustomEmote() && (ConfigSync.instance.syncEnableMovingWhileEmoting || emoteController.performingEmote.canMoveWhileEmoting))
-            if (EmoteController.allEmoteControllers.TryGetValue(__instance.gameObject, out var emoteController) && emoteController.IsPerformingCustomEmote() && (ThirdPersonEmoteController.isMovingWhileEmoting || emoteController.performingEmote.canMoveWhileEmoting))
+            if (EmoteController.allEmoteControllers.TryGetValue(__instance.gameObject, out var emoteController) && emoteController.IsPerformingCustomEmote() && ThirdPersonEmoteController.isMovingWhileEmoting && !(Keybinds.toggledRotating || Keybinds.holdingRotatePlayerModifier))
             {
                 bool result = !(__instance.inSpecialInteractAnimation || __instance.isPlayerDead || __instance.isCrouching || __instance.isClimbingLadder || __instance.isGrabbingObjectAnimation || __instance.inTerminalMenu || __instance.isTypingChat);
                 if (result)

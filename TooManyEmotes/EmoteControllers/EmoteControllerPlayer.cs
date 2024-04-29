@@ -158,7 +158,8 @@ namespace TooManyEmotes
 
                 //playerController.cameraContainerTransform.position = cameraContainerLerp.position;
                 //playerController.cameraContainerTransform.rotation = cameraContainerLerp.rotation;
-                if (!isLocalPlayer || !ThirdPersonEmoteController.isMovingWhileEmoting)
+                //if (!isLocalPlayer || !ThirdPersonEmoteController.isMovingWhileEmoting)
+                if (!isLocalPlayer || !ThirdPersonEmoteController.firstPersonEmotesEnabled)
                 {
                     playerController.cameraContainerTransform.position = cameraContainerLerp.position;
                     playerController.cameraContainerTransform.rotation = cameraContainerLerp.rotation;
@@ -295,7 +296,7 @@ namespace TooManyEmotes
             SyncPerformingEmoteManager.SendPerformingEmoteUpdateToServer(emote, AudioManager.emoteOnlyMode);
             timeSinceStartingEmote = 0;
             playerController.performingEmote = true;
-            originalAnimator.SetInteger("emoteNumber", 1);
+            //originalAnimator.SetInteger("emoteNumber", 1);
 
             return success;
         }
@@ -330,7 +331,7 @@ namespace TooManyEmotes
                 SyncPerformingEmoteManager.SendSyncEmoteUpdateToServer(emoteController, overrideEmoteId);
                 timeSinceStartingEmote = 0;
                 playerController.performingEmote = true;
-                originalAnimator.SetInteger("emoteNumber", 1);
+                //originalAnimator.SetInteger("emoteNumber", 1);
                 return true;
             }
             return false;
@@ -403,7 +404,8 @@ namespace TooManyEmotes
             {
                 cameraContainerLerp.SetPositionAndRotation(cameraContainerTarget.position, cameraContainerTarget.rotation);
                 playerController.performingEmote = true;
-                originalAnimator.SetInteger("emoteNumber", 0);
+                if (!isLocalPlayer)
+                    originalAnimator.SetInteger("emoteNumber", 0);
 
                 var heldProp = playerController.ItemSlots[playerController.currentItemSlot] as GrabbablePropObject;
                 if (heldProp)
@@ -427,8 +429,9 @@ namespace TooManyEmotes
                 cameraContainerLerp.SetPositionAndRotation(cameraContainerTarget.position, cameraContainerTarget.rotation);
 
                 playerController.performingEmote = true;
-                originalAnimator.SetInteger("emoteNumber", 0);
-                if (isLocalPlayer)
+                if (!isLocalPlayer)
+                    originalAnimator.SetInteger("emoteNumber", 0);
+                else
                 {
                     ThirdPersonEmoteController.OnStartCustomEmoteLocal();
                     playerController.StartPerformingEmoteServerRpc();

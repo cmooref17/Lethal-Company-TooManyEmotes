@@ -317,15 +317,21 @@ namespace TooManyEmotes.Input
         public static void OnUpdateRotatePlayerEmoteModifier(InputAction.CallbackContext context)
         {
             //if (localPlayerController == null || ConfigSync.instance.syncEnableMovingWhileEmoting || !emoteControllerLocal.IsPerformingCustomEmote())
-            if (localPlayerController == null || !emoteControllerLocal.IsPerformingCustomEmote())
+            if (localPlayerController == null || !emoteControllerLocal.IsPerformingCustomEmote() || ThirdPersonEmoteController.firstPersonEmotesEnabled)
                 return;
             
             if (context.performed)
             {
                 if (ConfigSettings.toggleRotateCharacterInEmote.Value)
+                {
                     toggledRotating = !toggledRotating;
+                    holdingRotatePlayerModifier = false;
+                }
                 else
+                {
                     holdingRotatePlayerModifier = true;
+                    toggledRotating = false;
+                }
             }
             else if (context.canceled && !ConfigSettings.toggleRotateCharacterInEmote.Value)
                 holdingRotatePlayerModifier = false;

@@ -34,7 +34,7 @@ namespace TooManyEmotes
 
         [HarmonyPatch(typeof(GameNetworkManager), "SaveGameValues")]
         [HarmonyPostfix]
-        public static void SaveUnlockedEmotes(GameNetworkManager __instance)
+        private static void SaveUnlockedEmotes(GameNetworkManager __instance)
         {
             if (!__instance.isHostingGame || !StartOfRound.Instance.inShipPhase)
                 return;
@@ -43,7 +43,19 @@ namespace TooManyEmotes
 
             try
             {
-                HashSet<string> usernames = new HashSet<string>(ES3.Load("TooManyEmotes.UnlockedEmotes.PlayersList", currentSaveFileName, new string[0]));
+                HashSet<string> usernames;
+                try
+                {
+                    usernames = new HashSet<string>(ES3.Load("TooManyEmotes.UnlockedEmotes.PlayersList", currentSaveFileName, new string[0]));
+                }
+                catch (Exception e)
+                {
+                    LogErrorVerbose("Error loading previous users list. Deleting key: TooManyEmotes.UnlockedEmotes.PlayersList from file: " + currentSaveFileName);
+                    LogErrorVerbose(e.ToString());
+                    ES3.DeleteKey("TooManyEmotes.UnlockedEmotes.PlayersList", currentSaveFileName);
+                    usernames = new HashSet<string>();
+                }
+
                 foreach (string username in SessionManager.unlockedEmotesByPlayer.Keys)
                     usernames.Add(username);
                 ES3.Save("TooManyEmotes.UnlockedEmotes.PlayersList", usernames.ToArray(), currentSaveFileName);
@@ -87,14 +99,15 @@ namespace TooManyEmotes
 
             catch (Exception e)
             {
-                LogError("Error while trying to save TooManyEmotes values when disconnecting as host: " + e);
+                LogError("Error while trying to save TooManyEmotes values when disconnecting as host.");
+                LogError(e.ToString());
             }
         }
 
 
         [HarmonyPatch(typeof(StartOfRound), "LoadUnlockables")]
         [HarmonyPostfix]
-        public static void LoadUnlockedEmotes(StartOfRound __instance)
+        private static void LoadUnlockedEmotes(StartOfRound __instance)
         {
             if (!GameNetworkManager.Instance.isHostingGame)
                 return;
@@ -159,8 +172,8 @@ namespace TooManyEmotes
 
 
         [HarmonyPatch(typeof(GameNetworkManager), "ResetSavedGameValues")]
-        [HarmonyPostfix]
-        public static void ResetUnlockedEmotesList(GameNetworkManager __instance)
+        [HarmonyPrefix]
+        private static void ResetUnlockedEmotesList(GameNetworkManager __instance)
         {
             if (!__instance.isHostingGame || StartOfRound.Instance == null || SessionManager.unlockedEmotes == null)
                 return;
@@ -196,33 +209,29 @@ namespace TooManyEmotes
 
 
         [HarmonyPatch(typeof(GameNetworkManager), "SaveLocalPlayerValues")]
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         private static void SaveLocalPlayerValues()
         {
-            if (!isClient || !SyncManager.isSynced || !ConfigSync.instance.syncPersistentUnlocksGlobal || SessionManager.unlockedEmotes == null)
+            if (!isClient || !SyncManager.isSynced || ConfigSync.instance == null || !ConfigSync.instance.syncPersistentUnlocksGlobal || globallyUnlockedEmoteNames == null || SessionManager.emotesUnlockedThisSession == null)
                 return;
 
             try
             {
                 foreach (var emote in SessionManager.emotesUnlockedThisSession)
                 {
-                    if (!emote.complementary && !emote.requiresHeldProp && !globallyUnlockedEmoteNames.Contains(emote.emoteName))
+                    if (emote != null && !emote.complementary && !emote.requiresHeldProp && !globallyUnlockedEmoteNames.Contains(emote.emoteName))
                         globallyUnlockedEmoteNames.Add(emote.emoteName);
                 }
                 ES3.Save("UnlockedEmotes", globallyUnlockedEmoteNames.ToArray(), TooManyEmotesSaveFileName);
                 Log("Saved " + globallyUnlockedEmoteNames.Count + " globally unlocked emotes for local player.");
             }
-            catch (Exception e)
-            {
-                LogErrorVerbose("Error while trying to save TooManyEmotes local player data.");
-                LogErrorVerbose(e.ToString());
-            }
+            catch (Exception e) { LogErrorVerbose("Error while trying to save TooManyEmotes local player data.\n" + e); }
         }
 
 
         internal static void LoadLocalPlayerValues() // Called from SyncManager.OnSynced()
         {
-            if (!isClient || !SyncManager.isSynced || !ConfigSync.instance.syncPersistentUnlocksGlobal)
+            if (!isClient || !SyncManager.isSynced || !ConfigSync.instance.syncPersistentUnlocksGlobal || globallyUnlockedEmoteNames == null || EmotesManager.allUnlockableEmotesDict == null)
                 return;
             
             try
@@ -237,11 +246,7 @@ namespace TooManyEmotes
                 globallyUnlockedEmoteNames.AddRange(loadEmoteNames);
                 Log("Loaded " + loadEmoteNames.Length + " globally unlocked emotes for local player.");
             }
-            catch (Exception e)
-            {
-                LogErrorVerbose("Error while trying to load TooManyEmotes local player data.");
-                LogErrorVerbose(e.ToString());
-            }
+            catch (Exception e) { LogErrorVerbose("Error while trying to load TooManyEmotes local player data.\n" + e); }
         }
 
 
@@ -254,11 +259,7 @@ namespace TooManyEmotes
                 SessionManager.emotesUnlockedThisSession?.Clear();
                 ES3.DeleteKey("UnlockedEmotes", TooManyEmotesSaveFileName);
             }
-            catch (Exception e)
-            {
-                LogErrorVerbose("Error resetting globally unlocked emotes?");
-                LogErrorVerbose(e.ToString());
-            }
+            catch (Exception e) { LogErrorVerbose("Error resetting globally unlocked emotes?\n" + e); }
         }
 
 
@@ -273,11 +274,7 @@ namespace TooManyEmotes
                 {
                     ES3.Save("TooManyEmotes.FavoriteEmotes", EmotesManager.allFavoriteEmotes.ToArray(), TooManyEmotesSaveFileName);
                 }
-                catch (Exception e)
-                {
-                    LogErrorVerbose("Error saving favorited emotes?");
-                    LogErrorVerbose(e.ToString());
-                }
+                catch (Exception e) { LogErrorVerbose("Error saving favorited emotes?\n" + e); }
             }
         }
 
@@ -287,15 +284,9 @@ namespace TooManyEmotes
             if (EmotesManager.allFavoriteEmotes == null)
                 return;
 
-            // Try to transfer old save data to new save location
-            List<string> oldFavoriteEmotes = null;
-            try // Not sure why I'm putting a try block here and inside the method, but it stays. For now
-            {
-                oldFavoriteEmotes = LoadOldFavoritedEmotes()?.ToList();
-            }
-            catch { }
+            List<string> oldFavoriteEmotes = LoadOldFavoritedEmotes()?.ToList();
 
-            EmotesManager.allFavoriteEmotes.Clear();
+            EmotesManager.allFavoriteEmotes?.Clear();
             try
             {
                 var addFavoritedEmotes = ES3.Load("TooManyEmotes.FavoriteEmotes", TooManyEmotesSaveFileName, new string[0]);
@@ -313,31 +304,43 @@ namespace TooManyEmotes
             catch (Exception e)
             {
                 LogError("Error while trying to load favorited emotes due to possible save corruption? Your favorited emotes will likely be reset.\n" + e);
-                ES3.DeleteKey("TooManyEmotes.FavoriteEmotes", TooManyEmotesSaveFileName);
-                LogErrorVerbose("Deleted key: TooManyEmotes.FavoriteEmotes from save: " + TooManyEmotesSaveFileName);
+                try
+                {
+                    ES3.DeleteKey("TooManyEmotes.FavoriteEmotes", TooManyEmotesSaveFileName);
+                    LogErrorVerbose("Deleted key: \"TooManyEmotes.FavoriteEmotes\" from file: \"" + TooManyEmotesSaveFileName + "\"");
+                }
+                catch 
+                {
+                    LogErrorVerbose("Could not delete key: \"TooManyEmotes.FavoriteEmotes\" from file: \"" + TooManyEmotesSaveFileName + "\"");
+                }
             }
             SessionManager.UpdateUnlockedFavoriteEmotes();
         }
 
 
         private static string[] LoadOldFavoritedEmotes()
-        { 
+        {
+            string[] emoteNames = null;
             try
             {
                 if (ES3.KeyExists("TooManyEmotes.FavoriteEmotes"))
                 {
-                    var emoteNames = ES3.Load<string[]>("TooManyEmotes.FavoriteEmotes");
-                    return emoteNames;
+                    emoteNames = ES3.Load<string[]>("TooManyEmotes.FavoriteEmotes");
+                    ES3.DeleteKey("TooManyEmotes.FavoriteEmotes");
+                    LogVerbose("Successfully loaded old favorited emotes.");
                 }
             }
             catch (Exception e)
             {
-                LogErrorVerbose("Error loading old favorited emotes?");
-                LogErrorVerbose(e.ToString());
-                ES3.DeleteKey("TooManyEmotes.FavoriteEmotes");
-                LogErrorVerbose("Deleted key: TooManyEmotes.FavoriteEmotes");
+                LogErrorVerbose("Error loading old favorited emotes?\n" + e);
+                try
+                {
+                    ES3.DeleteKey("TooManyEmotes.FavoriteEmotes");
+                    LogErrorVerbose("Deleted key: \"TooManyEmotes.FavoriteEmotes\"");
+                }
+                catch { LogErrorVerbose("Could not delete key: \"TooManyEmotes.FavoriteEmotes\""); }
             }
-            return null;
+            return emoteNames;
         }
 
 
@@ -350,11 +353,7 @@ namespace TooManyEmotes
                 SessionManager.unlockedFavoriteEmotes?.Clear();
                 SessionManager.UpdateUnlockedFavoriteEmotes();
             }
-            catch (Exception e)
-            {
-                LogErrorVerbose("Error resetting favorite emotes?");
-                LogErrorVerbose(e.ToString());
-            }
+            catch (Exception e) { LogErrorVerbose("Error resetting favorite emotes?\n" + e); }
         }
     }
 }

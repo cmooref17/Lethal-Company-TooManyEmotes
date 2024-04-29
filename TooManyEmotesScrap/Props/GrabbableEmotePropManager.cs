@@ -485,12 +485,15 @@ namespace TooManyEmotesScrap.Props
             if (allItems == null)
                 return;
 
+            LogWarning("AAA");
             if (grabbableEmotePropsData == null || startGrabbableItemId < 0 || numGrabbableEmoteProps <= 0)
                 return;
 
+            LogWarning("BBB");
             if (!ES3.KeyExists("shipGrabbableItemIDs", currentSaveFileName))
                 return;
 
+            LogWarning("CCC");
             if (!ES3.KeyExists("TooManyEmotes.GrabbablePropIndexes", currentSaveFileName))
                 return;
 
@@ -501,18 +504,22 @@ namespace TooManyEmotesScrap.Props
             int startId = ES3.Load<int>("TooManyEmotes.StartGrabbablePropItemId", currentSaveFileName);
             int numProps = ES3.Load<int>("TooManyEmotes.NumGrabbableProps", currentSaveFileName);
 
+            LogWarning("DDD");
             // No change needed
             if (startId == startGrabbableItemId && numProps == numGrabbableEmoteProps)
                 return;
 
+            LogWarning("EEE OldStart: " + startId + " CurrentStartId: " + startGrabbableItemId + " NumProps: " + numProps + " CurrentNumProps: " + numGrabbableEmoteProps);
             int numValuesChanged = 0;
             foreach (int index in grabbablePropIndexes)
             {
+                LogWarning("FFF: " + index);
                 if (index < 0 || index >= itemIds.Length)
                     continue;
 
                 int id = itemIds[index];
                 int newId = id;
+                LogWarning("GGG: " + id + " " + newId);
                 if (id >= startId && id < startId + numProps)
                 {
                     newId = id - startId + startGrabbableItemId;

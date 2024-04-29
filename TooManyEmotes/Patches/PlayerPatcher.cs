@@ -21,7 +21,7 @@ namespace TooManyEmotes.Patches
     {
         [HarmonyPatch(typeof(PlayerControllerB), "Start")]
         [HarmonyPostfix]
-        public static void InitializeEmoteController(PlayerControllerB __instance)
+        private static void InitializeEmoteController(PlayerControllerB __instance)
         {
             __instance.gameObject.AddComponent<EmoteControllerPlayer>();
         }
@@ -29,7 +29,7 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
-        public static void OnLocalClientReady(PlayerControllerB __instance)
+        private static void OnLocalClientReady(PlayerControllerB __instance)
         {
             Log("Initializing local player.");
             for (int i = 0; i < HUDManager.Instance.controlTipLines.Length; i++)
@@ -47,7 +47,7 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(StartOfRound), "OnPlayerDC")]
         [HarmonyPrefix]
-        public static void OnPlayerDC(int playerObjectNumber, ulong clientId, StartOfRound __instance)
+        private static void OnPlayerDC(int playerObjectNumber, ulong clientId, StartOfRound __instance)
         {
             PlayerControllerB playerController = __instance.allPlayerObjects[playerObjectNumber].GetComponent<PlayerControllerB>();
             if (playerController != null && EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(playerController, out var emoteController) && emoteController.IsPerformingCustomEmote())
@@ -57,7 +57,7 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(PlayerControllerB), "KillPlayer")]
         [HarmonyPrefix]
-        public static void OnPlayerDeath(Vector3 bodyVelocity, PlayerControllerB __instance)
+        private static void OnPlayerDeath(Vector3 bodyVelocity, PlayerControllerB __instance)
         {
             if (__instance != null && EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(__instance, out var emoteController) && emoteController.IsPerformingCustomEmote())
             {
@@ -69,7 +69,7 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(PlayerControllerB), "StopPerformingEmoteClientRpc")]
         [HarmonyPrefix]
-        public static void OnStopPerformingEmote(PlayerControllerB __instance)
+        private static void OnStopPerformingEmote(PlayerControllerB __instance)
         {
             if (__instance == localPlayerController)
                 return;
@@ -89,11 +89,11 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(PlayerControllerB), "PerformEmote")]
         [HarmonyPrefix]
-        public static void StopCustomEmoteOnDefaultEmote(InputAction.CallbackContext context, int emoteID)
+        private static void OnPerformDefaultEmote(InputAction.CallbackContext context, int emoteID)
         {
             if (context.performed && emoteControllerLocal.IsPerformingCustomEmote())
             {
-                //LogWarning("OnPerformEmoteLocalPlayer. Stopping custom emote.");
+                LogWarningVerbose("[PerformEmote] On perform vanilla emote on local player. Stopping custom emote.");
                 emoteControllerLocal.StopPerformingEmote();
             }
         }
