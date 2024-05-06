@@ -49,13 +49,13 @@ namespace TooManyEmotes.Networking
                 return;
             }
 
-            Log("Sending performing emote update to server. Emote: " + emote.emoteName + " EmoteId: " + emote.emoteId);
             bool sendTriggerAudioUpdate = doNotTriggerAudioDict[emoteControllerLocal] != doNotTriggerAudio;
 
             int bufferSize = sizeof(short) + (sendTriggerAudioUpdate ? sizeof(bool) : 0);
             var writer = new FastBufferWriter(bufferSize, Allocator.Temp);
             writer.WriteValue((short)emote.emoteId);
 
+            Log("Sending performing emote update to server. Emote: " + emote.emoteName + " EmoteId: " + emote.emoteId);
             if (sendTriggerAudioUpdate)
             {
                 writer.WriteValue(doNotTriggerAudio);

@@ -248,11 +248,11 @@ namespace TooManyEmotes.Audio
         protected virtual bool SetAudioFromEmote(UnlockableEmote emote)
         {
             audioSource.clip = null;
-            audioSource.mute = false;
+            audioSource.mute = AudioManager.dmcaFreeMode && audioSource.clip != null && AudioManager.IsClipDMCA(audioSource.clip);
             audioSource.time = 0;
 
             audioLoopSource.clip = null;
-            audioLoopSource.mute = false;
+            audioLoopSource.mute = audioSource.mute;
             audioLoopSource.time = 0;
 
             if (emote != null && emote.hasAudio)
@@ -276,8 +276,8 @@ namespace TooManyEmotes.Audio
                     return false;
 
                 // Mute dmca clip in case they were incorrectly loaded?
-                audioSource.mute = AudioManager.dmcaFreeMode && audioSource.clip != null && AudioManager.IsClipDMCA(audioSource.clip);
-                audioLoopSource.mute = AudioManager.dmcaFreeMode && audioLoopSource.clip != null && AudioManager.IsClipDMCA(audioLoopSource.clip);
+                //audioSource.mute = AudioManager.dmcaFreeMode && audioSource.clip != null && AudioManager.IsClipDMCA(audioSource.clip);
+                //audioLoopSource.mute = AudioManager.dmcaFreeMode && audioLoopSource.clip != null && AudioManager.IsClipDMCA(audioLoopSource.clip);
 
                 return true;
             }

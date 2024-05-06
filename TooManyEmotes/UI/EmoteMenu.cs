@@ -151,6 +151,8 @@ namespace TooManyEmotes.UI
                 }
             }
             customControlTipLinesParent.SetParent(menuTransform, true);
+            customControlTipLinesParent.localPosition = new Vector3(customControlTipLinesParent.localPosition.x, customControlTipLinesParent.localPosition.y, 0);
+            customControlTipLinesParent.SetSiblingIndex(1);
 
             currentPage = 0;
             hoveredEmoteUIIndex = -1;
@@ -212,7 +214,7 @@ namespace TooManyEmotes.UI
             if (currentLoadoutIndex < 0 || currentLoadoutIndex >= emoteLoadouts.Count)
                 currentLoadoutIndex = emoteLoadouts.Count - 1;
 
-            Transform additionalUIParent = menuTransform.Find("MenuUI/AdditionalUI").transform;
+            Transform additionalUIParent = menuTransform.Find("MenuUI/AdditionalUI");
             additionalUIParent.gameObject.AddComponent<AdditionalPanelUI>();
 
             AudioManager.LoadPreferences();
@@ -643,6 +645,7 @@ namespace TooManyEmotes.UI
         public static void OnUpdateToggleMuteEmote(Toggle toggle)
         {
             AudioManager.muteEmoteAudio = toggle.isOn;
+            Log("Toggling mute emote audio: " + AudioManager.muteEmoteAudio);
             foreach (var emoteAudioSource in EmoteAudioSource.allEmoteAudioSources)
                 emoteAudioSource.UpdateVolume();
             DiscoBallPatcher.OnUpdateMuteEmotes();
@@ -652,12 +655,14 @@ namespace TooManyEmotes.UI
         public static void OnUpdateToggleEmoteOnlyMode(Toggle toggle)
         {
             AudioManager.emoteOnlyMode = toggle.isOn;
+            Log("Toggling emote only mode: " + AudioManager.emoteOnlyMode);
         }
 
 
         public static void OnUpdateToggleDmcaFreeMode(Toggle toggle)
         {
             AudioManager.dmcaFreeMode = toggle.isOn;
+            Log("Toggling DMCA free mode: " + AudioManager.dmcaFreeMode);
             foreach (var emoteAudioSource in EmoteAudioSource.allEmoteAudioSources)
                 emoteAudioSource.RefreshAudio();
         }
@@ -666,12 +671,14 @@ namespace TooManyEmotes.UI
         public static void OnUpdateToggleFirstPerson(Toggle toggle)
         {
             ThirdPersonEmoteController.UpdateFirstPersonEmoteMode(toggle.isOn);
+            Log("Toggling first person emotes: " + ThirdPersonEmoteController.firstPersonEmotesEnabled);
         }
 
 
         public static void OnUpdateToggleAllowMovingWhileEmoting(Toggle toggle)
         {
             ThirdPersonEmoteController.SetCanMoveWhileEmoting(toggle.isOn);
+            Log("Toggling allow moving while emoting: " + ThirdPersonEmoteController.allowMovingWhileEmoting);
         }
 
 

@@ -15,7 +15,7 @@ using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes
 {
-    [BepInPlugin("FlipMods.TooManyEmotes", "TooManyEmotes", "2.1.15")]
+    [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     [BepInDependency("com.rune580.LethalCompanyInputUtils", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("me.swipez.melonloader.morecompany", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
@@ -67,9 +67,9 @@ namespace TooManyEmotes
             AdditionalEmoteData.SetAdditionalPropData();
             AdditionalEmoteData.SetAdditionalMusicData();
 
-            this._harmony = new Harmony("TooManyEmotes");
+            this._harmony = new Harmony(PluginInfo.PLUGIN_NAME);
             PatchAll();
-            Log("TooManyEmotes finished loading!");
+            Log(PluginInfo.PLUGIN_NAME + " finished loading!");
         }
 
 

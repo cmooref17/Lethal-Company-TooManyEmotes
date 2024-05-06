@@ -12,6 +12,7 @@ using Dissonance.Integrations.Unity_NFGO;
 using Unity.Netcode;
 using static TooManyEmotes.HelperTools;
 using static TooManyEmotes.CustomLogging;
+using UnityEngine.Rendering.HighDefinition;
 
 namespace TooManyEmotes.UI
 {
@@ -112,14 +113,28 @@ namespace TooManyEmotes.UI
                     if (child.name != "spine")
                         GameObject.Destroy(child.gameObject);
 
-                List<Component> destroyComponents = new List<Component>(previewPlayerObject.GetComponentsInChildren<Component>());
+                // Temp fix for a few errors
+                foreach (var additionalLightData in previewPlayerObject.GetComponentsInChildren<HDAdditionalLightData>())
+                    GameObject.Destroy(additionalLightData);
+
+                foreach (var component in previewPlayerObject.GetComponentsInChildren<Component>())
+                {
+                    if (component is Transform || component is SkinnedMeshRenderer || component is MeshFilter || component is Animator)
+                        continue;
+
+                    GameObject.Destroy(component);
+                }
+
+                /*List<Component> destroyComponents = new List<Component>(previewPlayerObject.GetComponentsInChildren<Component>());
                 int numDestroyed = -1;
                 while (destroyComponents != null && destroyComponents.Count > 0 && numDestroyed != 0)
                 {
+                    LogWarning("111111");
                     numDestroyed = 0;
                     List<Component> reDestroy = new List<Component>();
                     foreach (var component in destroyComponents)
                     {
+                        LogWarning("Component: " + component.ToString() + " Component2: " + component.GetType().ToString());
                         if (component is Transform || component is SkinnedMeshRenderer || component is MeshFilter || component is Animator)
                             continue;
 
@@ -137,7 +152,7 @@ namespace TooManyEmotes.UI
                 }
 
                 foreach (var component in destroyComponents)
-                    LogError("Failed to destroy component of type: " + component.GetType().ToString() + " on animation previewer object.");
+                    LogError("Failed to destroy component of type: " + component.GetType().ToString() + " on animation previewer object.");*/
 
                 simpleEmoteController = previewPlayerObject.AddComponent<EmoteController>();
                 simpleEmoteController.Initialize();
@@ -146,13 +161,15 @@ namespace TooManyEmotes.UI
                 GameObject boomboxPrefab = null;
                 if (allItems == null)
                     LogError("AllItemsList null!");
-
-                foreach (var item in allItems)
+                else
                 {
-                    if (item.itemName.ToLower() == "boombox")
+                    foreach (var item in allItems)
                     {
-                        boomboxPrefab = item.spawnPrefab;
-                        break;
+                        if (item.itemName.ToLower() == "boombox")
+                        {
+                            boomboxPrefab = item.spawnPrefab;
+                            break;
+                        }
                     }
                 }
 
@@ -176,7 +193,7 @@ namespace TooManyEmotes.UI
                 SetObjectLayerRecursive(previewPlayerObject, renderLayer);
             }
 
-            if (Plugin.radialMenuPrefab == null)
+            if (!Plugin.radialMenuPrefab)
                 return;
 
             __instance.StartCoroutine(InitPlayerCloneAfterSpawnAnimation());

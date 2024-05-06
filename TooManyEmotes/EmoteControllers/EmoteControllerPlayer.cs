@@ -159,7 +159,7 @@ namespace TooManyEmotes
                 //playerController.cameraContainerTransform.position = cameraContainerLerp.position;
                 //playerController.cameraContainerTransform.rotation = cameraContainerLerp.rotation;
                 //if (!isLocalPlayer || !ThirdPersonEmoteController.isMovingWhileEmoting)
-                if (!isLocalPlayer || !ThirdPersonEmoteController.firstPersonEmotesEnabled)
+                if (!isLocalPlayer || !(ThirdPersonEmoteController.firstPersonEmotesEnabled && ThirdPersonEmoteController.isMovingWhileEmoting))
                 {
                     playerController.cameraContainerTransform.position = cameraContainerLerp.position;
                     playerController.cameraContainerTransform.rotation = cameraContainerLerp.rotation;

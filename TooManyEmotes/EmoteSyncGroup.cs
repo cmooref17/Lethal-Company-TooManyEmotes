@@ -64,8 +64,8 @@ namespace TooManyEmotes
                     currentEmoteAudioSources = new Dictionary<UnlockableEmote, EmoteAudioSource>();
                     if (emoteController.personalEmoteAudioSource == null)
                     {
-                        this.useAudio = false;
                         LogError("Attempted to perform emote with personal audio source, which is null.");
+                        this.useAudio = false;
                     }
                     else
                     {
