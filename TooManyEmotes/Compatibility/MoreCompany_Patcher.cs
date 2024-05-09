@@ -1,5 +1,4 @@
 ﻿using BepInEx.Bootstrap;
-using Discord;
 using GameNetcodeStuff;
 using HarmonyLib;
 using MoreCompany.Cosmetics;
@@ -9,8 +8,10 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using TooManyEmotes.Audio;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Rendering;
 using static TooManyEmotes.CustomLogging;
 using static TooManyEmotes.HelperTools;
 
@@ -20,34 +21,49 @@ namespace TooManyEmotes.Compatibility
     internal static class MoreCompany_Patcher
     {
         public static bool Enabled { get { return Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany"); } }
+        internal static bool Patched = false;
+
+        [HarmonyPatch(typeof(StartOfRound), "Awake")]
+        [HarmonyPrefix]
+        private static void Init()
+        {
+            Patched = false;
+        }
 
 
         [HarmonyPatch(typeof(HUDManager), "AddTextMessageClientRpc")]
         [HarmonyPrefix]
-        private static bool ApplyPatch(string chatMessage, HUDManager __instance)
+        private static bool OnAddTextMessageClientRpc(string chatMessage, HUDManager __instance)
         {
-            if (Enabled)
-            {
-                if (!Plugin.IsModLoaded("com.potatoepet.AdvancedCompany"))
-                    Patch();
-            }
+            if (networkManager == null || !networkManager.IsListening)
+                return true;
+
             bool isClientExecStage = (int)Traverse.Create(__instance).Field("__rpc_exec_stage").GetValue() == 2;
-            return (!isClientExecStage && (networkManager.IsServer || networkManager.IsHost)) || (isClientExecStage && (networkManager.IsClient || networkManager.IsHost));
+            if (isClientExecStage && (isClient || isHost))
+            {
+                if (Enabled)
+                    Patch();
+                return true;
+            }
+            return !isClientExecStage && (isServer || isHost);
         }
 
 
-        // seperate method without inlining to avoid throwing errors on chat message
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void Patch()
         {
-            CosmeticApplication cosmetics = UnityEngine.Object.FindObjectOfType<CosmeticApplication>();
-            if (cosmetics == null)
+            if (Patched)
                 return;
 
-            if (CosmeticRegistry.locallySelectedCosmetics.Count <= 0 || cosmetics.spawnedCosmetics.Count > 0)
+            CosmeticApplication cosmetics = UnityEngine.Object.FindObjectOfType<CosmeticApplication>();
+            if (cosmetics == null || cosmetics.spawnedCosmetics.Count > 0)
                 return;
 
             Log("Applying MoreCompany Cosmetics patch.");
+            Patched = true;
+
+            if (CosmeticRegistry.locallySelectedCosmetics.Count <= 0)
+                return;
 
             foreach (string locallySelectedCosmetic in CosmeticRegistry.locallySelectedCosmetics)
                 cosmetics.ApplyCosmetic(locallySelectedCosmetic, true);

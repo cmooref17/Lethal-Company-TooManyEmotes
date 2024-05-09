@@ -211,6 +211,7 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /Y "$(TargetDir)$(TargetName).dll" "C:\Users\cmoor\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\plugins\FlipMods-TooManyEmotes\"</PostBuildEvent>
+    <PostBuildEvent>xcopy /Y "$(TargetDir)$(TargetName).dll" "C:\Users\cmoor\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\plugins\FlipMods-TooManyEmotes\"
+xcopy /Y "$(TargetDir)$(TargetName).dll" "C:\Program Files (x86)\Steam\steamapps\common\Lethal Company\BepInEx\plugins\FlipMods-TooManyEmotes\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

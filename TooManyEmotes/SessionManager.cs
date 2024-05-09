@@ -196,12 +196,8 @@ namespace TooManyEmotes
 
             if (emote.requiresHeldProp)
             {
-                LogWarning("PROP: " + emote.emoteName);
                 if (ConfigSync.instance.syncRemoveGrabbableEmotesPartyPooperMode)
-                {
-                    LogWarning("RETURNING");
                     return;
-                }
             }
 
             var _unlockedEmotes = unlockedEmotes;
@@ -304,11 +300,7 @@ namespace TooManyEmotes
                     if (IsEmoteUnlocked(emote))
                         unlockedFavoriteEmotes.Add(emote);
                 }
-                //else LogWarning("Error loading favorited emote. Emote does not exist. The emote has likely been temporarily removed in this update.");
             }
         }
-
-
-        //public static void SortUnlockedEmotes() => unlockedEmotes = unlockedEmotes.OrderBy(item => item.rarity).ThenBy(item => item.emoteName).ToList();
     }
 }
