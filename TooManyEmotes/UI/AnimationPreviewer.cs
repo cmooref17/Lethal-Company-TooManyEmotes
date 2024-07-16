@@ -27,9 +27,9 @@ namespace TooManyEmotes.UI
 
         public static EmoteController simpleEmoteController;
 
-        public static int renderLayer = 23; // EnemiesNotRendered
-        public static int propRenderLayer = 3; // Props
-        public static int renderLayerMask { get { return (1 << renderLayer) | (1 << propRenderLayer); } }
+        public static int renderLayer = 23; // EnemiesNotRendered layer
+        //public static int propLayer = 6; // Prop layer
+        public static int renderLayerMask { get { return (1 << renderLayer)/* | (1 << propLayer)*/; } }
 
         public static GameObject previewBoombox;
 
@@ -125,38 +125,10 @@ namespace TooManyEmotes.UI
                     GameObject.Destroy(component);
                 }
 
-                /*List<Component> destroyComponents = new List<Component>(previewPlayerObject.GetComponentsInChildren<Component>());
-                int numDestroyed = -1;
-                while (destroyComponents != null && destroyComponents.Count > 0 && numDestroyed != 0)
-                {
-                    LogWarning("111111");
-                    numDestroyed = 0;
-                    List<Component> reDestroy = new List<Component>();
-                    foreach (var component in destroyComponents)
-                    {
-                        LogWarning("Component: " + component.ToString() + " Component2: " + component.GetType().ToString());
-                        if (component is Transform || component is SkinnedMeshRenderer || component is MeshFilter || component is Animator)
-                            continue;
-
-                        try
-                        {
-                            GameObject.Destroy(component);
-                            numDestroyed++;
-                        }
-                        catch
-                        {
-                            reDestroy.Add(component);
-                        }
-                    }
-                    destroyComponents = reDestroy;
-                }
-
-                foreach (var component in destroyComponents)
-                    LogError("Failed to destroy component of type: " + component.GetType().ToString() + " on animation previewer object.");*/
-
                 simpleEmoteController = previewPlayerObject.AddComponent<EmoteController>();
                 simpleEmoteController.Initialize();
                 simpleEmoteController.CreateBoneMap(EmoteControllerPlayer.sourceBoneNames);
+                simpleEmoteController.smoothTransitionToEmote = false;
 
                 GameObject boomboxPrefab = null;
                 if (allItems == null)
@@ -189,6 +161,11 @@ namespace TooManyEmotes.UI
                             GameObject.Destroy(component);
                     }
                 }
+
+                yield return null;
+
+                if (MoreCompany_Patcher.Enabled)
+                    MoreCompany_Patcher.ShowLocalCosmetics(metarigGameObject.transform);
 
                 SetObjectLayerRecursive(previewPlayerObject, renderLayer);
             }
@@ -223,9 +200,8 @@ namespace TooManyEmotes.UI
                 if (simpleEmoteController.emotingProps != null)
                 {
                     foreach (var emoteProp in simpleEmoteController.emotingProps)
-                        emoteProp.SetPropLayer(3);
+                        emoteProp.SetPropLayer(renderLayer);
                 }
-                
             }
             else
             {

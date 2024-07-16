@@ -69,6 +69,12 @@ namespace TooManyEmotes
 
         public EmoteAudioSource personalEmoteAudioSource;
 
+        private float timePerformedEmote = 0;
+        //private Dictionary<Transform, Vector3> smoothBonePositions = new Dictionary<Transform, Vector3>();
+        //private Dictionary<Transform, Quaternion> smoothBoneRotations = new Dictionary<Transform,Quaternion>();
+
+        public bool smoothTransitionToEmote = false;
+
 
         protected virtual void Awake()
         {
@@ -210,9 +216,21 @@ namespace TooManyEmotes
 
                 if (sourceBone == null || targetBone == null) continue;
 
-                targetBone.transform.position = sourceBone.transform.position;
-                targetBone.transform.rotation = sourceBone.transform.rotation;
+                float emoteTime = Time.time - timePerformedEmote;
+                float lerpAmount = smoothTransitionToEmote ? Mathf.Clamp01(emoteTime / 0.2f) : 1;
+                targetBone.transform.position = Vector3.Lerp(targetBone.transform.position, sourceBone.transform.position, lerpAmount);
+                targetBone.transform.rotation = Quaternion.Slerp(targetBone.transform.rotation, sourceBone.transform.rotation, lerpAmount);
+
+                /*// Apply smooth bone transitions to emote
+                if (smoothTransitionToEmote && emoteTime < 0.5f)
+                {
+                    smoothBonePositions[targetBone] = Vector3.Lerp(smoothBonePositions[targetBone], targetBone.transform.localPosition, lerpAmount);
+                    smoothBoneRotations[targetBone] = Quaternion.Lerp(smoothBoneRotations[targetBone], targetBone.transform.localRotation, lerpAmount);
+                    targetBone.localPosition = smoothBonePositions[targetBone];
+                    targetBone.localRotation = smoothBoneRotations[targetBone];
+                }*/
             }
+
             //CorrectVerticalPosition();
         }
 
@@ -281,6 +299,9 @@ namespace TooManyEmotes
 
             performingEmote = emote;
             isPerformingEmote = true;
+
+            timePerformedEmote = Time.time;
+            RecordStartingBonePositions();
 
             // Emote on props (if they exist)
             PerformEmoteProps();
@@ -397,15 +418,15 @@ namespace TooManyEmotes
 
         protected void LoadEmoteProps()
         {
+            UnloadEmoteProps();
+
             if (performingEmote.propNamesInEmote == null)
                 return;
-
-            UnloadEmoteProps();
 
             foreach (string propName in performingEmote.propNamesInEmote)
             {
                 var propObject = EmotePropManager.LoadEmoteProp(propName);
-                propObject.SetPropLayer(6);
+                propObject.SetPropLayer(6); // Prop layer
                 emotingProps.Add(propObject);
                 propObject.transform.SetParent(propsParent);
                 propObject.transform.localPosition = Vector3.zero;
@@ -494,6 +515,11 @@ namespace TooManyEmotes
         public void CreateBoneMap(List<string> sourceBoneNames, List<string> targetBoneNames = null)
         {
             boneMap = BoneMapper.CreateBoneMap(humanoidSkeleton, metarig, sourceBoneNames, targetBoneNames);
+            /*foreach (var bone in boneMap.Values)
+            {
+                smoothBonePositions.Add(bone, bone.localPosition);
+                smoothBoneRotations.Add(bone, bone.localRotation);
+            }*/
         }
 
 
@@ -556,6 +582,20 @@ namespace TooManyEmotes
             if (emoteSyncGroup != null)
                 emoteSyncGroup.RemoveFromEmoteSyncGroup(this);
             emoteSyncGroup = null;
+        }
+
+
+        protected void RecordStartingBonePositions()
+        {
+            /*if (!smoothTransitionToEmote)
+                return;
+
+            for (int i = 0; i < smoothBonePositions.Count; i++)
+            {
+                Transform bone = smoothBonePositions.ElementAt(i).Key;
+                smoothBonePositions[bone] = bone.localPosition;
+                smoothBoneRotations[bone] = bone.localRotation;
+            }*/
         }
     }
 }

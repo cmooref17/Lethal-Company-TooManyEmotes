@@ -53,7 +53,7 @@ namespace TooManyEmotes.Props
 
         private void SetPropLayerRecursive(GameObject obj, int layer)
         {
-            if (obj.layer != 22 && obj.layer != 23)
+            if (obj.layer != 22)
                 obj.layer = layer;
             for (int i = 0; i < obj.transform.childCount; i++)
                 SetPropLayerRecursive(obj.transform.GetChild(i).gameObject, layer);

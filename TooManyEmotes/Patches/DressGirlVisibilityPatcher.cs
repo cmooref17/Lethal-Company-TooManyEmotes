@@ -10,7 +10,7 @@ using static TooManyEmotes.CustomLogging;
 
 namespace TooManyEmotes.Patches
 {
-    [HarmonyPatch]
+    /*[HarmonyPatch]
     public class DressGirlVisibilityPatcher
     {
         [HarmonyPatch(typeof(EnemyAI), "EnableEnemyMesh")]
@@ -25,5 +25,5 @@ namespace TooManyEmotes.Patches
             foreach (var renderer in __instance.meshRenderers)
                 renderer.enabled = renderer.gameObject.layer != 23;
         }
-    }
+    }*/
 }

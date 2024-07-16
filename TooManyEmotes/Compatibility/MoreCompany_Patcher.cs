@@ -1,6 +1,7 @@
 ﻿using BepInEx.Bootstrap;
 using GameNetcodeStuff;
 using HarmonyLib;
+using MoreCompany;
 using MoreCompany.Cosmetics;
 using System;
 using System.Collections.Generic;
@@ -20,61 +21,51 @@ namespace TooManyEmotes.Compatibility
     [HarmonyPatch]
     internal static class MoreCompany_Patcher
     {
-        public static bool Enabled { get { return Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany"); } }
-        internal static bool Patched = false;
-
-        [HarmonyPatch(typeof(StartOfRound), "Awake")]
-        [HarmonyPrefix]
-        private static void Init()
+        internal static bool Enabled { get { return Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany"); } }
+        
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        internal static void ShowLocalCosmetics(Transform playerRoot = null)
         {
-            Patched = false;
-        }
+            // If cosmetics not enabled in MoreCompany
+            if (!MainClass.cosmeticsSyncOther.Value || CosmeticRegistry.locallySelectedCosmetics.Count <= 0)
+                return;
 
+            Transform cosmeticRoot = playerRoot != null ? playerRoot : StartOfRound.Instance.localPlayerController.transform;
+            var cosmeticApplication = cosmeticRoot?.GetComponentInChildren<CosmeticApplication>();
 
-        [HarmonyPatch(typeof(HUDManager), "AddTextMessageClientRpc")]
-        [HarmonyPrefix]
-        private static bool OnAddTextMessageClientRpc(string chatMessage, HUDManager __instance)
-        {
-            if (networkManager == null || !networkManager.IsListening)
-                return true;
-
-            bool isClientExecStage = (int)Traverse.Create(__instance).Field("__rpc_exec_stage").GetValue() == 2;
-            if (isClientExecStage && (isClient || isHost))
+            if (cosmeticApplication && cosmeticApplication.spawnedCosmetics.Count != 0)
             {
-                if (Enabled)
-                    Patch();
-                return true;
+                foreach (var item in cosmeticApplication.spawnedCosmetics)
+                {
+                    SetAllChildrenLayer(item.transform, 0);
+                    item.gameObject.SetActive(true);
+                }
+                LogWarning("BBBBB");
+                return;
             }
-            return !isClientExecStage && (isServer || isHost);
+
+            if (!cosmeticApplication)
+                cosmeticApplication = cosmeticRoot.gameObject.AddComponent<CosmeticApplication>();
+            foreach (var cosmetic in CosmeticRegistry.locallySelectedCosmetics)
+                cosmeticApplication.ApplyCosmetic(cosmetic, true);
+            foreach (var cosmetic in cosmeticApplication.spawnedCosmetics)
+                cosmetic.transform.localScale *= CosmeticRegistry.COSMETIC_PLAYER_SCALE_MULT;
         }
 
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void Patch()
+        internal static void HideLocalCosmetics(Transform playerRoot = null)
         {
-            if (Patched)
-                return;
+            Transform cosmeticRoot = playerRoot != null ? playerRoot : StartOfRound.Instance.localPlayerController.transform;
+            var cosmeticApplication = cosmeticRoot?.GetComponentInChildren<CosmeticApplication>();
 
-            CosmeticApplication cosmetics = UnityEngine.Object.FindObjectOfType<CosmeticApplication>();
-            if (cosmetics == null || cosmetics.spawnedCosmetics.Count > 0)
-                return;
-
-            Log("Applying MoreCompany Cosmetics patch.");
-            Patched = true;
-
-            if (CosmeticRegistry.locallySelectedCosmetics.Count <= 0)
-                return;
-
-            foreach (string locallySelectedCosmetic in CosmeticRegistry.locallySelectedCosmetics)
-                cosmetics.ApplyCosmetic(locallySelectedCosmetic, true);
-
-            foreach (CosmeticInstance spawnedCosmetic in cosmetics.spawnedCosmetics)
+            if (cosmeticApplication && cosmeticApplication.spawnedCosmetics.Count != 0)
             {
-                Transform transform = spawnedCosmetic.transform;
-                transform.localScale *= 0.38f;
-                SetAllChildrenLayer(spawnedCosmetic.transform, 23);
+                foreach (var item in cosmeticApplication.spawnedCosmetics)
+                    SetAllChildrenLayer(item.transform, 23);
             }
         }
+
 
         private static void SetAllChildrenLayer(Transform transform, int layer)
         {

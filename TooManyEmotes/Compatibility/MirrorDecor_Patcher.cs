@@ -1,10 +1,4 @@
-﻿using GameNetcodeStuff;
-using HarmonyLib;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using HarmonyLib;
 using TooManyEmotes.Patches;
 using UnityEngine.Rendering;
 using static TooManyEmotes.CustomLogging;
@@ -14,15 +8,14 @@ namespace TooManyEmotes.Compatibility
     [HarmonyPatch]
     public static class MirrorDecor_Patcher
     {
-        public static bool Enabled = false;
+        public static bool Enabled { get { return Plugin.IsModLoaded("quackandcheese.mirrordecor"); } }
 
-        [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
+        [HarmonyPatch(typeof(StartOfRound), "Awake")]
         [HarmonyPrefix]
         public static void ApplyPatch()
         {
-            if (Plugin.IsModLoaded("quackandcheese.mirrordecor"))
+            if (Enabled)
             {
-                Enabled = true;
                 ThirdPersonEmoteController.localPlayerBodyLayer = 23;
                 ThirdPersonEmoteController.defaultShadowCastingMode = ShadowCastingMode.On;
                 Log("Applied patch for MirrorDecor");

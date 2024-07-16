@@ -365,7 +365,7 @@ namespace TooManyEmotes
                 var heldObject = __instance.ItemSlots[slot];
                 if (emoteController.sourceGrabbableEmoteProp != null && emoteController.sourceGrabbableEmoteProp != heldObject)
                     emoteController.StopPerformingEmote();
-                else if (heldObject != null && heldObject is GrabbablePropObject)
+                else if (heldObject && emoteController.emotingProps.Count > 0 /*heldObject is GrabbablePropObject*/)
                     heldObject.EnableItemMeshes(false);
             }
         }
@@ -377,15 +377,10 @@ namespace TooManyEmotes
                 sourceGrabbableEmoteProp = sourcePropObject;
 
             bool success = PerformEmote(emote, overrideEmoteId, doNotTriggerAudio);
-            if (isPerformingEmote)
+            if (isPerformingEmote && !isLocalPlayer)
             {
-                if (!isLocalPlayer)
-                {
-                    if (SyncManager.isSynced && ConfigSync.instance.syncPersistentUnlocksGlobal && !SessionManager.unlockedEmotesByPlayer.TryGetValue(playerController.playerUsername, out var unlockedEmotes) && !unlockedEmotes.Contains(performingEmote))
-                    {
-                        SessionManager.UnlockEmoteLocal(emote.emoteId, playerUsername: playerController.playerUsername);
-                    }
-                }
+                if (SyncManager.isSynced && ConfigSync.instance.syncPersistentUnlocksGlobal && !SessionManager.unlockedEmotesByPlayer.TryGetValue(playerController.playerUsername, out var unlockedEmotes) && !unlockedEmotes.Contains(performingEmote))
+                    SessionManager.UnlockEmoteLocal(emote.emoteId, playerUsername: playerController.playerUsername);
             }
             else
                 StopPerformingEmote();
@@ -407,8 +402,8 @@ namespace TooManyEmotes
                 if (!isLocalPlayer)
                     originalAnimator.SetInteger("emoteNumber", 0);
 
-                var heldProp = playerController.ItemSlots[playerController.currentItemSlot] as GrabbablePropObject;
-                if (heldProp)
+                var heldProp = playerController.ItemSlots[playerController.currentItemSlot];
+                if (heldProp && emotingProps.Count > 0)
                     heldProp.EnableItemMeshes(false);
 
                 if (isLocalPlayer)
@@ -453,10 +448,9 @@ namespace TooManyEmotes
             cameraContainerLerp.SetPositionAndRotation(cameraContainerTarget.position, cameraContainerTarget.rotation);
             playerController.gameplayCamera.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
 
-            var heldProp = playerController.ItemSlots[playerController.currentItemSlot] as GrabbablePropObject;
+            var heldProp = playerController.ItemSlots[playerController.currentItemSlot];
             if (heldProp)
                 heldProp.EnableItemMeshes(true);
-
 
             if (sourceGrabbableEmoteProp != null)
             {
@@ -492,6 +486,10 @@ namespace TooManyEmotes
                     sourceGrabbableEmoteProp.StopEmote();
                 sourceGrabbableEmoteProp = null;
             }
+
+            var heldProp = playerController.ItemSlots[playerController.currentItemSlot];
+            if (heldProp)
+                heldProp.EnableItemMeshes(true);
         }
 
 

@@ -46,6 +46,7 @@ namespace TooManyEmotes.Audio
             audioSource.maxDistance = ConfigSettings.emoteAudioMaxDistance.Value;
             audioSource.rolloffMode = AudioRolloffMode.Linear;
             audioSource.loop = false;
+            audioSource.playOnAwake = false;
 
             audioLoopSource.volume = ConfigSettings.baseEmoteAudioVolume.Value;
             audioLoopSource.dopplerLevel = 0;
@@ -54,6 +55,7 @@ namespace TooManyEmotes.Audio
             audioLoopSource.maxDistance = ConfigSettings.emoteAudioMaxDistance.Value;
             audioLoopSource.rolloffMode = AudioRolloffMode.Linear;
             audioLoopSource.loop = true;
+            audioLoopSource.playOnAwake = false;
 
             UpdateVolume();
         }
@@ -248,12 +250,14 @@ namespace TooManyEmotes.Audio
         protected virtual bool SetAudioFromEmote(UnlockableEmote emote)
         {
             audioSource.clip = null;
-            audioSource.mute = AudioManager.dmcaFreeMode && audioSource.clip != null && AudioManager.IsClipDMCA(audioSource.clip);
+            audioSource.mute = AudioManager.muteEmoteAudio || (AudioManager.dmcaFreeMode && audioSource.clip != null && AudioManager.IsClipDMCA(audioSource.clip));
             audioSource.time = 0;
+            audioLoopSource.loop = false;
 
             audioLoopSource.clip = null;
             audioLoopSource.mute = audioSource.mute;
             audioLoopSource.time = 0;
+            audioLoopSource.loop = true;
 
             if (emote != null && emote.hasAudio)
             {
@@ -274,10 +278,6 @@ namespace TooManyEmotes.Audio
                 }
                 else
                     return false;
-
-                // Mute dmca clip in case they were incorrectly loaded?
-                //audioSource.mute = AudioManager.dmcaFreeMode && audioSource.clip != null && AudioManager.IsClipDMCA(audioSource.clip);
-                //audioLoopSource.mute = AudioManager.dmcaFreeMode && audioLoopSource.clip != null && AudioManager.IsClipDMCA(audioLoopSource.clip);
 
                 return true;
             }

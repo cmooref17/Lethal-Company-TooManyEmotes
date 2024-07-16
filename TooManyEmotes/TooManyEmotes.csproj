@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D6950625-E3A1-4896-A183-87110491BF18}</ProjectGuid>
+    <ProjectGuid>{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>TooManyEmotes</RootNamespace>

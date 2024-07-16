@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34322.80
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TooManyEmotes", "TooManyEmotes\TooManyEmotes.csproj", "{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3DA80E68-B4DE-4E4C-B182-7ACE1BD656FA}
+	EndGlobalSection
+EndGlobal
