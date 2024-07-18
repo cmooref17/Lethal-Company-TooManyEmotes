@@ -3,7 +3,7 @@ using TooManyEmotes.Patches;
 using UnityEngine.Rendering;
 using static TooManyEmotes.CustomLogging;
 
-namespace TooManyEmotes.Compatibility
+/*namespace TooManyEmotes.Compatibility
 {
     [HarmonyPatch]
     public static class MirrorDecor_Patcher
@@ -22,4 +22,4 @@ namespace TooManyEmotes.Compatibility
             }
         }
     }
-}
+}*/

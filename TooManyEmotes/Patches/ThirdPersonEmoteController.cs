@@ -22,15 +22,15 @@ namespace TooManyEmotes.Patches
         internal static Transform localPlayerCameraContainer { get { return localPlayerController?.cameraContainerTransform; } }
         
         internal static GameObject playerHUDHelmetModel;
+        internal static GameObject scannedObjectsUI;
         internal static Camera gameplayCamera;
         internal static Camera emoteCamera;
         internal static Transform emoteCameraPivot;
-        internal static int cameraCollideLayerMask = /*1 << LayerMask.NameToLayer("Default") |*/ 1 << LayerMask.NameToLayer("Room") | 1 << LayerMask.NameToLayer("PlaceableShipObject") | 1 << LayerMask.NameToLayer("Terrain") | 1 << LayerMask.NameToLayer("MiscLevelGeometry");
+        internal static int cameraCollideLayerMask = 1 << LayerMask.NameToLayer("Room") | 1 << LayerMask.NameToLayer("PlaceableShipObject") | 1 << LayerMask.NameToLayer("Terrain") | 1 << LayerMask.NameToLayer("MiscLevelGeometry");
         
         internal static Vector2 clampCameraDistance = new Vector2(1.5f, 5);
         internal static float targetCameraDistance = 3f;
         
-        internal static int localPlayerBodyLayer = 0;
         internal static ShadowCastingMode defaultShadowCastingMode = ShadowCastingMode.On;
         
         internal static RectTransform defaultControlTipLinesParent;
@@ -45,7 +45,6 @@ namespace TooManyEmotes.Patches
         public static bool firstPersonEmotesEnabled { get; internal set; } = false;
         public static bool allowMovingWhileEmoting { get; internal set; } = false;
 
-        //private static bool isMovingWhileEmoting { get { return emoteControllerLocal.IsPerformingCustomEmote() && (ConfigSync.instance.syncEnableMovingWhileEmoting || emoteControllerLocal.performingEmote.canMoveWhileEmoting); } }
         internal static bool isMovingWhileEmoting { get { return !ConfigSync.instance.syncForceDisableMovingWhileEmoting && emoteControllerLocal.IsPerformingCustomEmote() && (allowMovingWhileEmoting || emoteControllerLocal.performingEmote.canMoveWhileEmoting); } }
 
 
@@ -60,6 +59,10 @@ namespace TooManyEmotes.Patches
                 emoteCamera = new GameObject("EmoteCamera").AddComponent<Camera>();
                 emoteCamera.CopyFrom(gameplayCamera);
             }
+
+            scannedObjectsUI = GameObject.Find("Systems/UI/Canvas/ObjectScanner");
+            if (!scannedObjectsUI) // Just in case the path changes in a future update or because of another mod?
+                scannedObjectsUI = HUDManager.Instance.scanInfoAnimator?.transform.parent.parent.gameObject;
 
             defaultControlTipLinesParent = HUDManager.Instance.controlTipLines[0].transform.parent.GetComponent<RectTransform>();
             defaultControlTipLinesScale = defaultControlTipLinesParent.localScale;
@@ -162,23 +165,24 @@ namespace TooManyEmotes.Patches
             gameplayCamera.cullingMask &= ~(1 << 23);
             //emoteCamera.cullingMask |= (1 << 23);
             emoteCamera.cullingMask = gameplayCamera.cullingMask; // Testing
-            emoteCamera.cullingMask &= ~((1 << 5) | (1 << 7) | (1 << 22)); // ui/helmet visor/scan nodes
+            emoteCamera.cullingMask &= ~((1 << 5) | (1 << 7)); // ui/helmet visor
 
             emoteCameraPivot.transform.SetParent(localPlayerController.transform);
             emoteCameraPivot.SetLocalPositionAndRotation(Vector3.up * 1.8f, Quaternion.identity);
             emoteCamera.transform.SetParent(emoteCameraPivot);
             emoteCamera.transform.SetLocalPositionAndRotation(Vector3.back * targetCameraDistance, Quaternion.identity);
 
-            /*// Fix other player's cameras not seeing local player's body (maybe?)
+            // Fix other player's cameras not seeing local player's body (maybe?)
             foreach (var playerController in StartOfRound.Instance.allPlayerScripts)
             {
                 if (playerController != null && playerController != localPlayerController && playerController.gameplayCamera != null)
                     playerController.gameplayCamera.cullingMask |= 1 << 23;
             }
 
+            // Fix ship camera from not seeing local player's body (if I'm remembering this part correctly)
             Camera camera = GameObject.Find("Environment/HangarShip/Cameras/ShipCamera")?.GetComponent<Camera>();
             if (camera)
-                camera.cullingMask |= 1 << 23;*/
+                camera.cullingMask |= 1 << 23;
         }
 
 
@@ -189,15 +193,17 @@ namespace TooManyEmotes.Patches
 
             try
             {
+                //playerController.thisPlayerModelArms.gameObject.layer = 5;
+
                 playerController.GetComponentInChildren<LODGroup>().enabled = false;
                 playerController.thisPlayerModelLOD1.gameObject.layer = 5;
                 playerController.thisPlayerModelLOD1.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
                 playerController.thisPlayerModelLOD2.shadowCastingMode = ShadowCastingMode.Off;
                 playerController.thisPlayerModelLOD2.enabled = false;
-            
+                playerController.playerBetaBadgeMesh.gameObject.layer = 5;
+
                 playerController.thisPlayerModel.gameObject.layer = 23;
                 playerController.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On; // defaultShadowCastingMode;
-                playerController.thisPlayerModelArms.gameObject.layer = localPlayerBodyLayer;
             }
             catch (Exception e)
             {
@@ -306,6 +312,84 @@ namespace TooManyEmotes.Patches
         }
 
 
+        public static void OnStartCustomEmoteLocal()
+        {
+            Keybinds.toggledRotating = false;
+            if (!firstPersonEmotesEnabled)
+            {
+                if (emoteCamera && !emoteCamera.enabled)
+                {
+                    StartOfRound.Instance.SwitchCamera(emoteCamera);
+                    CallChangeAudioListenerToObject(emoteCamera.gameObject);
+                    if (!isPerformingEmote)
+                        emoteCameraPivot.eulerAngles = gameplayCamera.transform.eulerAngles;
+                }
+
+                // Double checking values
+                localPlayerController.thisPlayerModelLOD1.gameObject.layer = 5;
+                localPlayerController.thisPlayerModelLOD1.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+                localPlayerController.thisPlayerModelLOD2.shadowCastingMode = ShadowCastingMode.Off;
+                localPlayerController.thisPlayerModelLOD2.enabled = false;
+                localPlayerController.playerBetaBadgeMesh.gameObject.layer = 5;
+
+                localPlayerController.thisPlayerModel.gameObject.layer = 3;
+                localPlayerController.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
+                localPlayerController.thisPlayerModelArms.enabled = false;
+
+                if (scannedObjectsUI)
+                    scannedObjectsUI.SetActive(false);
+
+                if (localPlayerController.localItemHolder == localPlayerController.currentlyHeldObjectServer?.parentObject)
+                    localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.serverItemHolder;
+
+                if (MoreCompany_Patcher.Enabled)
+                    MoreCompany_Patcher.ShowLocalCosmetics();
+            }
+
+            //HUDManager.Instance.ClearControlTips();
+            UpdateControlTip();
+            ShowCustomControlTips(!firstPersonEmotesEnabled);
+
+            isPerformingEmote = true;
+        }
+
+
+        public static void OnStopCustomEmoteLocal()
+        {
+            localPlayerCameraContainer.SetLocalPositionAndRotation(firstPersonCameraLocalPosition, firstPersonCameraLocalRotation);
+            Keybinds.toggledRotating = false;
+
+            if (emoteCamera)
+                emoteCamera.enabled = false;
+
+            if (StartOfRound.Instance.activeCamera != gameplayCamera)
+                StartOfRound.Instance.SwitchCamera(gameplayCamera);
+            if (localPlayerController.activeAudioListener != gameplayCamera.gameObject)
+                CallChangeAudioListenerToObject(gameplayCamera.gameObject);
+
+            localPlayerController.thisPlayerModel.gameObject.layer = 23;
+            localPlayerController.thisPlayerModel.shadowCastingMode = defaultShadowCastingMode;
+            localPlayerController.thisPlayerModelArms.enabled = true;
+
+            if (scannedObjectsUI)
+                scannedObjectsUI.SetActive(true);
+
+            if (MoreCompany_Patcher.Enabled)
+                MoreCompany_Patcher.HideLocalCosmetics();
+
+            ShowCustomControlTips(false);
+
+            foreach (var item in localPlayerController.ItemSlots)
+            {
+                if (item && item.parentObject == localPlayerController.serverItemHolder)
+                    item.parentObject = localPlayerController.localItemHolder;
+            }
+
+            emoteCameraPivot.eulerAngles = localPlayerCameraContainer.eulerAngles;
+            isPerformingEmote = false;
+        }
+
+
         internal static void UpdateFirstPersonEmoteMode(bool value)
         {
             if (firstPersonEmotesEnabled == value)
@@ -313,16 +397,29 @@ namespace TooManyEmotes.Patches
 
             firstPersonEmotesEnabled = value;
 
-            if (!emoteControllerLocal.IsPerformingCustomEmote())
-                return;
-
-            if (firstPersonEmotesEnabled)
+            if (emoteControllerLocal.IsPerformingCustomEmote())
             {
-                Keybinds.holdingRotatePlayerModifier = false;
-                Keybinds.toggledRotating = false;
+                localPlayerController.thisPlayerModelArms.enabled = firstPersonEmotesEnabled;
+                localPlayerController.thisPlayerModel.gameObject.layer = firstPersonEmotesEnabled ? 23 : 3;
+                if (firstPersonEmotesEnabled)
+                {
+                    Keybinds.holdingRotatePlayerModifier = false;
+                    Keybinds.toggledRotating = false;
+                    if (MoreCompany_Patcher.Enabled)
+                        MoreCompany_Patcher.HideLocalCosmetics();
+                    if (scannedObjectsUI)
+                        scannedObjectsUI.SetActive(false);
+                }
+                else
+                {
+                    if (MoreCompany_Patcher.Enabled)
+                        MoreCompany_Patcher.ShowLocalCosmetics();
+                    if (scannedObjectsUI)
+                        scannedObjectsUI.SetActive(true);
+                }
+                UpdateControlTip();
+                ShowCustomControlTips(!firstPersonEmotesEnabled);
             }
-            UpdateControlTip();
-            ShowCustomControlTips(!firstPersonEmotesEnabled);
         }
 
 
@@ -376,83 +473,6 @@ namespace TooManyEmotes.Patches
                         heldItem.EnableItemMeshes(false);
                 }
             }
-        }
-
-
-        public static void OnStartCustomEmoteLocal()
-        {
-            Keybinds.toggledRotating = false;
-            if (!firstPersonEmotesEnabled)
-            {
-                if (emoteCamera && !emoteCamera.enabled)
-                {
-                    StartOfRound.Instance.SwitchCamera(emoteCamera);
-                    CallChangeAudioListenerToObject(emoteCamera.gameObject);
-                    if (!isPerformingEmote)
-                        emoteCameraPivot.eulerAngles = gameplayCamera.transform.eulerAngles;
-                }
-
-                if (MoreCompany_Patcher.Enabled)
-                    MoreCompany_Patcher.ShowLocalCosmetics();
-
-                // Double checking values
-                localPlayerController.thisPlayerModelLOD1.gameObject.layer = 5;
-                localPlayerController.thisPlayerModelLOD1.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
-                localPlayerController.thisPlayerModelLOD2.shadowCastingMode = ShadowCastingMode.Off;
-                localPlayerController.thisPlayerModelLOD2.enabled = false;
-
-                localPlayerController.thisPlayerModel.gameObject.layer = 23;
-                localPlayerController.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
-
-                if (localPlayerController.localItemHolder == localPlayerController.currentlyHeldObjectServer?.parentObject)
-                {
-                    localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.serverItemHolder;
-                    //if (EmoteControllerPlayer.emoteControllerLocal.emotingProps.Count > 0)
-                        //localPlayerController.currentlyHeldObjectServer.EnableItemMeshes(false);
-                }
-            }
-
-            //HUDManager.Instance.ClearControlTips();
-            UpdateControlTip();
-            ShowCustomControlTips(!firstPersonEmotesEnabled);
-
-            isPerformingEmote = true;
-        }
-
-
-        public static void OnStopCustomEmoteLocal()
-        {
-            localPlayerCameraContainer.SetLocalPositionAndRotation(firstPersonCameraLocalPosition, firstPersonCameraLocalRotation);
-            Keybinds.toggledRotating = false;
-
-            if (emoteCamera)
-                emoteCamera.enabled = false;
-
-            if (StartOfRound.Instance.activeCamera != gameplayCamera)
-                StartOfRound.Instance.SwitchCamera(gameplayCamera);
-            if (localPlayerController.activeAudioListener != gameplayCamera.gameObject)
-                CallChangeAudioListenerToObject(gameplayCamera.gameObject);
-
-            if (MoreCompany_Patcher.Enabled)
-                MoreCompany_Patcher.HideLocalCosmetics();
-
-            localPlayerController.thisPlayerModel.shadowCastingMode = defaultShadowCastingMode;
-
-            ShowCustomControlTips(false);
-
-            foreach (var item in localPlayerController.ItemSlots)
-            {
-                if (item && item.parentObject == localPlayerController.serverItemHolder)
-                    item.parentObject = localPlayerController.localItemHolder;
-            }
-            //if (localPlayerController.serverItemHolder == localPlayerController.currentlyHeldObjectServer?.parentObject)
-                //localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.localItemHolder;
-
-            //if (localPlayerController.currentlyHeldObjectServer)
-                //localPlayerController.currentlyHeldObjectServer.EnableItemMeshes(true);
-
-            emoteCameraPivot.eulerAngles = localPlayerCameraContainer.eulerAngles;
-            isPerformingEmote = false;
         }
 
 

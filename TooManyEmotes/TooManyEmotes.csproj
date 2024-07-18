@@ -181,6 +181,7 @@
     <Compile Include="EmoteControllers\EmoteControllerPlayer.cs" />
     <Compile Include="EmoteControllers\EmoteController.cs" />
     <Compile Include="EmoteGifts.cs" />
+    <Compile Include="Patches\ScanNodePatcher.cs" />
     <Compile Include="Props\EmotePropData.cs" />
     <Compile Include="Props\GrabbablePropObject.cs" />
     <Compile Include="UI\AnimationPreviewer.cs" />

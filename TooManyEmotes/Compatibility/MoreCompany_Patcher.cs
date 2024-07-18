@@ -40,7 +40,6 @@ namespace TooManyEmotes.Compatibility
                     SetAllChildrenLayer(item.transform, 0);
                     item.gameObject.SetActive(true);
                 }
-                LogWarning("BBBBB");
                 return;
             }
 
