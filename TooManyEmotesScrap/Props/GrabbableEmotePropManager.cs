@@ -114,20 +114,22 @@ namespace TooManyEmotesScrap.Props
                 }
             }
 
-            CreateGrabbablePropData("sexy_saxophone.sexy_sax.prop", value: 120, rarity: 10, weight: 1.05f, positionOffset: new Vector3(-0.15f, 0.08f, -0.055f), rotationOffset: new Vector3(0, 100, 80), copySfxFromItem: "big bolt");
-            CreateGrabbablePropData("trombone.prop", value: 80, rarity: 12, weight: 1.05f, positionOffset: new Vector3(-0.155f, 0.325f, -0.015f), rotationOffset: new Vector3(-90, -80, 0), copySfxFromItem: "big bolt");
-            CreateGrabbablePropData("baseball_bat.prop", value: 80, rarity: 12, weight: 1.03f, positionOffset: new Vector3(0.3f, 0.2f, 0.02f), rotationOffset: new Vector3(0, 0, -160), copySfxFromItem: "dust pan");
+            CreateGrabbablePropData("sexy_saxophone.sexy_sax.prop", value: 120, rarity: 8, weight: 1.05f, positionOffset: new Vector3(-0.15f, 0.08f, -0.055f), rotationOffset: new Vector3(0, 100, 80), copySfxFromItem: "big bolt");
+            CreateGrabbablePropData("trombone.prop", value: 80, rarity: 10, weight: 1.05f, positionOffset: new Vector3(-0.155f, 0.325f, -0.015f), rotationOffset: new Vector3(-90, -80, 0), copySfxFromItem: "big bolt");
+            CreateGrabbablePropData("baseball_bat.prop", value: 80, rarity: 10, weight: 1.03f, positionOffset: new Vector3(0.3f, 0.2f, 0.02f), rotationOffset: new Vector3(0, 0, -160), copySfxFromItem: "dust pan");
 
-            CreateGrabbablePropData("junk_food.prop", value: 60, rarity: 15, weight: 0, positionOffset: new Vector3(-0.02f, 0.05f, -0.03f), rotationOffset: new Vector3(-10, 110, -10));
-            CreateGrabbablePropData("red_card.prop", value: 60, rarity: 15, weight: 0, positionOffset: new Vector3(0.08f, 0.075f, -0.075f), rotationOffset: new Vector3(-10, 100, -10));
+            CreateGrabbablePropData("junk_food.prop", value: 60, rarity: 13, weight: 0, positionOffset: new Vector3(-0.02f, 0.05f, -0.03f), rotationOffset: new Vector3(-10, 110, -10));
+            CreateGrabbablePropData("red_card.prop", value: 60, rarity: 13, weight: 0, positionOffset: new Vector3(0.08f, 0.075f, -0.075f), rotationOffset: new Vector3(-10, 100, -10));
 
-            CreateGrabbablePropData("perfect_score.prop", value: 60, rarity: 15, weight: 1.05f, positionOffset: new Vector3(-0.1f, 0.025f, -0.027f), rotationOffset: new Vector3(-10, 110, -10), copySfxFromItem: "toy robot");
-            CreateGrabbablePropData("old_chair.prop", value: 100, rarity: 12, weight: 1.15f, two_handed: true, positionOffset: new Vector3(0, 0.1f, 0.6f), rotationOffset: new Vector3(85, 180, 0), copySfxFromItem: "toy robot");
+            CreateGrabbablePropData("perfect_score.prop", value: 60, rarity: 13, weight: 1.05f, positionOffset: new Vector3(-0.1f, 0.025f, -0.027f), rotationOffset: new Vector3(-10, 110, -10), copySfxFromItem: "toy robot");
+            CreateGrabbablePropData("old_chair.prop", value: 100, rarity: 10, weight: 1.15f, two_handed: true, positionOffset: new Vector3(0, 0.1f, 0.6f), rotationOffset: new Vector3(85, 180, 0), copySfxFromItem: "toy robot");
 
-            CreateGrabbablePropData("paddle.prop", value: 60, rarity: 15, weight: 1.01f, positionOffset: new Vector3(0.15f, 0.08f, -0.01f), rotationOffset: new Vector3(0, 95, -10), copySfxFromItem: "airhorn");
-            CreateGrabbablePropData("dumbbell.prop", value: 120, rarity: 10, weight: 1.2f, positionOffset: new Vector3(0.015f, -0.08f, 0.02f), rotationOffset: new Vector3(0, 10, 0), copySfxFromItem: "big bolt");
+            CreateGrabbablePropData("paddle.prop", value: 60, rarity: 13, weight: 1.01f, positionOffset: new Vector3(0.15f, 0.08f, -0.01f), rotationOffset: new Vector3(0, 95, -10), copySfxFromItem: "airhorn");
+            CreateGrabbablePropData("dumbbell.prop", value: 120, rarity: 8, weight: 1.2f, positionOffset: new Vector3(0.015f, -0.08f, 0.02f), rotationOffset: new Vector3(0, 10, 0), copySfxFromItem: "big bolt");
 
-            CreateGrabbablePropData("gamepad.prop", value: 120, rarity: 10, weight: 1.01f, positionOffset: new Vector3(-0.03f, 0.15f, -0.09f), rotationOffset: new Vector3(160, 104, 0), copySfxFromItem: "airhorn");
+            CreateGrabbablePropData("gamepad.prop", value: 120, rarity: 8, weight: 1.01f, positionOffset: new Vector3(-0.03f, 0.15f, -0.09f), rotationOffset: new Vector3(160, 104, 0), copySfxFromItem: "airhorn");
+
+            CreateGrabbablePropData("jar_of_dirt.prop", value: 120, rarity: 8, weight: 1.05f, positionOffset: new Vector3(-0.2f, 0.15f, -0.07f), rotationOffset: new Vector3(100, 104, 0), copySfxFromItem: "magnifying glass");
         }
 
 
@@ -485,15 +487,15 @@ namespace TooManyEmotesScrap.Props
             if (allItems == null)
                 return;
 
-            LogWarning("AAA");
+            //LogWarning("AAA");
             if (grabbableEmotePropsData == null || startGrabbableItemId < 0 || numGrabbableEmoteProps <= 0)
                 return;
 
-            LogWarning("BBB");
+            //LogWarning("BBB");
             if (!ES3.KeyExists("shipGrabbableItemIDs", currentSaveFileName))
                 return;
 
-            LogWarning("CCC");
+            //LogWarning("CCC");
             if (!ES3.KeyExists("TooManyEmotes.GrabbablePropIndexes", currentSaveFileName))
                 return;
 
@@ -504,22 +506,22 @@ namespace TooManyEmotesScrap.Props
             int startId = ES3.Load<int>("TooManyEmotes.StartGrabbablePropItemId", currentSaveFileName);
             int numProps = ES3.Load<int>("TooManyEmotes.NumGrabbableProps", currentSaveFileName);
 
-            LogWarning("DDD");
+            //LogWarning("DDD");
             // No change needed
             if (startId == startGrabbableItemId && numProps == numGrabbableEmoteProps)
                 return;
 
-            LogWarning("EEE OldStart: " + startId + " CurrentStartId: " + startGrabbableItemId + " NumProps: " + numProps + " CurrentNumProps: " + numGrabbableEmoteProps);
+            //LogWarning("EEE OldStart: " + startId + " CurrentStartId: " + startGrabbableItemId + " NumProps: " + numProps + " CurrentNumProps: " + numGrabbableEmoteProps);
             int numValuesChanged = 0;
             foreach (int index in grabbablePropIndexes)
             {
-                LogWarning("FFF: " + index);
+                //LogWarning("FFF: " + index);
                 if (index < 0 || index >= itemIds.Length)
                     continue;
 
                 int id = itemIds[index];
                 int newId = id;
-                LogWarning("GGG: " + id + " " + newId);
+                //LogWarning("GGG: " + id + " " + newId);
                 if (id >= startId && id < startId + numProps)
                 {
                     newId = id - startId + startGrabbableItemId;

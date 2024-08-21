@@ -164,8 +164,10 @@ namespace TooManyEmotes.UI
 
                 yield return null;
 
-                if (MoreCompany_Patcher.Enabled)
-                    MoreCompany_Patcher.ShowLocalCosmetics(metarigGameObject.transform);
+                if (AdvancedCompany_Compat.Enabled)
+                { }
+                else if (MoreCompany_Compat.Enabled)
+                    MoreCompany_Compat.ShowLocalCosmetics(metarigGameObject.transform);
 
                 SetObjectLayerRecursive(previewPlayerObject, renderLayer);
             }

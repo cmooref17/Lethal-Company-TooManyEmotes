@@ -35,6 +35,9 @@
     <Reference Include="0Harmony">
       <HintPath>..\..\..\..\..\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\core\0Harmony.dll</HintPath>
     </Reference>
+    <Reference Include="AdvancedCompany">
+      <HintPath>D:\Downloads\AdvancedCompany.dll</HintPath>
+    </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
@@ -164,7 +167,8 @@
     <Compile Include="Audio\EmoteAudioSource.cs" />
     <Compile Include="Audio\EmoteAudioPlayer.cs" />
     <Compile Include="BoneMapper.cs" />
-    <Compile Include="Compatibility\HelmetCameras_Patcher.cs" />
+    <Compile Include="Compatibility\HelmetCameras_Compat.cs" />
+    <Compile Include="Compatibility\AdvancedCompany_Compat.cs" />
     <Compile Include="Compatibility\TooManyEmotesScrap_Compat.cs" />
     <Compile Include="CustomLogging.cs" />
     <Compile Include="EmoteControllers\OnAnimatorIKHandler.cs" />
@@ -174,8 +178,8 @@
     <Compile Include="Patches\DiscoBallPatcher.cs" />
     <Compile Include="Patches\CentipedePatcher.cs" />
     <Compile Include="Compatibility\LCVR_Compat.cs" />
-    <Compile Include="Compatibility\MirrorDecor_Patcher.cs" />
-    <Compile Include="Compatibility\MoreCompany_Patcher.cs" />
+    <Compile Include="Compatibility\MirrorDecor_Compat.cs" />
+    <Compile Include="Compatibility\MoreCompany_Compat.cs" />
     <Compile Include="Networking\ConfigSync.cs" />
     <Compile Include="EmoteControllers\EmoteControllerMaskedEnemy.cs" />
     <Compile Include="EmoteControllers\EmoteControllerPlayer.cs" />

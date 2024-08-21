@@ -19,15 +19,15 @@ using static TooManyEmotes.HelperTools;
 namespace TooManyEmotes.Compatibility
 {
     [HarmonyPatch]
-    internal static class MoreCompany_Patcher
+    internal static class MoreCompany_Compat
     {
         internal static bool Enabled { get { return Chainloader.PluginInfos.ContainsKey("me.swipez.melonloader.morecompany"); } }
-        
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         internal static void ShowLocalCosmetics(Transform playerRoot = null)
         {
             // If cosmetics not enabled in MoreCompany
-            if (!MainClass.cosmeticsSyncOther.Value || CosmeticRegistry.locallySelectedCosmetics.Count <= 0)
+            if (/*!MainClass.cosmeticsSyncOther.Value || */CosmeticRegistry.locallySelectedCosmetics.Count <= 0)
                 return;
 
             Transform cosmeticRoot = playerRoot != null ? playerRoot : StartOfRound.Instance.localPlayerController.transform;
@@ -53,9 +53,9 @@ namespace TooManyEmotes.Compatibility
 
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        internal static void HideLocalCosmetics(Transform playerRoot = null)
+        internal static void HideLocalCosmetics()
         {
-            Transform cosmeticRoot = playerRoot != null ? playerRoot : StartOfRound.Instance.localPlayerController.transform;
+            Transform cosmeticRoot = StartOfRound.Instance.localPlayerController.transform;
             var cosmeticApplication = cosmeticRoot?.GetComponentInChildren<CosmeticApplication>();
 
             if (cosmeticApplication && cosmeticApplication.spawnedCosmetics.Count != 0)

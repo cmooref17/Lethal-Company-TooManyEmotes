@@ -234,7 +234,7 @@ namespace TooManyEmotes.Patches
                         if (localPlayerController.currentlyHeldObjectServer != null)
                             localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.localItemHolder;
                     }
-                    //localPlayerCameraContainer.SetPositionAndRotation(localPlayerController.playerGlobalHead.position, localPlayerController.transform.rotation);
+                    localPlayerCameraContainer.SetPositionAndRotation(localPlayerController.playerGlobalHead.position, localPlayerController.transform.rotation);
                     return isMovingWhileEmoting;
                 }
 
@@ -342,8 +342,10 @@ namespace TooManyEmotes.Patches
                 if (localPlayerController.localItemHolder == localPlayerController.currentlyHeldObjectServer?.parentObject)
                     localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.serverItemHolder;
 
-                if (MoreCompany_Patcher.Enabled)
-                    MoreCompany_Patcher.ShowLocalCosmetics();
+                if (AdvancedCompany_Compat.Enabled)
+                    AdvancedCompany_Compat.ShowLocalCosmetics();
+                else if (MoreCompany_Compat.Enabled)
+                    MoreCompany_Compat.ShowLocalCosmetics();
             }
 
             //HUDManager.Instance.ClearControlTips();
@@ -374,8 +376,10 @@ namespace TooManyEmotes.Patches
             if (scannedObjectsUI)
                 scannedObjectsUI.SetActive(true);
 
-            if (MoreCompany_Patcher.Enabled)
-                MoreCompany_Patcher.HideLocalCosmetics();
+            if (AdvancedCompany_Compat.Enabled)
+                AdvancedCompany_Compat.HideLocalCosmetics();
+            else if (MoreCompany_Compat.Enabled)
+                MoreCompany_Compat.HideLocalCosmetics();
 
             ShowCustomControlTips(false);
 
@@ -405,15 +409,19 @@ namespace TooManyEmotes.Patches
                 {
                     Keybinds.holdingRotatePlayerModifier = false;
                     Keybinds.toggledRotating = false;
-                    if (MoreCompany_Patcher.Enabled)
-                        MoreCompany_Patcher.HideLocalCosmetics();
+                    if (AdvancedCompany_Compat.Enabled)
+                        AdvancedCompany_Compat.HideLocalCosmetics();
+                    else if (MoreCompany_Compat.Enabled)
+                        MoreCompany_Compat.HideLocalCosmetics();
                     if (scannedObjectsUI)
                         scannedObjectsUI.SetActive(false);
                 }
                 else
                 {
-                    if (MoreCompany_Patcher.Enabled)
-                        MoreCompany_Patcher.ShowLocalCosmetics();
+                    if (AdvancedCompany_Compat.Enabled)
+                        AdvancedCompany_Compat.ShowLocalCosmetics();
+                    else if (MoreCompany_Compat.Enabled)
+                        MoreCompany_Compat.ShowLocalCosmetics();
                     if (scannedObjectsUI)
                         scannedObjectsUI.SetActive(true);
                 }

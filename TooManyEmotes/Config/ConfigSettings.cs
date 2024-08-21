@@ -81,7 +81,7 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<string> emoteNameColorTier3;
 
         public static ConfigEntry<bool> verboseLogs;
-        public static ConfigEntry<bool> enableGirlPatch;
+        //public static ConfigEntry<bool> enableGirlPatch;
         public static ConfigEntry<bool> resetFavoriteOnNextStart;
         public static ConfigEntry<bool> resetGlobalUnlocksOnNextStart;
 
@@ -166,7 +166,7 @@ namespace TooManyEmotes.Config
             emoteNameColorTier3 = AddConfigEntry("Accessibility", "EmoteNameColorLegendary", "#FF2222", "The color of the [legendary] emote name in the terminal.");
 
             verboseLogs = AddConfigEntry("Other", "VerboseLogs", false, "Set to true if you want to receive ALL logs. Most of the time, you will want to keep this disabled unless troubleshooting a specific issue.");
-            enableGirlPatch = AddConfigEntry("Other", "EnableGirlPatch", true, "If true, this mod will disable the girl's mesh while she's un the \"unrendered\" layer to prevent the third-person emote camera from seeing her when not supposed do. Disable this if this causes conflicts with another mod.");
+            //enableGirlPatch = AddConfigEntry("Other", "EnableGirlPatch", true, "If true, this mod will disable the girl's mesh while she's un the \"unrendered\" layer to prevent the third-person emote camera from seeing her when not supposed do. Disable this if this causes conflicts with another mod.");
             resetFavoriteOnNextStart = AddConfigEntry("Other", "ResetFavoritedEmotesOnNextStart", false, "Set this to true to force remove all emotes from your favorites when the game starts up next. This may resolve any issues that might be related to having favorited emotes that don't exist.\nThis setting will reset back to false once reset.");
             resetGlobalUnlocksOnNextStart = AddConfigEntry("Other", "ResetGlobalUnlocksOnNextStart", false, "Set this to true to force reset all globally unlocked emotes for your local player. These emotes are only usable when the host has PersistentUnlocksGlobal enabled in the config.\nThis setting will reset back to false once reset.");
 

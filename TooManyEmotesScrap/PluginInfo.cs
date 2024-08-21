@@ -6,6 +6,6 @@ namespace TooManyEmotesScrap
     {
         public const string PLUGIN_GUID = "FlipMods.TooManyEmotesScrap";
         public const string PLUGIN_NAME = "TooManyEmotesScrap";
-        public const string PLUGIN_VERSION = "1.0.5";
+        public const string PLUGIN_VERSION = "1.0.6";
     }
 }

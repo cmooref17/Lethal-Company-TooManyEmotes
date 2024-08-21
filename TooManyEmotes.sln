@@ -5,6 +5,8 @@ VisualStudioVersion = 17.8.34322.80
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TooManyEmotes", "TooManyEmotes\TooManyEmotes.csproj", "{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TooManyEmotesScrap", "TooManyEmotesScrap\TooManyEmotesScrap.csproj", "{287F3E6E-43AA-427D-85BC-6ABFB6CDF356}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{287F3E6E-43AA-427D-85BC-6ABFB6CDF356}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{287F3E6E-43AA-427D-85BC-6ABFB6CDF356}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{287F3E6E-43AA-427D-85BC-6ABFB6CDF356}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{287F3E6E-43AA-427D-85BC-6ABFB6CDF356}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

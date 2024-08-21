@@ -6,7 +6,7 @@ using static TooManyEmotes.CustomLogging;
 /*namespace TooManyEmotes.Compatibility
 {
     [HarmonyPatch]
-    public static class MirrorDecor_Patcher
+    public static class MirrorDecor_Compat
     {
         public static bool Enabled { get { return Plugin.IsModLoaded("quackandcheese.mirrordecor"); } }
 

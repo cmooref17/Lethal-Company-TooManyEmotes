@@ -6,7 +6,7 @@ using UnityEngine;
 namespace TooManyEmotes.Compatibility
 {
     [HarmonyPatch]
-    internal static class HelmetCameras_Patcher
+    internal static class HelmetCameras_Compat
     {
         public static bool Enabled { get { return Chainloader.PluginInfos.ContainsKey("RickArg.lethalcompany.helmetcameras"); } }
 

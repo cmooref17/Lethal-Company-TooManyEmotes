@@ -33,7 +33,8 @@ namespace TooManyEmotesScrap.Config
             HashSet<string> headers = new HashSet<string>();
             HashSet<string> keys = new HashSet<string>();
 
-            foreach (ConfigEntryBase entry in currentConfigEntries.Values) {
+            foreach (ConfigEntryBase entry in currentConfigEntries.Values)
+            {
                 headers.Add(entry.Definition.Section);
                 keys.Add(entry.Definition.Key);
             }

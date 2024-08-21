@@ -31,6 +31,7 @@ namespace TooManyEmotes
             AssignPropToEmote("guitar_prop", "jug_band.guitar");
             AssignPropToEmote("banjo_prop", "jug_band.banjo");
             AssignPropToEmote("fiddle_prop", "jug_band.fiddle");
+
             AssignPropToEmote("sexy_saxophone.sexy_sax.prop", "sexy_saxophone.sexy_sax");
             AssignPropToEmote("sexy_saxophone.epic_sax.prop", "sexy_saxophone.epic_sax");
             AssignPropToEmote("trombone.prop", "sad_trombone");
@@ -39,6 +40,15 @@ namespace TooManyEmotes
             AssignPropToEmote("dumbbell.prop", "pumping_iron");
             AssignPropToEmote("paddle.prop", "paddle_royale");
             AssignPropToEmote("gamepad.prop", "controller_crew");
+            AssignPropToEmote("jar_of_dirt.prop", "jar_of_dirt");
+
+            AssignPropToEmote("travelers.banjo.prop", "travelers.banjo");
+            AssignPropToEmote("travelers.harmonica.prop", "travelers.harmonica");
+            AssignPropToEmote("travelers.drums.prop", "travelers.drums");
+            AssignPropToEmote("travelers.flute.prop", "travelers.flute");
+            AssignPropToEmote("travelers.whistle.prop", "travelers.whistle");
+            AssignPropToEmote("travelers.piano.prop", "travelers.piano");
+            AssignPropToEmote("travelers.bow.prop", "travelers.bow");
         }
 
 
@@ -47,26 +57,45 @@ namespace TooManyEmotes
             if (EmotesManager.allUnlockableEmotesDict == null)
                 return;
 
-            SetEmoteDoesNotUseBoombox("hand_signals");
-            SetEmoteDoesNotUseBoombox("red_card");
-            SetEmoteDoesNotUseBoombox("sexy_saxophone.sexy_sax");
-            SetEmoteDoesNotUseBoombox("sexy_saxophone.epic_sax");
             SetEmoteDoesNotUseBoombox("jug_band.jug");
             SetEmoteDoesNotUseBoombox("jug_band.guitar");
             SetEmoteDoesNotUseBoombox("jug_band.banjo");
             SetEmoteDoesNotUseBoombox("jug_band.fiddle");
+
+            SetEmoteDoesNotUseBoombox("hand_signals");
+            SetEmoteDoesNotUseBoombox("red_card");
+            SetEmoteDoesNotUseBoombox("sexy_saxophone.sexy_sax");
+            SetEmoteDoesNotUseBoombox("sexy_saxophone.epic_sax");
             SetEmoteDoesNotUseBoombox("sad_trombone");
             SetEmoteDoesNotUseBoombox("snake_summoner");
             SetEmoteDoesNotUseBoombox("miracle_trickshot");
             SetEmoteDoesNotUseBoombox("junk_food");
             SetEmoteDoesNotUseBoombox("pumping_iron");
             SetEmoteDoesNotUseBoombox("paddle_royale");
+            SetEmoteDoesNotUseBoombox("wolf_howl");
+            SetEmoteDoesNotUseBoombox("jar_of_dirt");
+
+            SetEmoteDoesNotUseBoombox("travelers.banjo");
+            SetEmoteDoesNotUseBoombox("travelers.harmonica");
+            SetEmoteDoesNotUseBoombox("travelers.drums");
+            SetEmoteDoesNotUseBoombox("travelers.flute");
+            SetEmoteDoesNotUseBoombox("travelers.whistle");
+            SetEmoteDoesNotUseBoombox("travelers.piano");
+            SetEmoteDoesNotUseBoombox("travelers.bow");
 
             //AssignMusicToEmote("smug_dance", "starlit_loop");
             AssignMusicToEmote("jug_band.jug", "jug_band.jug");
             AssignMusicToEmote("jug_band.guitar", "jug_band.guitar");
             AssignMusicToEmote("jug_band.banjo", "jug_band.banjo");
             AssignMusicToEmote("jug_band.fiddle", "jug_band.fiddle");
+
+            AssignMusicToEmote("travelers.banjo", "travelers.banjo");
+            AssignMusicToEmote("travelers.harmonica", "travelers.harmonica");
+            AssignMusicToEmote("travelers.drums", "travelers.drums");
+            AssignMusicToEmote("travelers.flute", "travelers.flute");
+            AssignMusicToEmote("travelers.whistle", "travelers.whistle");
+            AssignMusicToEmote("travelers.piano", "travelers.piano");
+            AssignMusicToEmote("travelers.bow", "travelers.bow");
         }
 
 

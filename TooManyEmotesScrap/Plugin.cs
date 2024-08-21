@@ -11,21 +11,21 @@ using System.CodeDom;
 
 namespace TooManyEmotesScrap
 {
-    [BepInPlugin("FlipMods.TooManyEmotesScrap", "TooManyEmotesScrap", "1.0.5")]
+    [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     [BepInDependency("FlipMods.TooManyEmotes", BepInDependency.DependencyFlags.HardDependency)]
     public class Plugin : BaseUnityPlugin
     {
         private Harmony _harmony;
         public static Plugin instance;
         public static ManualLogSource defaultLogger { get { return instance.Logger; } }
-        public static string recommendedTMEVersion = "2.1.9";
+        public static string recommendedTMEVersion = "2.2.0";
 
         private void Awake()
         {
             instance = this;
             InitLogger();
             ConfigSettings.BindConfigSettings();
-            this._harmony = new Harmony("TooManyEmotesScrap");
+            this._harmony = new Harmony(PluginInfo.PLUGIN_NAME);
 
             Log("Recommended minimum TooManyEmotes version: " + recommendedTMEVersion + " - Current version: " + TooManyEmotes.Plugin.instance.Info.Metadata.Version);
             PatchAll();

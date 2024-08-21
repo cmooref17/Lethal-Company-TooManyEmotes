@@ -8,7 +8,7 @@ using TooManyEmotes.Config;
 using UnityEngine;
 using static TooManyEmotes.CustomLogging;
 
-namespace TooManyEmotes.Patches
+/*namespace TooManyEmotes.Patches
 {
     [HarmonyPatch]
     public class DressGirlVisibilityPatcher
@@ -26,4 +26,4 @@ namespace TooManyEmotes.Patches
                 renderer.enabled = renderer.gameObject.layer != 23;
         }
     }
-}
+}*/

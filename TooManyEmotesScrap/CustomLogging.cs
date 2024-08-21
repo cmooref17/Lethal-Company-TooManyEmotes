@@ -8,7 +8,7 @@ namespace TooManyEmotesScrap
 
         public static void InitLogger()
         {
-            try { logger = BepInEx.Logging.Logger.CreateLogSource(string.Format("{0}-{1}", Plugin.instance.Info.Metadata.Name, Plugin.instance.Info.Metadata.Version)); }
+            try { logger = BepInEx.Logging.Logger.CreateLogSource(string.Format("{0}-{1}", PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)); }
             catch { logger =  Plugin.defaultLogger; }
         }
 

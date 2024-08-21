@@ -12,6 +12,7 @@ namespace TooManyEmotes
     {
         EmoteController emoteController;
         Animator animator;
+        public float handIKWeight = 0.8f;
 
 
         void Awake()
@@ -34,15 +35,15 @@ namespace TooManyEmotes
             {
                 if (emoteController.ikLeftHand && emoteController.ikLeftHand.localPosition != Vector3.zero)
                 {
-                    animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 0.65f);
-                    animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 0.65f);
+                    animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, handIKWeight);
+                    animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, handIKWeight);
                     animator.SetIKPosition(AvatarIKGoal.LeftHand, emoteController.ikLeftHand.position);
                     animator.SetIKRotation(AvatarIKGoal.LeftHand, emoteController.ikLeftHand.rotation);
                 }
                 if (emoteController.ikRightHand && emoteController.ikRightHand.localPosition != Vector3.zero)
                 {
-                    animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 0.65f);
-                    animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 0.65f);
+                    animator.SetIKPositionWeight(AvatarIKGoal.RightHand, handIKWeight);
+                    animator.SetIKRotationWeight(AvatarIKGoal.RightHand, handIKWeight);
                     animator.SetIKPosition(AvatarIKGoal.RightHand, emoteController.ikRightHand.position);
                     animator.SetIKRotation(AvatarIKGoal.RightHand, emoteController.ikRightHand.rotation);
                 }
