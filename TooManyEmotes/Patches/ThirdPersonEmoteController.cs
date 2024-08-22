@@ -505,6 +505,7 @@ namespace TooManyEmotes.Patches
             string zoomInDisplayText = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.ZoomInEmoteAction);
             string zoomOutDisplayText = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.ZoomOutEmoteAction);
             string rotateDisplayText = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.RotatePlayerEmoteAction);
+            string performNextInstrumentText = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.PerformNextInstrumentAction);
 
             if (zoomInDisplayText == "")
                 zoomInDisplayText = "Unbound";
@@ -529,6 +530,9 @@ namespace TooManyEmotes.Patches
             customControlTipLines[index++].text += zoomControlText;
 
             customControlTipLines[index++].text = string.Format((isMovingWhileEmoting ? "Freeze" : "Rotate") + " : " + (ConfigSettings.toggleRotateCharacterInEmote.Value ? "Toggle" : "Hold") + " [{0}]", rotateDisplayText);
+
+            if (emoteControllerLocal.isPerformingEmote && emoteControllerLocal.performingEmote.inEmoteSyncGroup && emoteControllerLocal.performingEmote.emoteSyncGroup.Count > 1)
+                customControlTipLines[index++].text = string.Format("Play Next Instrument: [{0}]", performNextInstrumentText);
 
             for (; index < customControlTipLines.Length; index++)
                 customControlTipLines[index].text = "";

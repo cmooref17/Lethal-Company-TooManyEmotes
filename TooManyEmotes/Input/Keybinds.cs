@@ -29,7 +29,8 @@ namespace TooManyEmotes.Input
         public static InputAction NextEmotePageAction;
         public static InputAction NextEmoteLoadoutUpAction;
         public static InputAction NextEmoteLoadoutDownAction;
-        public static InputAction ForceReloadPlayerModelAction;
+        public static InputAction PerformNextInstrumentAction;
+        //public static InputAction ForceReloadPlayerModelAction;
 
         /*
         public static InputAction QuickEmoteFavorite1Action;
@@ -69,8 +70,10 @@ namespace TooManyEmotes.Input
                 RotatePlayerEmoteAction = InputUtils_Compat.RotateCharacterEmoteHotkey;
                 ZoomInEmoteAction = InputUtils_Compat.ZoomInEmoteHotkey;
                 ZoomOutEmoteAction = InputUtils_Compat.ZoomOutEmoteHotkey;
+                
+                PerformNextInstrumentAction = InputUtils_Compat.PerformNextInstrumentHotkey;
 
-                ForceReloadPlayerModelAction = InputUtils_Compat.ForceReloadPlayerModelHotkey;
+                //ForceReloadPlayerModelAction = InputUtils_Compat.ForceReloadPlayerModelHotkey;
 
                 ThumbStickAction = new InputAction("TooManyEmotes.ThumbStick", binding: "<Gamepad>/rightStick");
                 PerformSelectedEmoteAction = new InputAction("TooManyEmotes.PerformSelectedEmote", binding: "<Mouse>/leftButton", interactions: "Press");
@@ -103,9 +106,12 @@ namespace TooManyEmotes.Input
                 ZoomInEmoteAction.AddBinding("<Gamepad>/");
                 ZoomOutEmoteAction = ActionMap.AddAction("TooManyEmotes.ZoomOutEmote", binding: "<Mouse>/scroll/down", interactions: "Press");
                 ZoomOutEmoteAction.AddBinding("<Gamepad>/");
+                
+                PerformNextInstrumentAction = ActionMap.AddAction("TooManyEmotes.PlayNextInstrument", binding: "<Keyboard>/n", interactions: "Press");
+                PerformNextInstrumentAction.AddBinding("<Gamepad>/dpad/right");
 
-                ForceReloadPlayerModelAction = ActionMap.AddAction("TooManyEmotes.ForceReloadPlayerModel", binding: "<Keyboard>/", interactions: "Press");
-                ForceReloadPlayerModelAction.AddBinding("<Gamepad>/");
+                //ForceReloadPlayerModelAction = ActionMap.AddAction("TooManyEmotes.ForceReloadPlayerModel", binding: "<Keyboard>/", interactions: "Press");
+                //ForceReloadPlayerModelAction.AddBinding("<Gamepad>/");
 
                 ThumbStickAction = new InputAction("TooManyEmotes.ThumbStick", binding: "<Gamepad>/rightStick");
                 PerformSelectedEmoteAction = new InputAction("TooManyEmotes.PerformSelectedEmote", binding: "<Mouse>/leftButton", interactions: "Press");
@@ -138,7 +144,8 @@ namespace TooManyEmotes.Input
             ZoomInEmoteAction.performed += ThirdPersonEmoteController.OnZoomInEmote;
             ZoomOutEmoteAction.performed += ThirdPersonEmoteController.OnZoomOutEmote;
 
-            ForceReloadPlayerModelAction.performed += OnReloadPlayerModel;
+            PerformNextInstrumentAction.performed += PlayNextInstrument;
+            //ForceReloadPlayerModelAction.performed += OnReloadPlayerModel;
 
             PerformSelectedEmoteAction.Enable();
             PerformSelectedEmoteAction.performed += OnSelectEmoteUI;
@@ -173,7 +180,8 @@ namespace TooManyEmotes.Input
             ZoomInEmoteAction.performed -= ThirdPersonEmoteController.OnZoomInEmote;
             ZoomOutEmoteAction.performed -= ThirdPersonEmoteController.OnZoomOutEmote;
 
-            ForceReloadPlayerModelAction.performed -= OnReloadPlayerModel;
+            PerformNextInstrumentAction.performed -= PlayNextInstrument;
+            //ForceReloadPlayerModelAction.performed -= OnReloadPlayerModel;
 
             PerformSelectedEmoteAction.Disable();
             PerformSelectedEmoteAction.performed -= OnSelectEmoteUI;
@@ -265,12 +273,17 @@ namespace TooManyEmotes.Input
         {
             if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
-            if (EmoteMenu.hoveredEmoteIndex < 0 || EmoteMenu.hoveredEmoteIndex >= EmoteMenu.currentLoadoutEmotesList.Count || ConfigSettings.disableEmotesForSelf.Value || EmoteControllerPlayer.emoteControllerLocal == null)
+            if (EmoteMenu.hoveredEmoteIndex < 0 || EmoteMenu.hoveredEmoteIndex >= EmoteMenu.currentLoadoutEmotesList.Count || EmoteControllerPlayer.emoteControllerLocal == null)
                 return;
 
             UnlockableEmote emote = EmoteMenu.currentLoadoutEmotesList[EmoteMenu.hoveredEmoteIndex];
             if (emote != null)
-                EmoteControllerPlayer.emoteControllerLocal.TryPerformingEmoteLocal(emote);
+            {
+                if (emoteControllerLocal.isPerformingEmote && emoteControllerLocal.performingEmote.inEmoteSyncGroup && emoteControllerLocal.performingEmote.IsEmoteInEmoteGroup(emote))
+                    emoteControllerLocal.TrySyncingEmoteWithEmoteController(emoteControllerLocal);
+                else
+                    emoteControllerLocal.TryPerformingEmoteLocal(emote);
+            }
         }
 
 
@@ -337,14 +350,25 @@ namespace TooManyEmotes.Input
                 holdingRotatePlayerModifier = false;
         }
 
+        public static void PlayNextInstrument(InputAction.CallbackContext context)
+        {
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
+                return;
 
-        public static void OnReloadPlayerModel(InputAction.CallbackContext context)
+            if (emoteControllerLocal.isPerformingEmote && emoteControllerLocal.performingEmote.inEmoteSyncGroup && emoteControllerLocal.performingEmote.emoteSyncGroup.Count > 1)
+            {
+                emoteControllerLocal.TryPerformingEmoteLocal(emoteControllerLocal.performingEmote);
+                //emoteControllerLocal.TrySyncingEmoteWithEmoteController(emoteControllerLocal);
+            }
+        }
+
+        /*public static void OnReloadPlayerModel(InputAction.CallbackContext context)
         {
             if (localPlayerController == null || !context.performed || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
 
             Log("Reloading local player model.");
             ThirdPersonEmoteController.ReloadPlayerModel(localPlayerController);
-        }
+        }*/
     }
 }

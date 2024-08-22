@@ -44,8 +44,11 @@ namespace TooManyEmotes.Input
         [InputAction("", GamepadPath = "<Gamepad>/dpad/down", Name = "Swap Emote Loadout Down")]
         public InputAction NextEmoteLoadoutDownHotkey { get; set; }
 
-        [InputAction("", GamepadPath = "", Name = "Force Reload Local Player Model")]
-        public InputAction ForceReloadPlayerModelHotkey { get; set; }
+        [InputAction("<Keyboard>/n", GamepadPath = "<Gamepad>/dpad/right", Name = "Play Next Instrument")]
+        public InputAction PerformNextInstrumentHotkey { get; set; }
+
+        //[InputAction("", GamepadPath = "", Name = "Force Reload Local Player Model")]
+        //public InputAction ForceReloadPlayerModelHotkey { get; set; }
         /*
         public InputAction QuickEmoteFavorite1 { get; set; }
         public InputAction QuickEmoteFavorite2 { get; set; }
