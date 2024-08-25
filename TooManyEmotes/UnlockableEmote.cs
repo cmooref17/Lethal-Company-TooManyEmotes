@@ -43,6 +43,7 @@ namespace TooManyEmotes
         public List<UnlockableEmote> emoteSyncGroup;
         public bool inEmoteSyncGroup { get { return emoteSyncGroup != null && !randomEmote; } }
         public bool IsEmoteInEmoteGroup(UnlockableEmote emote) => this == emote || (emoteSyncGroup != null && emoteSyncGroup.Contains(emote));
+        public float recordSongLoopValue = 0;
         public bool randomEmote = false;
 
         public List<string> propNamesInEmote;

@@ -6,9 +6,10 @@ using System.Text;
 using System.Threading.Tasks;
 using TooManyEmotes.Config;
 using UnityEngine;
+using TooManyEmotes.Compatibility;
 using static TooManyEmotes.CustomLogging;
 
-/*namespace TooManyEmotes.Patches
+namespace TooManyEmotes.Patches
 {
     [HarmonyPatch]
     public class DressGirlVisibilityPatcher
@@ -17,13 +18,13 @@ using static TooManyEmotes.CustomLogging;
         [HarmonyPostfix]
         public static void HideGirlMesh(bool enable, EnemyAI __instance, bool overrideDoNotSet = false)
         {
-            if (!ConfigSettings.enableGirlPatch.Value || !(__instance is DressGirlAI))
-                return;
-
-            foreach (var renderer in __instance.skinnedMeshRenderers)
-                renderer.enabled = renderer.gameObject.layer != 23;
-            foreach (var renderer in __instance.meshRenderers)
-                renderer.enabled = renderer.gameObject.layer != 23;
+            if (/*!ConfigSettings.enableGirlPatch.Value || */LethalVRM_Compat.Enabled && __instance is DressGirlAI)
+            {
+                foreach (var renderer in __instance.skinnedMeshRenderers)
+                    renderer.enabled = renderer.gameObject.layer != 23;
+                foreach (var renderer in __instance.meshRenderers)
+                    renderer.enabled = renderer.gameObject.layer != 23;
+            }
         }
     }
-}*/
+}

@@ -96,6 +96,18 @@ namespace TooManyEmotes
             AssignMusicToEmote("travelers.whistle", "travelers.whistle");
             AssignMusicToEmote("travelers.piano", "travelers.piano");
             AssignMusicToEmote("travelers.bow", "travelers.bow");
+
+            UnlockableEmote emote;
+            if (EmotesManager.allUnlockableEmotesDict.TryGetValue("jug_band.banjo", out emote) && emote.inEmoteSyncGroup)
+            {
+                foreach (var emoteInSyncGroup in emote.emoteSyncGroup)
+                    emoteInSyncGroup.recordSongLoopValue = 1.0f;
+            }
+            if (EmotesManager.allUnlockableEmotesDict.TryGetValue("travelers.banjo", out emote) && emote.inEmoteSyncGroup)
+            {
+                foreach (var emoteInSyncGroup in emote.emoteSyncGroup)
+                    emoteInSyncGroup.recordSongLoopValue = 0.5f;
+            }
         }
 
 

@@ -169,6 +169,7 @@
     <Compile Include="BoneMapper.cs" />
     <Compile Include="Compatibility\HelmetCameras_Compat.cs" />
     <Compile Include="Compatibility\AdvancedCompany_Compat.cs" />
+    <Compile Include="Compatibility\LethalVRM_Compat.cs" />
     <Compile Include="Compatibility\TooManyEmotesScrap_Compat.cs" />
     <Compile Include="CustomLogging.cs" />
     <Compile Include="EmoteControllers\OnAnimatorIKHandler.cs" />

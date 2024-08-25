@@ -279,10 +279,10 @@ namespace TooManyEmotes.Input
             UnlockableEmote emote = EmoteMenu.currentLoadoutEmotesList[EmoteMenu.hoveredEmoteIndex];
             if (emote != null)
             {
-                if (emoteControllerLocal.isPerformingEmote && emoteControllerLocal.performingEmote.inEmoteSyncGroup && emoteControllerLocal.performingEmote.IsEmoteInEmoteGroup(emote))
+                /*if (emoteControllerLocal.isPerformingEmote && emoteControllerLocal.performingEmote.inEmoteSyncGroup && emoteControllerLocal.performingEmote.IsEmoteInEmoteGroup(emote))
                     emoteControllerLocal.TrySyncingEmoteWithEmoteController(emoteControllerLocal);
-                else
-                    emoteControllerLocal.TryPerformingEmoteLocal(emote);
+                else*/
+                emoteControllerLocal.TryPerformingEmoteLocal(emote);
             }
         }
 

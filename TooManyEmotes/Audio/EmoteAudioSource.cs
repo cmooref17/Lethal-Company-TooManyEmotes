@@ -173,23 +173,27 @@ namespace TooManyEmotes.Audio
             var emoteController = emoteSyncGroup.leadEmoteController;
             var emote = playAudioFromEmoteController != null ? playAudioFromEmoteController.performingEmote : emoteController.performingEmote;
 
-            isPlayingAudio = false;
-            audioSource.Stop();
-            audioLoopSource.Stop();
-            audioSource.mute = false;
-            audioLoopSource.mute = false;
+            var referenceEmoteAudioSource = emoteSyncGroup.leadEmoteAudioSource;
 
-            //float timeSinceStartedEmote = Time.time - emoteSyncGroup.timeStartedEmote;
-
-            bool success = SetAudioFromEmote(emote);
-            if (success)
+            if (referenceEmoteAudioSource != null)
             {
-                var referenceEmoteAudioSource = emoteSyncGroup.leadEmoteAudioSource;
-                if (referenceEmoteAudioSource != null)
+                bool audioSourceIsPlaying = referenceEmoteAudioSource.audioSource.isPlaying;
+                bool audioLoopSourceIsPlaying = referenceEmoteAudioSource.audioLoopSource.isPlaying;
+                float audioSourceTime = referenceEmoteAudioSource.audioSource.time;
+                float audioLoopSourceTime = referenceEmoteAudioSource.audioLoopSource.time;
+
+                isPlayingAudio = false;
+                audioSource.Stop();
+                audioLoopSource.Stop();
+                audioSource.mute = false;
+                audioLoopSource.mute = false;
+
+                bool success = SetAudioFromEmote(emote);
+                if (success)
                 {
-                    audioSource.time = referenceEmoteAudioSource.audioSource.time;
-                    audioLoopSource.time = referenceEmoteAudioSource.audioLoopSource.time;
-                    if (audioSource.clip != null && referenceEmoteAudioSource.audioSource.isPlaying)
+                    audioSource.time = audioSourceTime;
+                    audioLoopSource.time = audioLoopSourceTime;
+                    if (audioSource.clip != null && audioSourceIsPlaying)
                     {
                         audioSource.Play();
                         if (audioLoopSource.clip != null && referenceEmoteAudioSource.playAudioLoopSourceAtTime > Time.time)
@@ -198,40 +202,76 @@ namespace TooManyEmotes.Audio
                             audioLoopSource.PlayScheduled(AudioSettings.dspTime + (audioSource.clip.length - audioSource.time));
                         }
                     }
-                    else if (audioLoopSource.clip != null && referenceEmoteAudioSource.audioLoopSource.isPlaying)
+                    else if (audioLoopSource.clip != null && audioLoopSourceIsPlaying)
                     {
                         audioLoopSource.Play();
                     }
+
+                    isPlayingAudio = true;
+                    return true;
                 }
-                /*
-                else if (audioSource.clip != null && timeSinceStartedEmote < audioSource.clip.length)
+            }
+            return false;
+        }
+
+
+        public virtual bool SyncWithEmoteController(UnlockableEmote emote, EmoteController playAudioFromEmoteController)
+        {
+            if (emote == null || playAudioFromEmoteController == null || !playAudioFromEmoteController.IsPerformingCustomEmote())
+                return false;
+
+            isPlayingAudio = false;
+            audioSource.Stop();
+            audioLoopSource.Stop();
+            audioSource.mute = false;
+            audioLoopSource.mute = false;
+
+            bool success = SetAudioFromEmote(emote);
+            if (success)
+            {
+                var currentAnimationClip = playAudioFromEmoteController.GetCurrentAnimationClip();
+                float playAtTime = playAudioFromEmoteController.currentAnimationTime;
+
+                if (currentAnimationClip == emote.transitionsToClip || currentAnimationClip.isLooping)
                 {
-                    audioSource.time = timeSinceStartedEmote; // % audioSource.clip.length;
-                    audioSource.Play();
                     if (audioLoopSource.clip != null)
                     {
-                        float dTime = audioSource.clip.length - audioSource.time;
-                        playAudioLoopSourceAtTime = Time.time + dTime;
-                        audioLoopSource.PlayScheduled(AudioSettings.dspTime + playAudioLoopSourceAtTime);
+                        audioLoopSource.time = playAtTime;
+                        playAudioLoopSourceAtTime = Time.time - audioLoopSource.time;
+                        audioLoopSource.Play();
                     }
                 }
-                else if (audioLoopSource.clip != null)
+                else
                 {
                     if (audioSource.clip != null)
-                        timeSinceStartedEmote -= audioSource.clip.length;
-                    else if (emote.transitionsToClip != null)
-                        timeSinceStartedEmote -= emote.transitionsToClip.length;
+                    {
+                        float dTime = 0;
+                        if (emote.transitionsToClip != null) // sync end of audio clip with start of loop animation (if exists)
+                            dTime = currentAnimationClip.length - playAtTime - audioSource.clip.length;
 
-                    float playAtTime = timeSinceStartedEmote % audioLoopSource.clip.length;
-                    audioLoopSource.time = playAtTime;
-                    audioLoopSource.Play();
+                        if (dTime > 0)
+                        {
+                            audioSource.time = 0;
+                            audioSource.PlayScheduled(AudioSettings.dspTime + dTime);
+                        }
+                        else
+                        {
+                            audioSource.time = -dTime;
+                            audioSource.Play();
+                        }
+                    }
+                    if (emote.transitionsToClip != null)
+                    {
+                        audioLoopSource.time = 0;
+                        float dTime = audioSource.clip != null ? currentAnimationClip.length - playAudioFromEmoteController.currentAnimationTime : currentAnimationClip.length - playAudioFromEmoteController.currentAnimationTime;
+                        playAudioLoopSourceAtTime = Time.time + dTime;
+                        audioLoopSource.PlayScheduled(AudioSettings.dspTime + dTime);
+                    }
                 }
-                */
 
                 isPlayingAudio = true;
                 return true;
             }
-
             return false;
         }
 

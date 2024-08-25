@@ -93,6 +93,8 @@ namespace TooManyEmotes.UI
                 copyPlayerController.thisPlayerModel.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
 
                 previewPlayerMesh = copyPlayerController.thisPlayerModel;
+                previewPlayerMesh.gameObject.SetActive(true);
+                previewPlayerMesh.enabled = true;
                 GameObject.Destroy(modelGameObject.GetComponentInChildren<LODGroup>());
                 GameObject.Destroy(metarigGameObject.GetComponentInChildren<RigBuilder>());
                 GameObject.Destroy(metarigGameObject.GetComponentInChildren<GraphicRaycaster>());

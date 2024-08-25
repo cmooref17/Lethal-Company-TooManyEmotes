@@ -346,6 +346,9 @@ namespace TooManyEmotes.Patches
                     AdvancedCompany_Compat.ShowLocalCosmetics();
                 else if (MoreCompany_Compat.Enabled)
                     MoreCompany_Compat.ShowLocalCosmetics();
+
+                if (LethalVRM_Compat.Enabled)
+                    LethalVRM_Compat.DisplayVRMModel();
             }
 
             //HUDManager.Instance.ClearControlTips();
@@ -381,6 +384,9 @@ namespace TooManyEmotes.Patches
             else if (MoreCompany_Compat.Enabled)
                 MoreCompany_Compat.HideLocalCosmetics();
 
+            if (LethalVRM_Compat.Enabled)
+                LethalVRM_Compat.HideVRMModel();
+
             ShowCustomControlTips(false);
 
             foreach (var item in localPlayerController.ItemSlots)
@@ -413,6 +419,10 @@ namespace TooManyEmotes.Patches
                         AdvancedCompany_Compat.HideLocalCosmetics();
                     else if (MoreCompany_Compat.Enabled)
                         MoreCompany_Compat.HideLocalCosmetics();
+
+                    if (LethalVRM_Compat.Enabled)
+                        LethalVRM_Compat.HideVRMModel();
+
                     if (scannedObjectsUI)
                         scannedObjectsUI.SetActive(false);
                 }
@@ -422,6 +432,10 @@ namespace TooManyEmotes.Patches
                         AdvancedCompany_Compat.ShowLocalCosmetics();
                     else if (MoreCompany_Compat.Enabled)
                         MoreCompany_Compat.ShowLocalCosmetics();
+
+                    if (LethalVRM_Compat.Enabled)
+                        LethalVRM_Compat.DisplayVRMModel();
+
                     if (scannedObjectsUI)
                         scannedObjectsUI.SetActive(true);
                 }

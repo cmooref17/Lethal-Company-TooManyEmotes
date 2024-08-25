@@ -301,23 +301,6 @@ namespace TooManyEmotes.Patches
         }
 
 
-        /*
-        [HarmonyPatch(typeof(DepositItemsDesk), "SellItemsClientRpc")]
-        [HarmonyPostfix]
-        private static void GainEmoteCredits(int itemProfit, int newGroupCredits, int itemsSold, float buyingRate, DepositItemsDesk __instance)
-        {
-            int execStage = (int)Traverse.Create(__instance).Field("__rpc_exec_stage").GetValue();
-            if (execStage == 2 && (isClient || isHost))
-            {
-                int emoteCreditsProfit = (int)(itemProfit * ConfigSync.instance.syncAddEmoteCreditsMultiplier);
-                Log("Gained " + itemProfit + " group credits.");
-                Log("Gained " + emoteCreditsProfit + " emote credits. GainEmoteCreditsMultiplier: " + ConfigSync.instance.syncAddEmoteCreditsMultiplier);
-                currentEmoteCredits += emoteCreditsProfit;
-            }
-        }
-        */
-
-
         [HarmonyPatch(typeof(DepositItemsDesk), "SellAndDisplayItemProfits")]
         [HarmonyPrefix]
         private static void OnGainGroupCredits(int profit, int newGroupCredits, DepositItemsDesk __instance)
@@ -327,9 +310,13 @@ namespace TooManyEmotes.Patches
                 return;
 
             int emoteCreditsProfit = (int)(profit * ConfigSync.instance.syncAddEmoteCreditsMultiplier);
-            Log("Gained " + profit + " group credits.");
-            Log("Gained " + emoteCreditsProfit + " emote credits. GainEmoteCreditsMultiplier: " + ConfigSync.instance.syncAddEmoteCreditsMultiplier);
+            Log("Gained " + profit + " group credits. (GainEmoteCreditsMultiplier: " + ConfigSync.instance.syncAddEmoteCreditsMultiplier + ")");
             currentEmoteCredits += emoteCreditsProfit;
+            for (int i = 0; i < currentEmoteCreditsByPlayer.Count; i++)
+            {
+                string playerName = currentEmoteCreditsByPlayer.ElementAt(i).Key;
+                currentEmoteCreditsByPlayer[playerName] += emoteCreditsProfit;
+            }
         }
 
 
