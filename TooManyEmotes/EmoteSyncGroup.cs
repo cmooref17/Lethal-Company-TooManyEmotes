@@ -184,7 +184,7 @@ namespace TooManyEmotes
 
         public void DestroyEmoteSyncGroup()
         {
-            Log("Cleaning up emote sync group with id: " + syncId);
+            LogVerbose("Cleaning up emote sync group with id: " + syncId);
             if (currentEmoteAudioSources != null)
             {
                 foreach (var emoteAudioSource in currentEmoteAudioSources.Values)

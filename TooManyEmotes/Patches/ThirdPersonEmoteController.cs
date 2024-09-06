@@ -104,9 +104,13 @@ namespace TooManyEmotes.Patches
 
         internal static void SavePreferences()
         {
-            Log("Saving ThirdPersonEmoteController preferences.");
-            ES3.Save("TooManyEmotes.EnableFirstPersonEmotes", firstPersonEmotesEnabled, SaveManager.TooManyEmotesSaveFileName);
-            ES3.Save("TooManyEmotes.AllowMovingWhileEmoting", allowMovingWhileEmoting, SaveManager.TooManyEmotesSaveFileName);
+            try
+            {
+                Log("Saving ThirdPersonEmoteController preferences.");
+                ES3.Save("TooManyEmotes.EnableFirstPersonEmotes", firstPersonEmotesEnabled, SaveManager.TooManyEmotesSaveFileName);
+                ES3.Save("TooManyEmotes.AllowMovingWhileEmoting", allowMovingWhileEmoting, SaveManager.TooManyEmotesSaveFileName);
+            }
+            catch (Exception e) { LogErrorVerbose("Error while trying to save TooManyEmotes ThirdPersonEmoteController preferences.\n" + e); }
         }
 
 

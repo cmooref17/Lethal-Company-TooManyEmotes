@@ -47,17 +47,26 @@ namespace TooManyEmotes.Input
         [InputAction("<Keyboard>/n", GamepadPath = "<Gamepad>/dpad/right", Name = "Play Next Instrument")]
         public InputAction PerformNextInstrumentHotkey { get; set; }
 
-        //[InputAction("", GamepadPath = "", Name = "Force Reload Local Player Model")]
-        //public InputAction ForceReloadPlayerModelHotkey { get; set; }
-        /*
-        public InputAction QuickEmoteFavorite1 { get; set; }
-        public InputAction QuickEmoteFavorite2 { get; set; }
-        public InputAction QuickEmoteFavorite3 { get; set; }
-        public InputAction QuickEmoteFavorite4 { get; set; }
-        public InputAction QuickEmoteFavorite5 { get; set; }
-        public InputAction QuickEmoteFavorite6 { get; set; }
-        public InputAction QuickEmoteFavorite7 { get; set; }
-        public InputAction QuickEmoteFavorite8 { get; set; }
-        */
+        [InputAction("<Keyboard>/m", GamepadPath = "", Name = "Perform Random Emote")]
+        public InputAction PerformRandomEmoteHotkey { get; set; }
+
+
+        [InputAction("", GamepadPath = "", Name = "Set/Perform Quick Emote 1")]
+        public InputAction QuickEmoteHotkey1 { get; set; }
+        [InputAction("", GamepadPath = "", Name = "Set/Perform Quick Emote 2")]
+        public InputAction QuickEmoteHotkey2 { get; set; }
+        [InputAction("", GamepadPath = "", Name = "Set/Perform Quick Emote 3")]
+        public InputAction QuickEmoteHotkey3 { get; set; }
+        [InputAction("", GamepadPath = "", Name = "Set/Perform Quick Emote 4")]
+        public InputAction QuickEmoteHotkey4 { get; set; }
+        [InputAction("", GamepadPath = "", Name = "Set/Perform Quick Emote 5")]
+        public InputAction QuickEmoteHotkey5 { get; set; }
+        [InputAction("", GamepadPath = "", Name = "Set/Perform Quick Emote 6")]
+        public InputAction QuickEmoteHotkey6 { get; set; }
+        [InputAction("", GamepadPath = "", Name = "Set/Perform Quick Emote 7")]
+        public InputAction QuickEmoteHotkey7 { get; set; }
+        [InputAction("", GamepadPath = "", Name = "Set/Perform Quick Emote 8")]
+        public InputAction QuickEmoteHotkey8 { get; set; }
+
     }
 }

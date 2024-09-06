@@ -446,7 +446,6 @@ namespace TooManyEmotes
 
             base.StopPerformingEmote();
             cameraContainerLerp.SetPositionAndRotation(cameraContainerTarget.position, cameraContainerTarget.rotation);
-            playerController.gameplayCamera.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
 
             var heldProp = playerController.ItemSlots[playerController.currentItemSlot];
             if (heldProp)
@@ -465,6 +464,7 @@ namespace TooManyEmotes
             if (isLocalPlayer)
             {
                 ThirdPersonEmoteController.OnStopCustomEmoteLocal();
+                playerController.gameplayCamera.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                 playerController.StopPerformingEmoteServerRpc();
             }
         }

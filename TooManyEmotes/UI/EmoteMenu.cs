@@ -398,6 +398,9 @@ namespace TooManyEmotes.UI
             if (usingController || nextEmoteLoadoutUpKeybind != "" || nextEmoteLoadoutDownKeybind != "")
                 customControlTipLines[index++].text = string.Format("Swap Loadout: [{0}/{1}]", nextEmoteLoadoutUpKeybind, nextEmoteLoadoutDownKeybind);
             customControlTipLines[index++].text = string.Format("Favorite Emote: [{0}]", favoriteEmoteKeybind);
+            if (InputUtils_Compat.Enabled && index < customControlTipLines.Length)
+                customControlTipLines[index++].text = "Set Quick Emote : [Keybind #]";
+
             //if (usingController) controlTipLines[index++].text = string.Format("Perform Emote: [{0}]", performEmoteKeybind);
 
             for (; index < customControlTipLines.Length; index++)
@@ -454,6 +457,9 @@ namespace TooManyEmotes.UI
                     {
                         emoteUI.emote = emote;
                         emoteUI.textContainer.text = emote.displayName;
+                        int quickEmoteIndex = EmotesManager.allQuickEmotes.IndexOf(emote.emoteName);
+                        if (quickEmoteIndex >= 0 && quickEmoteIndex < EmotesManager.allQuickEmotes.Count)
+                            emoteUI.textContainer.text += " [" + (quickEmoteIndex + 1) + "]";
                         //emoteTextColor = emote.favorite ? Color.green : Color.white;
                         if (!emote.complementary && ColorUtility.TryParseHtmlString(UnlockableEmote.rarityColorCodes[emote.rarity], out var emoteColor))
                         {
@@ -699,11 +705,16 @@ namespace TooManyEmotes.UI
 
         public static void SaveFilterPreferences()
         {
-            ES3.Save("TooManyEmotes.HideEmotesComplementary", hideEmotesComplementaryToggle.isOn, SaveManager.TooManyEmotesSaveFileName);
-            ES3.Save("TooManyEmotes.HideEmotes0", hideEmotes0Toggle.isOn, SaveManager.TooManyEmotesSaveFileName);
-            ES3.Save("TooManyEmotes.HideEmotes1", hideEmotes1Toggle.isOn, SaveManager.TooManyEmotesSaveFileName);
-            ES3.Save("TooManyEmotes.HideEmotes2", hideEmotes2Toggle.isOn, SaveManager.TooManyEmotesSaveFileName);
-            ES3.Save("TooManyEmotes.HideEmotes3", hideEmotes3Toggle.isOn, SaveManager.TooManyEmotesSaveFileName);
+            try
+            {
+                Log("Saving TooManyEmotes emote menu preferences.");
+                ES3.Save("TooManyEmotes.HideEmotesComplementary", hideEmotesComplementaryToggle.isOn, SaveManager.TooManyEmotesSaveFileName);
+                ES3.Save("TooManyEmotes.HideEmotes0", hideEmotes0Toggle.isOn, SaveManager.TooManyEmotesSaveFileName);
+                ES3.Save("TooManyEmotes.HideEmotes1", hideEmotes1Toggle.isOn, SaveManager.TooManyEmotesSaveFileName);
+                ES3.Save("TooManyEmotes.HideEmotes2", hideEmotes2Toggle.isOn, SaveManager.TooManyEmotesSaveFileName);
+                ES3.Save("TooManyEmotes.HideEmotes3", hideEmotes3Toggle.isOn, SaveManager.TooManyEmotesSaveFileName);
+            }
+            catch (Exception e) { LogErrorVerbose("Error while trying to save TooManyEmotes emote menu data.\n" + e); }
         }
 
 

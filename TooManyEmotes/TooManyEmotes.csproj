@@ -166,6 +166,7 @@
     <Compile Include="Audio\EmoteAudioPlayerManager.cs" />
     <Compile Include="Audio\EmoteAudioSource.cs" />
     <Compile Include="Audio\EmoteAudioPlayer.cs" />
+    <Compile Include="QuickEmotes.cs" />
     <Compile Include="BoneMapper.cs" />
     <Compile Include="Compatibility\HelmetCameras_Compat.cs" />
     <Compile Include="Compatibility\AdvancedCompany_Compat.cs" />

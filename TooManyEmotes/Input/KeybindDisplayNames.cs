@@ -52,9 +52,14 @@ namespace TooManyEmotes.Input
                 var line = HUDManager.Instance.controlTipLines[i];
                 if (line != null && line.gameObject.activeSelf && line.enabled && line.text.Contains("Emote Radial Menu"))
                 {
-                    string displayName = GetKeybindDisplayName(Keybinds.OpenEmoteMenuAction);
-                    if (displayName != "")
-                        HUDManager.Instance.controlTipLines[i].text = string.Format("Open Emote Radial Menu : [{0}]", displayName);
+                    string emoteMenuDisplayName = GetKeybindDisplayName(Keybinds.OpenEmoteMenuAction);
+                    string randomEmoteDisplayName = GetKeybindDisplayName(Keybinds.PerformRandomEmoteAction);
+                    if (emoteMenuDisplayName != "")
+                    {
+                        HUDManager.Instance.controlTipLines[i].text = string.Format("Emote Menu : [{0}]", emoteMenuDisplayName);
+                        if (i == HUDManager.Instance.controlTipLines.Length - 1 && randomEmoteDisplayName != "")
+                            HUDManager.Instance.controlTipLines[i].text += string.Format("\nRandom Emote : [{0}]", randomEmoteDisplayName);
+                    }
                     break;
                 }
             }

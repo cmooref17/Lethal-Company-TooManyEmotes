@@ -16,7 +16,6 @@ namespace TooManyEmotes.Compatibility
         internal static bool Enabled => Plugin.IsModLoaded("com.rune580.LethalCompanyInputUtils");
 
         public static InputAction OpenEmoteMenuHotkey => IngameKeybinds.Instance.OpenEmoteMenuHotkey;
-        //public static InputAction PerformEmoteHotkey => IngameKeybinds.Instance.PerformEmoteHotkey;
         public static InputAction RotateCharacterEmoteHotkey => IngameKeybinds.Instance.RotateCharacterEmoteHotkey;
         public static InputAction ZoomInEmoteHotkey => IngameKeybinds.Instance.ZoomInEmoteHotkey;
         public static InputAction ZoomOutEmoteHotkey => IngameKeybinds.Instance.ZoomOutEmoteHotkey;
@@ -29,16 +28,16 @@ namespace TooManyEmotes.Compatibility
         public static InputAction NextEmoteLoadoutDownHotkey => IngameKeybinds.Instance.NextEmoteLoadoutDownHotkey;
 
         public static InputAction PerformNextInstrumentHotkey => IngameKeybinds.Instance.PerformNextInstrumentHotkey;
-        //public static InputAction ForceReloadPlayerModelHotkey => IngameKeybinds.Instance.ForceReloadPlayerModelHotkey;
-        /*
-        public static InputAction QuickEmoteFavorite1 => IngameKeybinds.Instance.QuickEmoteFavorite1;
-        public static InputAction QuickEmoteFavorite2 => IngameKeybinds.Instance.QuickEmoteFavorite2;
-        public static InputAction QuickEmoteFavorite3 => IngameKeybinds.Instance.QuickEmoteFavorite3;
-        public static InputAction QuickEmoteFavorite4 => IngameKeybinds.Instance.QuickEmoteFavorite4;
-        public static InputAction QuickEmoteFavorite5 => IngameKeybinds.Instance.QuickEmoteFavorite5;
-        public static InputAction QuickEmoteFavorite6 => IngameKeybinds.Instance.QuickEmoteFavorite6;
-        public static InputAction QuickEmoteFavorite7 => IngameKeybinds.Instance.QuickEmoteFavorite7;
-        public static InputAction QuickEmoteFavorite8 => IngameKeybinds.Instance.QuickEmoteFavorite8;
-        */
+        public static InputAction PerformRandomEmoteHotkey => IngameKeybinds.Instance.PerformRandomEmoteHotkey;
+
+        public static InputAction QuickEmote1 => IngameKeybinds.Instance.QuickEmoteHotkey1;
+        public static InputAction QuickEmote2 => IngameKeybinds.Instance.QuickEmoteHotkey2;
+        public static InputAction QuickEmote3 => IngameKeybinds.Instance.QuickEmoteHotkey3;
+        public static InputAction QuickEmote4 => IngameKeybinds.Instance.QuickEmoteHotkey4;
+        public static InputAction QuickEmote5 => IngameKeybinds.Instance.QuickEmoteHotkey5;
+        public static InputAction QuickEmote6 => IngameKeybinds.Instance.QuickEmoteHotkey6;
+        public static InputAction QuickEmote7 => IngameKeybinds.Instance.QuickEmoteHotkey7;
+        public static InputAction QuickEmote8 => IngameKeybinds.Instance.QuickEmoteHotkey8;
+
     }
 }

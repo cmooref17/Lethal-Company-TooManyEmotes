@@ -16,6 +16,7 @@ namespace TooManyEmotes
         public static List<UnlockableEmote> complementaryEmotes;
         internal static List<UnlockableEmote> complementaryEmotesDefault;
         public static List<string> allFavoriteEmotes;
+        public static List<string> allQuickEmotes;
 
         public static List<UnlockableEmote> allEmotesTier0;
         public static List<UnlockableEmote> allEmotesTier1;
@@ -30,6 +31,9 @@ namespace TooManyEmotes
 
             complementaryEmotesDefault = new List<UnlockableEmote>();
             allFavoriteEmotes = new List<string>();
+            allQuickEmotes = new List<string>(8);
+            while (allQuickEmotes.Count < allQuickEmotes.Capacity)
+                allQuickEmotes.Add("");
 
             allEmotesTier0 = new List<UnlockableEmote>();
             allEmotesTier1 = new List<UnlockableEmote>();
@@ -204,6 +208,7 @@ namespace TooManyEmotes
 
             complementaryEmotes = new List<UnlockableEmote>(complementaryEmotesDefault);
             SaveManager.LoadFavoritedEmotes();
+            SaveManager.LoadQuickEmotes();
         }
     }
 }

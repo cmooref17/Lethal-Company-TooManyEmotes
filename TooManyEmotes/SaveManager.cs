@@ -25,7 +25,10 @@ namespace TooManyEmotes
             if (ConfigSettings.resetGloballyUnlockedEmotes)
                 ResetGloballyUnlockedEmotes();
             if (ConfigSettings.resetFavoriteEmotes)
+            {
                 ResetFavoritedEmotes();
+                ResetQuickEmotes();
+            }
 
             ConfigSettings.resetGloballyUnlockedEmotes = false;
             ConfigSettings.resetFavoriteEmotes = false;
@@ -284,22 +287,11 @@ namespace TooManyEmotes
             if (EmotesManager.allFavoriteEmotes == null)
                 return;
 
-            List<string> oldFavoriteEmotes = LoadOldFavoritedEmotes()?.ToList();
-
             EmotesManager.allFavoriteEmotes?.Clear();
             try
             {
                 var addFavoritedEmotes = ES3.Load("TooManyEmotes.FavoriteEmotes", TooManyEmotesSaveFileName, new string[0]);
                 EmotesManager.allFavoriteEmotes.AddRange(addFavoritedEmotes);
-                if (oldFavoriteEmotes != null)
-                {
-                    foreach (var emote in oldFavoriteEmotes)
-                    {
-                        if (!EmotesManager.allFavoriteEmotes.Contains(emote))
-                            EmotesManager.allFavoriteEmotes.Add(emote);
-                    }
-                    SaveFavoritedEmotes();
-                }
             }
             catch (Exception e)
             {
@@ -318,32 +310,6 @@ namespace TooManyEmotes
         }
 
 
-        private static string[] LoadOldFavoritedEmotes()
-        {
-            string[] emoteNames = null;
-            try
-            {
-                if (ES3.KeyExists("TooManyEmotes.FavoriteEmotes"))
-                {
-                    emoteNames = ES3.Load<string[]>("TooManyEmotes.FavoriteEmotes");
-                    ES3.DeleteKey("TooManyEmotes.FavoriteEmotes");
-                    LogVerbose("Successfully loaded old favorited emotes.");
-                }
-            }
-            catch (Exception e)
-            {
-                LogErrorVerbose("Error loading old favorited emotes?\n" + e);
-                try
-                {
-                    ES3.DeleteKey("TooManyEmotes.FavoriteEmotes");
-                    LogErrorVerbose("Deleted key: \"TooManyEmotes.FavoriteEmotes\"");
-                }
-                catch { LogErrorVerbose("Could not delete key: \"TooManyEmotes.FavoriteEmotes\""); }
-            }
-            return emoteNames;
-        }
-
-
         internal static void ResetFavoritedEmotes()
         {
             LogWarning("Resetting favorited emotes for local player.");
@@ -354,6 +320,75 @@ namespace TooManyEmotes
                 SessionManager.UpdateUnlockedFavoriteEmotes();
             }
             catch (Exception e) { LogErrorVerbose("Error resetting favorite emotes?\n" + e); }
+        }
+
+
+
+
+
+        public static void SaveQuickEmotes()
+        {
+            if (EmotesManager.allQuickEmotes != null)
+            {
+                try
+                {
+                    for (int i = 0; i < EmotesManager.allQuickEmotes.Count; i++)
+                    {
+                        string emoteName = EmotesManager.allQuickEmotes[i] ?? "";
+                        ES3.Save("TooManyEmotes.QuickEmote" + i, emoteName, TooManyEmotesSaveFileName);
+                    }
+                }
+                catch (Exception e) { LogErrorVerbose("Error saving quick emotes?\n" + e); }
+            }
+        }
+
+
+        public static void LoadQuickEmotes()
+        {
+            if (EmotesManager.allQuickEmotes == null)
+                return;
+
+            try
+            {
+                for (int i = 0; i < EmotesManager.allQuickEmotes.Count; i++)
+                {
+                    string emoteName = ES3.Load("TooManyEmotes.QuickEmote" + i, TooManyEmotesSaveFileName, "");
+                    EmotesManager.allQuickEmotes[i] = emoteName;
+                }
+            }
+            catch (Exception e)
+            {
+                LogError("Error while trying to load quick emotes due to possible save corruption? Your quick emotes will likely be reset.\n" + e);
+                for (int i = 0; i < EmotesManager.allQuickEmotes.Count; i++)
+                {
+                    string key = "TooManyEmotes.QuickEmote" + i;
+                    try
+                    {
+                        ES3.DeleteKey(key, TooManyEmotesSaveFileName);
+                        LogErrorVerbose("Deleted key: \"" + key + "\" from file: \"" + TooManyEmotesSaveFileName + "\"");
+                    }
+                    catch
+                    {
+                        LogErrorVerbose("Could not delete key: \"" + key + "\" from file: \"" + TooManyEmotesSaveFileName + "\"");
+                    }
+                }
+            }
+        }
+
+
+        internal static void ResetQuickEmotes()
+        {
+            LogWarning("Resetting quick emotes.");
+            try
+            {
+                for (int i = 0; i < EmotesManager.allQuickEmotes.Count; i++)
+                {
+                    string key = "TooManyEmotes.QuickEmote" + i;
+                    ES3.DeleteKey(key, TooManyEmotesSaveFileName);
+                    EmotesManager.allQuickEmotes[i] = "";
+                }
+            }
+            catch (Exception e) { LogErrorVerbose("Error resetting quick emotes?\n" + e); }
         }
     }
 }
