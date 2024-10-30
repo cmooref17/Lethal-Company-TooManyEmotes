@@ -20,7 +20,14 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<bool> syncUnsharedEmotes;
         public static ConfigEntry<bool> forceDisableMovingWhileEmoting;
 
+        public static ConfigEntry<string> forceEmotesIntoComplementary;
+        public static ConfigEntry<string> forceEmotesIntoCommon;
+        public static ConfigEntry<string> forceEmotesIntoUncommon;
+        public static ConfigEntry<string> forceEmotesIntoRare;
+        public static ConfigEntry<string> forceEmotesIntoLegendary;
+
         public static ConfigEntry<bool> disableEmotesForSelf;
+        public static ConfigEntry<bool> disableChatLogRandomEmote;
         public static ConfigEntry<bool> toggleRotateCharacterInEmote;
 
         public static ConfigEntry<bool> removeGrabbableEmotesPartyPooperMode;
@@ -103,9 +110,12 @@ namespace TooManyEmotes.Config
             syncUnsharedEmotes = AddConfigEntry("Emote Settings", "CanSyncUnsharedEmotes", true, "[Host only] Only applies if ShareEverything is false. If set to true, players will be able to sync emotes with other players, even if they do not have the emote being performed unlocked.");
             forceDisableMovingWhileEmoting = AddConfigEntry("Emote Settings", "ForceDisableMovingWhileEmoting", false, "[Host only] If true, this will prevent all players from moving while emoting, and the option to enable this will be removed from the emote menu.\nIf false, all players will be able to turn this on or off again.");
 
+            //forceEmotesIntoComplementary = AddConfigEntry("Emote Settings", "ForceEmotesIntoComplementaryTier", "", "[Host only] If true, this will prevent all players from moving while emoting, and the option to enable this will be removed from the emote menu.\nIf false, all players will be able to turn this on or off again.");
+
             removeGrabbableEmotesPartyPooperMode = AddConfigEntry("Emote Settings", "DoNotUnlockPropEmotes PartyPooperMode", true, "[Host only] If true, and if I am a Party Pooper is enabled, emotes from props will NOT be unlocked in the radial menu.\nThis only applies if the TooManyEmotesScrap mod is installed.");
 
             disableEmotesForSelf = AddConfigEntry("Emote Settings", "DisableEmotingForSelf", false, "Disabling this will not convert your player's animator controller to an AnimatorOverrideController, and you will not be able to perform custom emotes. Disable this in case of specific mod conflicts. You will still be able to see other players emoting.");
+            disableChatLogRandomEmote = AddConfigEntry("Emote Settings", "DisableChatLogRandomEmote", false, "If true, chat will no longer display what emote you are performing when performing a random emote. This could save memory if using mods that cache all chat messages.");
             toggleRotateCharacterInEmote = AddConfigEntry("Emote Settings", "ToggleRotateCharacterInEmote", false, "If true, rotating character while emoting will be toggled, instead of rotating while holding the hotkey.");
 
             disableRaritySystem = AddConfigEntry("Emote Store", "DisableRaritySystem", false, "[Host only] If true, every emote will have the same likelyhood of appearing in the emote store.");

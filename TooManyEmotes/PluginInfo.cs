@@ -6,6 +6,6 @@ namespace TooManyEmotes
     {
         public const string PLUGIN_GUID = "FlipMods.TooManyEmotes";
         public const string PLUGIN_NAME = "TooManyEmotes";
-        public const string PLUGIN_VERSION = "2.2.6";
+        public const string PLUGIN_VERSION = "2.2.9";
     }
 }

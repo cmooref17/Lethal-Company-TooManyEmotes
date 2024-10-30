@@ -30,42 +30,54 @@ namespace TooManyEmotes.Compatibility
         [MethodImpl(MethodImplOptions.NoInlining)]
         internal static void ShowLocalCosmetics()
         {
-            if (localPlayerController != StartOfRound.Instance.localPlayerController)
+            try
             {
-                localPlayerController = StartOfRound.Instance.localPlayerController;
-                acCosmetics.Clear();
-                var cosmeticInstances = localPlayerController.GetComponentsInChildren<AdvancedCompany.Cosmetics.CosmeticInstance>();
-                foreach (var cosmetic in cosmeticInstances)
-                    acCosmetics.Add(cosmetic.gameObject);
-            }
+                if (localPlayerController != StartOfRound.Instance.localPlayerController)
+                {
+                    localPlayerController = StartOfRound.Instance.localPlayerController;
+                    acCosmetics.Clear();
+                    var cosmeticInstances = localPlayerController.GetComponentsInChildren<AdvancedCompany.Cosmetics.CosmeticInstance>();
+                    foreach (var cosmetic in cosmeticInstances)
+                        acCosmetics.Add(cosmetic.gameObject);
+                }
 
-            foreach (var cosmetic in acCosmetics)
-            {
-                SetAllChildrenLayer(cosmetic.transform, 0);
-                cosmetic.SetActive(true);
+                foreach (var cosmetic in acCosmetics)
+                {
+                    SetAllChildrenLayer(cosmetic.transform, 0);
+                    cosmetic.SetActive(true);
+                }
             }
+            catch { } // Probably fine
         }
 
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         internal static void HideLocalCosmetics()
         {
-            if (localPlayerController != StartOfRound.Instance.localPlayerController)
-                return;
+            try
+            {
+                if (localPlayerController != StartOfRound.Instance.localPlayerController)
+                    return;
 
-            foreach (var cosmetic in acCosmetics)
-                SetAllChildrenLayer(cosmetic.transform, 23);
+                foreach (var cosmetic in acCosmetics)
+                    SetAllChildrenLayer(cosmetic.transform, 23);
+            }
+            catch { } // Probably fine
         }
 
 
         private static void SetAllChildrenLayer(Transform transform, int layer)
         {
-            transform.gameObject.layer = layer;
-            foreach (var light in transform.gameObject.GetComponents<Light>())
-                light.cullingMask = 1 << layer;
+            try
+            {
+                transform.gameObject.layer = layer;
+                foreach (var light in transform.gameObject.GetComponents<Light>())
+                    light.cullingMask = 1 << layer;
 
-            foreach (Transform item in transform)
-                SetAllChildrenLayer(item, layer);
+                foreach (Transform item in transform)
+                    SetAllChildrenLayer(item, layer);
+            }
+            catch { } // Probably fine
         }
     }
 }

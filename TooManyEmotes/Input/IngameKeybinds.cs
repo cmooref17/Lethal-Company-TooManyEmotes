@@ -50,7 +50,7 @@ namespace TooManyEmotes.Input
         [InputAction("<Keyboard>/m", GamepadPath = "", Name = "Perform Random Emote")]
         public InputAction PerformRandomEmoteHotkey { get; set; }
 
-
+        /*
         [InputAction("", GamepadPath = "", Name = "Set/Perform Quick Emote 1")]
         public InputAction QuickEmoteHotkey1 { get; set; }
         [InputAction("", GamepadPath = "", Name = "Set/Perform Quick Emote 2")]
@@ -67,6 +67,7 @@ namespace TooManyEmotes.Input
         public InputAction QuickEmoteHotkey7 { get; set; }
         [InputAction("", GamepadPath = "", Name = "Set/Perform Quick Emote 8")]
         public InputAction QuickEmoteHotkey8 { get; set; }
+        */
 
     }
 }

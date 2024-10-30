@@ -26,54 +26,66 @@ namespace TooManyEmotes.Compatibility
         [MethodImpl(MethodImplOptions.NoInlining)]
         internal static void ShowLocalCosmetics(Transform playerRoot = null)
         {
-            // If cosmetics not enabled in MoreCompany
-            if (/*!MainClass.cosmeticsSyncOther.Value || */CosmeticRegistry.locallySelectedCosmetics.Count <= 0)
-                return;
-
-            Transform cosmeticRoot = playerRoot != null ? playerRoot : StartOfRound.Instance.localPlayerController.transform;
-            var cosmeticApplication = cosmeticRoot?.GetComponentInChildren<CosmeticApplication>();
-
-            if (cosmeticApplication && cosmeticApplication.spawnedCosmetics.Count != 0)
+            try
             {
-                foreach (var item in cosmeticApplication.spawnedCosmetics)
-                {
-                    SetAllChildrenLayer(item.transform, 0);
-                    item.gameObject.SetActive(true);
-                }
-                return;
-            }
+                // If cosmetics not enabled in MoreCompany
+                if (/*!MainClass.cosmeticsSyncOther.Value || */CosmeticRegistry.locallySelectedCosmetics.Count <= 0)
+                    return;
 
-            if (!cosmeticApplication)
-                cosmeticApplication = cosmeticRoot.gameObject.AddComponent<CosmeticApplication>();
-            foreach (var cosmetic in CosmeticRegistry.locallySelectedCosmetics)
-                cosmeticApplication.ApplyCosmetic(cosmetic, true);
-            foreach (var cosmetic in cosmeticApplication.spawnedCosmetics)
-                cosmetic.transform.localScale *= CosmeticRegistry.COSMETIC_PLAYER_SCALE_MULT;
+                Transform cosmeticRoot = playerRoot != null ? playerRoot : StartOfRound.Instance.localPlayerController.transform;
+                var cosmeticApplication = cosmeticRoot?.GetComponentInChildren<CosmeticApplication>();
+
+                if (cosmeticApplication && cosmeticApplication.spawnedCosmetics.Count != 0)
+                {
+                    foreach (var item in cosmeticApplication.spawnedCosmetics)
+                    {
+                        SetAllChildrenLayer(item.transform, 0);
+                        item.gameObject.SetActive(true);
+                    }
+                    return;
+                }
+
+                if (!cosmeticApplication)
+                    cosmeticApplication = cosmeticRoot.gameObject.AddComponent<CosmeticApplication>();
+                foreach (var cosmetic in CosmeticRegistry.locallySelectedCosmetics)
+                    cosmeticApplication.ApplyCosmetic(cosmetic, true);
+                foreach (var cosmetic in cosmeticApplication.spawnedCosmetics)
+                    cosmetic.transform.localScale *= CosmeticRegistry.COSMETIC_PLAYER_SCALE_MULT;
+            }
+            catch { } // Probably fine
         }
 
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         internal static void HideLocalCosmetics()
         {
-            Transform cosmeticRoot = StartOfRound.Instance.localPlayerController.transform;
-            var cosmeticApplication = cosmeticRoot?.GetComponentInChildren<CosmeticApplication>();
-
-            if (cosmeticApplication && cosmeticApplication.spawnedCosmetics.Count != 0)
+            try
             {
-                foreach (var item in cosmeticApplication.spawnedCosmetics)
-                    SetAllChildrenLayer(item.transform, 23);
+                Transform cosmeticRoot = StartOfRound.Instance.localPlayerController.transform;
+                var cosmeticApplication = cosmeticRoot?.GetComponentInChildren<CosmeticApplication>();
+
+                if (cosmeticApplication && cosmeticApplication.spawnedCosmetics.Count != 0)
+                {
+                    foreach (var item in cosmeticApplication.spawnedCosmetics)
+                        SetAllChildrenLayer(item.transform, 23);
+                }
             }
+            catch { } // Probably fine
         }
 
 
         private static void SetAllChildrenLayer(Transform transform, int layer)
         {
-            transform.gameObject.layer = layer;
-            foreach (var light in transform.gameObject.GetComponents<Light>())
-                light.cullingMask = 1 << layer;
+            try
+            {
+                transform.gameObject.layer = layer;
+                foreach (var light in transform.gameObject.GetComponents<Light>())
+                    light.cullingMask = 1 << layer;
 
-            foreach (Transform item in transform)
-                SetAllChildrenLayer(item, layer);
+                foreach (Transform item in transform)
+                    SetAllChildrenLayer(item, layer);
+            }
+            catch { } // Probably fine
         }
     }
 }

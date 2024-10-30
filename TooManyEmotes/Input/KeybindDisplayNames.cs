@@ -82,14 +82,14 @@ namespace TooManyEmotes.Input
 
         public static string GetKeybindDisplayName(string controlPath)
         {
-            if (controlPath.Length <= 1)
+            if (string.IsNullOrEmpty(controlPath) || controlPath.Length <= 1)
                 return "";
 
             string displayName = controlPath.ToLower();
             int replaceIndex = displayName.IndexOf(">/");
             displayName = replaceIndex >= 0 ? displayName.Substring(replaceIndex + 2) : displayName;
 
-            if (displayName.Contains("not-bound"))
+            if (string.IsNullOrWhiteSpace(displayName) || displayName.Contains("not-bound"))
                 return "";
 
             displayName = displayName.Replace("leftalt", "Alt");
