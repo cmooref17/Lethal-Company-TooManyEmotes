@@ -20,11 +20,11 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<bool> syncUnsharedEmotes;
         public static ConfigEntry<bool> forceDisableMovingWhileEmoting;
 
-        public static ConfigEntry<string> forceEmotesIntoComplementary;
-        public static ConfigEntry<string> forceEmotesIntoCommon;
-        public static ConfigEntry<string> forceEmotesIntoUncommon;
-        public static ConfigEntry<string> forceEmotesIntoRare;
-        public static ConfigEntry<string> forceEmotesIntoLegendary;
+        /*public static ConfigEntry<string> forceEmotesIntoComplementary;
+        public static ConfigEntry<string> forceEmotesTier0;
+        public static ConfigEntry<string> forceEmotesTier1;
+        public static ConfigEntry<string> forceEmotesTier2;
+        public static ConfigEntry<string> forceEmotesTier3;*/
 
         public static ConfigEntry<bool> disableEmotesForSelf;
         public static ConfigEntry<bool> disableChatLogRandomEmote;
@@ -65,15 +65,6 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<bool> colorCodeEmoteNamesInRadialMenu;
         public static ConfigEntry<bool> colorCodeEmoteBackgroundInRadialMenu;
 
-        public static ConfigEntry<string> quickEmoteFavorite1Keybind;
-        public static ConfigEntry<string> quickEmoteFavorite2Keybind;
-        public static ConfigEntry<string> quickEmoteFavorite3Keybind;
-        public static ConfigEntry<string> quickEmoteFavorite4Keybind;
-        public static ConfigEntry<string> quickEmoteFavorite5Keybind;
-        public static ConfigEntry<string> quickEmoteFavorite6Keybind;
-        public static ConfigEntry<string> quickEmoteFavorite7Keybind;
-        public static ConfigEntry<string> quickEmoteFavorite8Keybind;
-
         public static ConfigEntry<bool> disableBoomboxRequirement;
         public static ConfigEntry<bool> disableAudioShipSpeaker;
         public static ConfigEntry<float> baseEmoteAudioVolume;
@@ -110,7 +101,11 @@ namespace TooManyEmotes.Config
             syncUnsharedEmotes = AddConfigEntry("Emote Settings", "CanSyncUnsharedEmotes", true, "[Host only] Only applies if ShareEverything is false. If set to true, players will be able to sync emotes with other players, even if they do not have the emote being performed unlocked.");
             forceDisableMovingWhileEmoting = AddConfigEntry("Emote Settings", "ForceDisableMovingWhileEmoting", false, "[Host only] If true, this will prevent all players from moving while emoting, and the option to enable this will be removed from the emote menu.\nIf false, all players will be able to turn this on or off again.");
 
-            //forceEmotesIntoComplementary = AddConfigEntry("Emote Settings", "ForceEmotesIntoComplementaryTier", "", "[Host only] If true, this will prevent all players from moving while emoting, and the option to enable this will be removed from the emote menu.\nIf false, all players will be able to turn this on or off again.");
+            /*forceEmotesIntoComplementary = AddConfigEntry("Emote Settings", "ForceEmotesIntoComplementaryTier", "", "[Host only] This will override the tier for the specified emotes. Type the emote's name, separated by a comma. (case-insensitive)\nExample: \"Death,Spiderman,Backflip\"");
+            forceEmotesTier0 = AddConfigEntry("Emote Settings", "ForceEmotesIntoCommonTier", "", "[Host only] If true, this will prevent all players from moving while emoting, and the option to enable this will be removed from the emote menu.\nIf false, all players will be able to turn this on or off again.");
+            forceEmotesTier1 = AddConfigEntry("Emote Settings", "ForceEmotesIntoUncommonTier", "", "[Host only] If true, this will prevent all players from moving while emoting, and the option to enable this will be removed from the emote menu.\nIf false, all players will be able to turn this on or off again.");
+            forceEmotesTier2 = AddConfigEntry("Emote Settings", "ForceEmotesIntoRareTier", "", "[Host only] If true, this will prevent all players from moving while emoting, and the option to enable this will be removed from the emote menu.\nIf false, all players will be able to turn this on or off again.");
+            forceEmotesTier3 = AddConfigEntry("Emote Settings", "ForceEmotesIntoLegendaryTier", "", "[Host only] If true, this will prevent all players from moving while emoting, and the option to enable this will be removed from the emote menu.\nIf false, all players will be able to turn this on or off again.");*/
 
             removeGrabbableEmotesPartyPooperMode = AddConfigEntry("Emote Settings", "DoNotUnlockPropEmotes PartyPooperMode", true, "[Host only] If true, and if I am a Party Pooper is enabled, emotes from props will NOT be unlocked in the radial menu.\nThis only applies if the TooManyEmotesScrap mod is installed.");
 
@@ -151,17 +146,6 @@ namespace TooManyEmotes.Config
             colorCodeEmoteNamesInRadialMenu = AddConfigEntry("Emote Radial Menu", "ColorCodeEmoteNamesInRadialMenuByRarity", false, "If true, emote names in the radial menu will be colored based on their rarity.");
             colorCodeEmoteBackgroundInRadialMenu = AddConfigEntry("Emote Radial Menu", "ColorCodeEmoteBackgroundInRadialMenu", false, "If true, the background UI element for each element in the radial menu will be colored based on their rarity.\nNOTE: Enabling this will force the emote names in the radial menu to have their default color.");
 
-            /*
-            quickEmoteFavorite1Keybind = AddConfigEntry("Emote Radial Menu", "Perform Favorite Emote 1 Keybind", "", "Hotkey for performing favorite emote 1. This keybind will also be used to assign favorited emotes to a hotkey in the emote menu, favorites tab. NOTE: This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
-            quickEmoteFavorite2Keybind = AddConfigEntry("Emote Radial Menu", "Perform Favorite Emote 2 Keybind", "", "Hotkey for performing favorite emote 2. This keybind will also be used to assign favorited emotes to a hotkey in the emote menu, favorites tab. NOTE: This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
-            quickEmoteFavorite3Keybind = AddConfigEntry("Emote Radial Menu", "Perform Favorite Emote 3 Keybind", "", "Hotkey for performing favorite emote 3. This keybind will also be used to assign favorited emotes to a hotkey in the emote menu, favorites tab. NOTE: This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
-            quickEmoteFavorite4Keybind = AddConfigEntry("Emote Radial Menu", "Perform Favorite Emote 4 Keybind", "", "Hotkey for performing favorite emote 4. This keybind will also be used to assign favorited emotes to a hotkey in the emote menu, favorites tab. NOTE: This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
-            quickEmoteFavorite5Keybind = AddConfigEntry("Emote Radial Menu", "Perform Favorite Emote 5 Keybind", "", "Hotkey for performing favorite emote 5. This keybind will also be used to assign favorited emotes to a hotkey in the emote menu, favorites tab. NOTE: This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
-            quickEmoteFavorite6Keybind = AddConfigEntry("Emote Radial Menu", "Perform Favorite Emote 6 Keybind", "", "Hotkey for performing favorite emote 6. This keybind will also be used to assign favorited emotes to a hotkey in the emote menu, favorites tab. NOTE: This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
-            quickEmoteFavorite7Keybind = AddConfigEntry("Emote Radial Menu", "Perform Favorite Emote 7 Keybind", "", "Hotkey for performing favorite emote 7. This keybind will also be used to assign favorited emotes to a hotkey in the emote menu, favorites tab. NOTE: This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
-            quickEmoteFavorite8Keybind = AddConfigEntry("Emote Radial Menu", "Perform Favorite Emote 8 Keybind", "", "Hotkey for performing favorite emote 8. This keybind will also be used to assign favorited emotes to a hotkey in the emote menu, favorites tab. NOTE: This setting will be ignored if InputUtils is installed and enabled. (I recommend running InputUtils to edit keybinds in the in-game settings)");
-            */
-
             disableBoomboxRequirement = AddConfigEntry("Emote Audio", "DisableBoomboxRequirement", false, "If set to true, emote audio that normally requires a nearby boombox will be played from your character instead.");
             disableAudioShipSpeaker = AddConfigEntry("Emote Audio", "DisableAudioOnShipSpeaker", false, "[Host only] This does nothing if DisableBoomboxRequirement is true. This setting is host only to ensure no de-synced audio sources.");
             baseEmoteAudioVolume = AddConfigEntry("Emote Audio", "BaseEmoteAudioVolume", 0.25f, "The base emote audio volume. The volume slider in the emote menu will be based off of this value.");
@@ -177,7 +161,7 @@ namespace TooManyEmotes.Config
 
             verboseLogs = AddConfigEntry("Other", "VerboseLogs", false, "Set to true if you want to receive ALL logs. Most of the time, you will want to keep this disabled unless troubleshooting a specific issue.");
             //enableGirlPatch = AddConfigEntry("Other", "EnableGirlPatch", true, "If true, this mod will disable the girl's mesh while she's un the \"unrendered\" layer to prevent the third-person emote camera from seeing her when not supposed do. Disable this if this causes conflicts with another mod.");
-            resetFavoriteOnNextStart = AddConfigEntry("Other", "ResetFavoritedEmotesOnNextStart", false, "Set this to true to force remove all emotes from your favorites when the game starts up next.\nThis will also reset quick emotes.\nThis may resolve any issues that might be related to having favorited emotes that don't exist.\nThis setting will reset back to false once reset.");
+            resetFavoriteOnNextStart = AddConfigEntry("Other", "ResetFavoritedEmotesOnNextStart", false, "Set this to true to force remove all emotes from your favorites when the game starts up next.\nThis may resolve any issues that might be related to having favorited emotes that don't exist.\nThis setting will reset back to false once reset.");
             resetGlobalUnlocksOnNextStart = AddConfigEntry("Other", "ResetGlobalUnlocksOnNextStart", false, "Set this to true to force reset all globally unlocked emotes for your local player. These emotes are only usable when the host has PersistentUnlocksGlobal enabled in the config.\nThis setting will reset back to false once reset.");
 
             bool saveConfig = false;

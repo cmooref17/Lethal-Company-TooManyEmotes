@@ -27,7 +27,7 @@ namespace TooManyEmotes
             if (ConfigSettings.resetFavoriteEmotes)
             {
                 ResetFavoritedEmotes();
-                ResetQuickEmotes();
+                //ResetQuickEmotes();
             }
 
             ConfigSettings.resetGloballyUnlockedEmotes = false;
@@ -40,6 +40,10 @@ namespace TooManyEmotes
         private static void SaveUnlockedEmotes(GameNetworkManager __instance)
         {
             if (!__instance.isHostingGame || !StartOfRound.Instance.inShipPhase)
+                return;
+
+            // Don't save values if playing with party pooper mode
+            if (ConfigSync.instance.syncUnlockEverything)
                 return;
 
             Log("Saving game values.");
@@ -113,6 +117,10 @@ namespace TooManyEmotes
         private static void LoadUnlockedEmotes(StartOfRound __instance)
         {
             if (!GameNetworkManager.Instance.isHostingGame)
+                return;
+
+            // Don't load values if playing with party pooper mode
+            if (ConfigSync.instance.syncUnlockEverything)
                 return;
 
             Log("Loading game values.");

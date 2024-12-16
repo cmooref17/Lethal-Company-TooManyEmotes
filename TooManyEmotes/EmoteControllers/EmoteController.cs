@@ -271,7 +271,10 @@ namespace TooManyEmotes
                 return false;
 
             if (!isSimpleEmoteController)
+            {
                 Log("[" + emoteControllerName + "] Performing emote: " + emote.emoteName);
+                //LogWarningVerbose("[DEBUG] Emote id: " + emote.emoteId);
+            }
 
             if (isPerformingEmote)
                 ResetPerformingEmote();

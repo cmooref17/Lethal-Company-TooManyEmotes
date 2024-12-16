@@ -109,39 +109,6 @@ namespace TooManyEmotes.Audio
         public static void BuildAudioClipList()
         {
             LoadAllAudioClips();
-            /*
-
-            foreach (var audioClip in loadedAudioClips)
-            {
-                string emoteName = audioClip.name;
-                if (audioClip.name.Contains("."))
-                {
-                    var args = audioClip.name.Split('.');
-                    if (args.Length > 0 && args[0].Length > 0)
-                        emoteName = args[0];
-                }
-                emoteName = emoteName.Replace("_start", "").Replace("_loop", "");
-                if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote))
-                {
-                    if (emote.animationClip != null && emote.animationClip.name == audioClip.name)
-                        emote.
-                    emote.propNamesInEmote.Add(propPrefab.name);
-                }
-
-            }
-            */
-            /*
-            foreach (var audioClip in loadedAudioClips)
-            {
-                string emoteName = audioClip.name.Replace(audioFileExtension, "");
-                if (emoteName.EndsWith("_start"))
-                    emoteName = emoteName.Substring(0, emoteName.Length - 6);
-                else if (emoteName.EndsWith("_loop"))
-                    emoteName = emoteName.Substring(0, emoteName.Length - 5);
-
-                if (EmotesManager.allUnlockableEmotesDict.TryGetValue(emoteName, out var emote)) { }
-            }
-            */
         }
 
 

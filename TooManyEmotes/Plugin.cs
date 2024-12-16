@@ -101,11 +101,10 @@ namespace TooManyEmotes
                     else
                         customAnimationClipsLoopDict.Add(clip.name, clip);
                 }
-
             }
 
             customAnimationClips = new List<AnimationClip>(customAnimationClipsHash);
-            customAnimationClipsHash = new HashSet<AnimationClip>(customAnimationClips);
+            //customAnimationClips.Sort((item1, item2) => item1.name.CompareTo(item2.name));
 
             foreach (var animationClipLoop in customAnimationClipsLoopDict.Values)
                 customAnimationClips.Remove(animationClipLoop);

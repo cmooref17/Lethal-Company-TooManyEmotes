@@ -285,7 +285,10 @@ namespace TooManyEmotes
             {
                 return TrySyncingEmoteWithEmoteController(syncWithEmoteController, overrideEmoteId);
             }
-            
+
+
+            LogWarningVerbose("[DEBUG] Trying to perform emote on local player. Emote: " + emote.emoteName + " | Emote id: " + emote.emoteId);
+
             bool success;
             if (sourcePropObject != null && sourcePropObject == localPlayerController.ItemSlots[localPlayerController.currentItemSlot])
                 success = PerformEmote(emote, sourcePropObject, overrideEmoteId, AudioManager.emoteOnlyMode);

@@ -5,6 +5,11 @@ using HarmonyLib;
 using TooManyEmotes.Patches;
 using static TooManyEmotes.HelperTools;
 using static TooManyEmotes.CustomLogging;
+using TooManyEmotes.Networking;
+using System.Collections;
+using System;
+using System.Globalization;
+using TooManyEmotes.Config;
 
 namespace TooManyEmotes
 {
@@ -22,6 +27,8 @@ namespace TooManyEmotes
         public static List<UnlockableEmote> allEmotesTier1;
         public static List<UnlockableEmote> allEmotesTier2;
         public static List<UnlockableEmote> allEmotesTier3;
+
+        internal static CultureInfo defaultSortCulture = CultureInfo.CreateSpecificCulture("en-US");
 
 
         public static void BuildEmotesList()
@@ -54,6 +61,18 @@ namespace TooManyEmotes
                     rarity = 0
                 };
 
+                /*emote.rarity =
+                    SyncManager.overrideEmoteNames0.Contains(clip.name.ToLower()) ? 0 :
+                    SyncManager.overrideEmoteNames1.Contains(clip.name.ToLower()) ? 1 :
+                    SyncManager.overrideEmoteNames2.Contains(clip.name.ToLower()) ? 2 :
+                    SyncManager.overrideEmoteNames3.Contains(clip.name.ToLower()) ? 3 : -1;
+                if (SyncManager.overrideEmoteNamesComplementary.Contains(clip.name.ToLower()))
+                {
+                    emote.rarity = 0;
+                    emote.complementary = true;
+                }*/
+
+                
                 emote.rarity = 
                     Plugin.animationClipsTier1.Contains(clip) ? 1 :
                     Plugin.animationClipsTier2.Contains(clip) ? 2 :
@@ -187,12 +206,22 @@ namespace TooManyEmotes
                 }
             }
 
-            //allUnlockableEmotes = allUnlockableEmotes.OrderBy(item => item.rarity).ThenBy(item => item.emoteName).ToList(); // Sort by rarity, then by name
-            allUnlockableEmotes = allUnlockableEmotes.OrderBy(item => item.emoteName).ToList(); // Sort by name
+            // Try because I don't trust anything
+            try
+            {
+                allUnlockableEmotes.Sort((item1, item2) => string.Compare(item1.displayName, item2.displayName, true, defaultSortCulture));
+            }
+            catch (Exception e)
+            {
+                if (ConfigSettings.verboseLogs.Value)
+                    LogWarningVerbose("Failed to apply default emote sort. Reverting to original sort method.");
+                allUnlockableEmotes = allUnlockableEmotes.OrderBy(item => item.emoteName).ToList(); // Sort by name
+            }
 
             int id = 0;
             foreach (var emote in allUnlockableEmotes)
             {
+                //LogWarningVerbose("[DEBUG] Registering emote: " + emote.emoteName + " at index: " + id);
                 emote.emoteId = id++;
                 if (emote.complementary)
                     continue;

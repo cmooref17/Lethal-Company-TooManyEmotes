@@ -33,7 +33,7 @@ namespace TooManyEmotes.Input
         public static InputAction PerformNextInstrumentAction;
         public static InputAction PerformRandomEmoteAction;
 
-        /*
+
         public static InputAction QuickEmote1Action;
         public static InputAction QuickEmote2Action;
         public static InputAction QuickEmote3Action;
@@ -42,7 +42,7 @@ namespace TooManyEmotes.Input
         public static InputAction QuickEmote6Action;
         public static InputAction QuickEmote7Action;
         public static InputAction QuickEmote8Action;
-        */
+
 
         public static InputAction PerformSelectedEmoteAction;
         public static InputAction ThumbStickAction;
@@ -78,7 +78,7 @@ namespace TooManyEmotes.Input
 
                 PerformRandomEmoteAction = InputUtils_Compat.PerformRandomEmoteHotkey;
 
-                /*
+
                 QuickEmote1Action = InputUtils_Compat.QuickEmote1;
                 QuickEmote2Action = InputUtils_Compat.QuickEmote2;
                 QuickEmote3Action = InputUtils_Compat.QuickEmote3;
@@ -87,7 +87,7 @@ namespace TooManyEmotes.Input
                 QuickEmote6Action = InputUtils_Compat.QuickEmote6;
                 QuickEmote7Action = InputUtils_Compat.QuickEmote7;
                 QuickEmote8Action = InputUtils_Compat.QuickEmote8;
-                */
+
 
                 PerformSelectedEmoteAction = new InputAction("TooManyEmotes.PerformSelectedEmote", binding: "<Mouse>/leftButton", interactions: "Press");
                 ThumbStickAction = new InputAction("TooManyEmotes.ThumbStick", binding: "<Gamepad>/rightStick");
@@ -159,7 +159,7 @@ namespace TooManyEmotes.Input
             // For now
             if (InputUtils_Compat.Enabled)
             {
-                /*
+
                 QuickEmote1Action.performed += OnQuickEmote1;
                 QuickEmote2Action.performed += OnQuickEmote2;
                 QuickEmote3Action.performed += OnQuickEmote3;
@@ -168,7 +168,7 @@ namespace TooManyEmotes.Input
                 QuickEmote6Action.performed += OnQuickEmote6;
                 QuickEmote7Action.performed += OnQuickEmote7;
                 QuickEmote8Action.performed += OnQuickEmote8;
-                */
+
             }
 
             PerformSelectedEmoteAction.Enable();
@@ -204,7 +204,7 @@ namespace TooManyEmotes.Input
             // For now
             if (InputUtils_Compat.Enabled)
             {
-                /*
+
                 QuickEmote1Action.performed -= OnQuickEmote1;
                 QuickEmote2Action.performed -= OnQuickEmote2;
                 QuickEmote3Action.performed -= OnQuickEmote3;
@@ -213,7 +213,7 @@ namespace TooManyEmotes.Input
                 QuickEmote6Action.performed -= OnQuickEmote6;
                 QuickEmote7Action.performed -= OnQuickEmote7;
                 QuickEmote8Action.performed -= OnQuickEmote8;
-                */
+
             }
 
             PerformSelectedEmoteAction.Disable();
@@ -256,7 +256,7 @@ namespace TooManyEmotes.Input
         }
 
 
-        static void OnPressOpenEmoteMenu(InputAction.CallbackContext context)
+        private static void OnPressOpenEmoteMenu(InputAction.CallbackContext context)
         {
             //Log("Starting opening emote menu...");
             if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
@@ -284,7 +284,7 @@ namespace TooManyEmotes.Input
         }
 
 
-        static void OnSelectEmoteUI(InputAction.CallbackContext context)
+        private static void OnSelectEmoteUI(InputAction.CallbackContext context)
         {
             if (localPlayerController == null || !context.performed)
                 return;
@@ -341,7 +341,7 @@ namespace TooManyEmotes.Input
 
         public static void OnQuickEmote(InputAction.CallbackContext context, int quickEmoteIndex)
         {
-            if (localPlayerController == null || !context.performed)
+            if (localPlayerController == null || !context.performed || (quickMenuManager.isMenuOpen && !EmoteMenu.isMenuOpen))
                 return;
             if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
@@ -355,18 +355,27 @@ namespace TooManyEmotes.Input
                     if (EmotesManager.allQuickEmotes != null && quickEmoteIndex >= 0 && quickEmoteIndex < EmotesManager.allQuickEmotes.Count())
                         previousQuickEmoteName = EmotesManager.allQuickEmotes[quickEmoteIndex];
 
+                    LogWarningVerbose("HoveredEmoteIndex: " + EmoteMenu.hoveredEmoteIndex + " LoadoutSize: " + EmoteMenu.currentLoadoutEmotesList.Count);
                     if (EmoteMenu.hoveredEmoteIndex >= 0 && EmoteMenu.hoveredEmoteIndex < EmoteMenu.currentLoadoutEmotesList.Count)
                     {
                         UnlockableEmote quickEmote = EmoteMenu.currentLoadoutEmotesList[EmoteMenu.hoveredEmoteIndex];
-                        
+
                         if (quickEmote != null)
                         {
+                            LogWarningVerbose("QuickEmote: " + quickEmote);
                             if (quickEmote.emoteName != previousQuickEmoteName)
                             {
                                 while (EmotesManager.allQuickEmotes.Contains(quickEmote.emoteName))
                                     EmotesManager.allQuickEmotes[EmotesManager.allQuickEmotes.IndexOf(quickEmote.emoteName)] = "";
 
-                                EmotesManager.allQuickEmotes[quickEmoteIndex] = quickEmote.emoteName;
+                                if (quickEmote.inEmoteSyncGroup)
+                                {
+                                    EmotesManager.allQuickEmotes[quickEmoteIndex] = quickEmote.emoteSyncGroup[0].emoteName;
+                                }
+                                else
+                                {
+                                    EmotesManager.allQuickEmotes[quickEmoteIndex] = quickEmote.emoteName;
+                                }
                                 EmoteMenu.UpdateEmoteWheel(); // Update UI
                                 SaveManager.SaveQuickEmotes();
 
@@ -400,7 +409,7 @@ namespace TooManyEmotes.Input
                         LogWarningVerbose("Could not perform quick emote " + (quickEmoteIndex + 1) + ". Emote is invalid: " + emoteName);
                     else
                     {
-                        if (!SessionManager.unlockedEmotes.Contains(emote))
+                        if (!SessionManager.unlockedEmotes.Contains(emote) && !emote.complementary)
                             LogWarningVerbose("Could not perform quick emote " + (quickEmoteIndex + 1) + ". Emote is not unlocked: " + emoteName);
                         else
                         {
@@ -415,37 +424,12 @@ namespace TooManyEmotes.Input
                     LogErrorVerbose("Could not perform quick emote " + (quickEmoteIndex + 1) + "\n" + e);
                 }
             }
-            /*
-            if (!context.performed || quickEmoteNumber >= StartOfRoundPatcher.unlockedFavoriteEmotes.Count)
-                return;
-
-            if (EmoteMenuManager.isMenuOpen)
-            {
-                if (EmoteMenuManager.hoveredEmoteIndex >= 0 && EmoteMenuManager.hoveredEmoteIndex != quickEmoteNumber && EmoteMenuManager.previewingEmote != null)
-                {
-                    var emote = EmoteMenuManager.previewingEmote;
-                    // Favorite an emote
-                    int indexInAllFavoritedEmotes = StartOfRoundPatcher.allFavoriteEmotes.IndexOf(emote.emoteName);
-                    if (indexInAllFavoritedEmotes >= 0) 
-                    {
-
-                    }
-                }
-            }
-            else
-            {
-                // Perform favorited emote
-                var emote = StartOfRoundPatcher.unlockedFavoriteEmotes[quickEmoteNumber];
-                if (emote != null)
-                    localPlayerController.PerformEmote(context, -(emote.emoteId + 1));
-            }
-            */
         }
 
         public static void OnUpdateRotatePlayerEmoteModifier(InputAction.CallbackContext context)
         {
             //if (localPlayerController == null || ConfigSync.instance.syncEnableMovingWhileEmoting || !emoteControllerLocal.IsPerformingCustomEmote())
-            if (localPlayerController == null || !emoteControllerLocal.IsPerformingCustomEmote() || ThirdPersonEmoteController.firstPersonEmotesEnabled)
+            if (localPlayerController == null || !emoteControllerLocal.IsPerformingCustomEmote() || ThirdPersonEmoteController.firstPersonEmotesEnabled || quickMenuManager.isMenuOpen)
                 return;
             
             if (context.performed)
@@ -468,7 +452,7 @@ namespace TooManyEmotes.Input
 
         public static void PlayNextInstrument(InputAction.CallbackContext context)
         {
-            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
+            if (localPlayerController == null || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled || (quickMenuManager.isMenuOpen && !EmoteMenu.isMenuOpen))
                 return;
 
             if (emoteControllerLocal.isPerformingEmote && emoteControllerLocal.performingEmote.inEmoteSyncGroup && emoteControllerLocal.performingEmote.emoteSyncGroup.Count > 1)
@@ -483,7 +467,7 @@ namespace TooManyEmotes.Input
         {
             if (ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled)
                 return;
-            if (EmoteMenu.isMenuOpen || SessionManager.unlockedEmotes == null || SessionManager.unlockedEmotes.Count <= 0)
+            if (EmoteMenu.isMenuOpen || SessionManager.unlockedEmotes == null || SessionManager.unlockedEmotes.Count <= 0 || (quickMenuManager.isMenuOpen && !EmoteMenu.isMenuOpen))
                 return;
 
             int emoteIndex = UnityEngine.Random.Range(0, SessionManager.unlockedEmotes.Count);

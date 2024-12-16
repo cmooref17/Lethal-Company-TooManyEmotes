@@ -3,6 +3,7 @@ using HarmonyLib;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
+using UnityEngine.PlayerLoop;
 using static TooManyEmotes.CustomLogging;
 using static TooManyEmotes.HelperTools;
 
@@ -46,6 +47,7 @@ namespace TooManyEmotes.Networking
             if (isServer)
             {
                 ServerSendPerformingEmoteUpdateToClients(emoteControllerLocal, emote, doNotTriggerAudio);
+                //LogWarningVerbose("[DEBUG][HOST] Sending performing emote update to clients. Emote: " + emote.emoteName + " EmoteId: " + emote.emoteId);
                 return;
             }
 
@@ -97,6 +99,7 @@ namespace TooManyEmotes.Networking
                 overrideEmoteId = emote.emoteSyncGroup.IndexOf(emote);
 
             Log("Receiving performing emote update from client: " + clientId + " Emote: " + emote.emoteName);
+            //LogWarningVerbose("[DEBUG] Emote id: " + emote.emoteId);
             if (isClient && !emoteController.isLocalPlayer)
                 emoteController.PerformEmote(emote, overrideEmoteId: overrideEmoteId, doNotTriggerAudio: doNotTriggerAudio);
             ServerSendPerformingEmoteUpdateToClients(emoteController, emote, doNotTriggerAudio);
@@ -173,6 +176,7 @@ namespace TooManyEmotes.Networking
             if (emote.emoteSyncGroup != null)
                 overrideEmoteId = emote.emoteSyncGroup.IndexOf(emote);
             Log("Receiving performing emote update from server for emote controller with id: " + emoteControllerId + " Emote: " + emote.emoteName);
+            //LogWarningVerbose("[DEBUG] Emote id: " + emote.emoteId);
             emoteController.PerformEmote(emote, overrideEmoteId: overrideEmoteId, doNotTriggerAudio: doNotTriggerAudio);
         }
 

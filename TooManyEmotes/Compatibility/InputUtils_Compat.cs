@@ -30,7 +30,7 @@ namespace TooManyEmotes.Compatibility
         public static InputAction PerformNextInstrumentHotkey => IngameKeybinds.Instance.PerformNextInstrumentHotkey;
         public static InputAction PerformRandomEmoteHotkey => IngameKeybinds.Instance.PerformRandomEmoteHotkey;
 
-        /*
+
         public static InputAction QuickEmote1 => IngameKeybinds.Instance.QuickEmoteHotkey1;
         public static InputAction QuickEmote2 => IngameKeybinds.Instance.QuickEmoteHotkey2;
         public static InputAction QuickEmote3 => IngameKeybinds.Instance.QuickEmoteHotkey3;
@@ -39,6 +39,5 @@ namespace TooManyEmotes.Compatibility
         public static InputAction QuickEmote6 => IngameKeybinds.Instance.QuickEmoteHotkey6;
         public static InputAction QuickEmote7 => IngameKeybinds.Instance.QuickEmoteHotkey7;
         public static InputAction QuickEmote8 => IngameKeybinds.Instance.QuickEmoteHotkey8;
-        */
     }
 }

@@ -499,7 +499,17 @@ namespace TooManyEmotes.UI
                     allUnlockedEmotesFiltered.Add(SessionManager.unlockedFavoriteEmotes[i]);
             }
 
-            allUnlockedEmotesFiltered.Sort((item1, item2) => item1.displayName.CompareTo(item2.displayName));
+            // Try because I don't trust anything
+            try
+            {
+                allUnlockedEmotesFiltered.Sort((item1, item2) => string.Compare(item1.displayName, item2.displayName, true, EmotesManager.defaultSortCulture));
+            }
+            catch (Exception e)
+            {
+                if (ConfigSettings.verboseLogs.Value)
+                    LogWarningVerbose("Failed to apply default emote sort in emote menu. Reverting to original sort method.");
+                allUnlockedEmotesFiltered.Sort((item1, item2) => item1.displayName.CompareTo(item2.displayName));
+            }
         }
 
 
