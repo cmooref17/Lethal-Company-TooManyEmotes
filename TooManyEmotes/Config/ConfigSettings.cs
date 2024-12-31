@@ -72,6 +72,7 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<float> emoteAudioIncreasePerPlayerSyncing;
         public static ConfigEntry<float> emoteAudioMinDistance;
         public static ConfigEntry<float> emoteAudioMaxDistance;
+        public static ConfigEntry<bool> dmcaFreeMode;
 
         public static ConfigEntry<string> emoteNameColorTier0;
         public static ConfigEntry<string> emoteNameColorTier1;
@@ -153,6 +154,7 @@ namespace TooManyEmotes.Config
             emoteAudioIncreasePerPlayerSyncing = AddConfigEntry("Emote Audio", "VolumeGainPerPlayerSyncingEmote", 0.05f, "By how much emote audio volume will increase by per player syncing with that emote.");
             emoteAudioMinDistance = AddConfigEntry("Emote Audio", "MinAudioDistance", 10f, "The range from an emote audio source at which the volume will start to fade.");
             emoteAudioMaxDistance = AddConfigEntry("Emote Audio", "MaxAudioDistance", 40f, "The range from an emote audio source at which the audio can no longer be heard.");
+            dmcaFreeMode = AddConfigEntry("Emote Audio", "DmcaFreeMode", true, "Disable DMCA-protected audio.");
             
             emoteNameColorTier0 = AddConfigEntry("Accessibility", "EmoteNameColorCommon", "#00FF00", "The color of the [common] emote name in the terminal.");
             emoteNameColorTier1 = AddConfigEntry("Accessibility", "EmoteNameColorRare", "#2828FF", "The color of the [rare] emote name in the terminal.");
@@ -163,6 +165,7 @@ namespace TooManyEmotes.Config
             //enableGirlPatch = AddConfigEntry("Other", "EnableGirlPatch", true, "If true, this mod will disable the girl's mesh while she's un the \"unrendered\" layer to prevent the third-person emote camera from seeing her when not supposed do. Disable this if this causes conflicts with another mod.");
             resetFavoriteOnNextStart = AddConfigEntry("Other", "ResetFavoritedEmotesOnNextStart", false, "Set this to true to force remove all emotes from your favorites when the game starts up next.\nThis may resolve any issues that might be related to having favorited emotes that don't exist.\nThis setting will reset back to false once reset.");
             resetGlobalUnlocksOnNextStart = AddConfigEntry("Other", "ResetGlobalUnlocksOnNextStart", false, "Set this to true to force reset all globally unlocked emotes for your local player. These emotes are only usable when the host has PersistentUnlocksGlobal enabled in the config.\nThis setting will reset back to false once reset.");
+      
 
             bool saveConfig = false;
             if (resetFavoriteOnNextStart.Value)

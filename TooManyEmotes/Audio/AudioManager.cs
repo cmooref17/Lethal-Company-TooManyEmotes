@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using TooManyEmotes.Patches;
 using static TooManyEmotes.CustomLogging;
+using TooManyEmotes.Config;
 
 namespace TooManyEmotes.Audio
 {
@@ -31,7 +32,7 @@ namespace TooManyEmotes.Audio
 
         public static bool muteEmoteAudio = false;
         public static bool emoteOnlyMode = false;
-        public static bool dmcaFreeMode = true;
+        public static bool dmcaFreeMode = ConfigSettings.dmcaFreeMode.Value;
         public static float emoteVolumeMultiplier = 1;
 
 
@@ -85,7 +86,7 @@ namespace TooManyEmotes.Audio
                 emoteVolumeMultiplier = ES3.Load("TooManyEmotes.EmoteAudioVolume", SaveManager.TooManyEmotesSaveFileName, 1.0f);
                 muteEmoteAudio = ES3.Load("TooManyEmotes.MuteEmoteAudio", SaveManager.TooManyEmotesSaveFileName, false);
                 emoteOnlyMode = ES3.Load("TooManyEmotes.EmoteOnlyMode", SaveManager.TooManyEmotesSaveFileName, false);
-                dmcaFreeMode = ES3.Load("TooManyEmotes.DmcaFreeMode", SaveManager.TooManyEmotesSaveFileName, true);
+                dmcaFreeMode = ES3.Load("TooManyEmotes.DmcaFreeMode", SaveManager.TooManyEmotesSaveFileName, ConfigSettings.dmcaFreeMode.Value);
             }
             catch (Exception e)
             {
@@ -93,7 +94,7 @@ namespace TooManyEmotes.Audio
                 emoteVolumeMultiplier = 1;
                 muteEmoteAudio = false;
                 emoteOnlyMode = false;
-                dmcaFreeMode = true;
+                dmcaFreeMode = ConfigSettings.dmcaFreeMode.Value;
                 try
                 {
                     ES3.DeleteKey("TooManyEmotes.EmoteAudioVolume", SaveManager.TooManyEmotesSaveFileName);
