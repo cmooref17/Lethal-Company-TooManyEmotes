@@ -12,6 +12,7 @@ using System.Reflection;
 using TooManyEmotes.Audio;
 using TooManyEmotes.Props;
 using static TooManyEmotes.CustomLogging;
+using System.Linq.Expressions;
 
 namespace TooManyEmotes
 {
@@ -78,19 +79,33 @@ namespace TooManyEmotes
             customAnimationClipsHash = new HashSet<AnimationClip>();
             customAnimationClipsLoopDict = new Dictionary<string, AnimationClip>();
 
-            complementaryAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_complementary"));
-            animationClipsTier0 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_0"));
-            animationClipsTier1 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_1"));
-            animationClipsTier2 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_2"));
-            animationClipsTier3 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_3"));
-            animationClipsSpecial = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_special"));
-            complementaryAnimationClips.AddRange(animationClipsSpecial); // for now
+             
+            //complementaryAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_test"));
+            if (complementaryAnimationClips != null && complementaryAnimationClips.Count() > 0)
+            {
+                customAnimationClipsHash.UnionWith(complementaryAnimationClips);
+                animationClipsTier0 = new List<AnimationClip>();
+                animationClipsTier1 = new List<AnimationClip>();
+                animationClipsTier2 = new List<AnimationClip>();
+                animationClipsTier3 = new List<AnimationClip>();
+                animationClipsSpecial = new List<AnimationClip>();
+            }
+            else
+            {
+                complementaryAnimationClips = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_complementary"));
+                animationClipsTier0 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_0"));
+                animationClipsTier1 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_1"));
+                animationClipsTier2 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_2"));
+                animationClipsTier3 = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_3"));
+                animationClipsSpecial = new List<AnimationClip>(LoadEmoteAssetBundle("Assets/emotes_special"));
+                complementaryAnimationClips.AddRange(animationClipsSpecial); // for now
 
-            customAnimationClipsHash.UnionWith(complementaryAnimationClips);
-            customAnimationClipsHash.UnionWith(animationClipsTier0);
-            customAnimationClipsHash.UnionWith(animationClipsTier1);
-            customAnimationClipsHash.UnionWith(animationClipsTier2);
-            customAnimationClipsHash.UnionWith(animationClipsTier3);
+                customAnimationClipsHash.UnionWith(complementaryAnimationClips);
+                customAnimationClipsHash.UnionWith(animationClipsTier0);
+                customAnimationClipsHash.UnionWith(animationClipsTier1);
+                customAnimationClipsHash.UnionWith(animationClipsTier2);
+                customAnimationClipsHash.UnionWith(animationClipsTier3);
+            }
 
             foreach (var clip in customAnimationClipsHash)
             {

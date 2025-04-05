@@ -73,6 +73,8 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<float> emoteAudioMinDistance;
         public static ConfigEntry<float> emoteAudioMaxDistance;
 
+        //public static ConfigEntry<bool> dmcaFreeMode;
+
         public static ConfigEntry<string> emoteNameColorTier0;
         public static ConfigEntry<string> emoteNameColorTier1;
         public static ConfigEntry<string> emoteNameColorTier2;
@@ -153,7 +155,8 @@ namespace TooManyEmotes.Config
             emoteAudioIncreasePerPlayerSyncing = AddConfigEntry("Emote Audio", "VolumeGainPerPlayerSyncingEmote", 0.05f, "By how much emote audio volume will increase by per player syncing with that emote.");
             emoteAudioMinDistance = AddConfigEntry("Emote Audio", "MinAudioDistance", 10f, "The range from an emote audio source at which the volume will start to fade.");
             emoteAudioMaxDistance = AddConfigEntry("Emote Audio", "MaxAudioDistance", 40f, "The range from an emote audio source at which the audio can no longer be heard.");
-            
+            // dmcaFreeMode = AddConfigEntry("Emote Audio", "DmcaFreeMode", true, "Disable DMCA-protected audio.");
+
             emoteNameColorTier0 = AddConfigEntry("Accessibility", "EmoteNameColorCommon", "#00FF00", "The color of the [common] emote name in the terminal.");
             emoteNameColorTier1 = AddConfigEntry("Accessibility", "EmoteNameColorRare", "#2828FF", "The color of the [rare] emote name in the terminal.");
             emoteNameColorTier2 = AddConfigEntry("Accessibility", "EmoteNameColorEpic", "#AA00EE", "The color of the [epic] emote name in the terminal.");

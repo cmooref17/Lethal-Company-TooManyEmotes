@@ -13,6 +13,7 @@ using TooManyEmotes.Compatibility;
 using TooManyEmotes.UI;
 using static TooManyEmotes.HelperTools;
 using static TooManyEmotes.CustomLogging;
+using System.Collections.Generic;
 
 namespace TooManyEmotes.Patches
 {
@@ -46,6 +47,36 @@ namespace TooManyEmotes.Patches
         public static bool allowMovingWhileEmoting { get; internal set; } = false;
 
         internal static bool isMovingWhileEmoting { get { return !ConfigSync.instance.syncForceDisableMovingWhileEmoting && emoteControllerLocal.IsPerformingCustomEmote() && (allowMovingWhileEmoting || emoteControllerLocal.performingEmote.canMoveWhileEmoting); } }
+
+
+        //internal static Dictionary<Renderer, int> registeredLocalChildRendererRenderLayer = new Dictionary<Renderer, int>();
+
+
+        /*public static void RegisterLocalObjectRendererShowWhileEmoting(Renderer renderer, int overrideRenderLayer = 6)
+        {
+            if (!renderer || !StartOfRound.Instance.localPlayerController)
+                return;
+
+            if (!renderer.transform.IsChildOf(StartOfRound.Instance.localPlayerController.transform))
+            {
+                LogError("Failed to register local object renderer for dynamic render layer during emotes. Object is not parented to the local player.");
+                return;
+            }
+            registeredLocalChildRendererRenderLayer.Add(renderer, overrideRenderLayer);
+        }
+
+        public static void RegisterLocalObjectRendererHideWhileEmoting(Renderer renderer)
+        {
+            if (!renderer || !StartOfRound.Instance.localPlayerController)
+                return;
+
+            if (!renderer.transform.IsChildOf(StartOfRound.Instance.localPlayerController.transform))
+            {
+                LogError("Failed to register local object renderer for dynamic render layer during emotes. Object is not parented to the local player.");
+                return;
+            }
+            registeredLocalChildRendererRenderLayer.Add(renderer, 23);
+        }*/
 
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]

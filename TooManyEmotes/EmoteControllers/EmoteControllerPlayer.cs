@@ -402,15 +402,19 @@ namespace TooManyEmotes
             {
                 cameraContainerLerp.SetPositionAndRotation(cameraContainerTarget.position, cameraContainerTarget.rotation);
                 playerController.performingEmote = true;
-                if (!isLocalPlayer)
-                    originalAnimator.SetInteger("emoteNumber", 0);
+                /*if (!isLocalPlayer)
+                    originalAnimator.SetInteger("emoteNumber", 0);*/
+                originalAnimator.SetInteger("emoteNumber", 1);
 
                 var heldProp = playerController.ItemSlots[playerController.currentItemSlot];
                 if (heldProp && emotingProps.Count > 0)
                     heldProp.EnableItemMeshes(false);
 
                 if (isLocalPlayer)
+                {
                     ThirdPersonEmoteController.OnStartCustomEmoteLocal();
+                    playerController.StartPerformingEmoteServerRpc();
+                }
             }
             return success;
         }
@@ -425,11 +429,11 @@ namespace TooManyEmotes
             if (isPerformingEmote)
             {
                 cameraContainerLerp.SetPositionAndRotation(cameraContainerTarget.position, cameraContainerTarget.rotation);
-
                 playerController.performingEmote = true;
-                if (!isLocalPlayer)
-                    originalAnimator.SetInteger("emoteNumber", 0);
-                else
+                /*if (!isLocalPlayer)
+                    originalAnimator.SetInteger("emoteNumber", 0);*/
+                originalAnimator.SetInteger("emoteNumber", 1);
+                if (isLocalPlayer)
                 {
                     ThirdPersonEmoteController.OnStartCustomEmoteLocal();
                     playerController.StartPerformingEmoteServerRpc();

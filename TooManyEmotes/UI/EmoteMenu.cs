@@ -615,8 +615,20 @@ namespace TooManyEmotes.UI
                 localPlayerController.isFreeCamera = false;
             if (menuGameObject)
                 menuGameObject.SetActive(false);
-            if (quickMenuManager)
-                quickMenuManager.CloseQuickMenu();
+            if (quickMenuManager && quickMenuManager.isMenuOpen)
+            {
+                if (quickMenuManager.settingsPanel.activeSelf)
+                {
+                    IngamePlayerSettings.Instance.DiscardChangedSettings();
+                }
+
+                quickMenuManager.CloseQuickMenuPanels();
+                quickMenuManager.menuContainer.SetActive(value: false);
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+                quickMenuManager.isMenuOpen = false;
+            }
+
             OnHoveredNewLoadoutElement(-1);
             AnimationPreviewer.SetPreviewAnimation(null);
             AdditionalPanelUI.hovered = false;

@@ -3,6 +3,7 @@ using static TooManyEmotes.HelperTools;
 using static TooManyEmotes.CustomLogging;
 using UnityEngine;
 using System;
+using GameNetcodeStuff;
 
 namespace TooManyEmotes.Compatibility
 {
@@ -82,5 +83,12 @@ namespace TooManyEmotes.Compatibility
             ES3.DeleteKey("TooManyEmotes.StartGrabbablePropItemId", currentSaveFileName);
             ES3.DeleteKey("TooManyEmotes.NumGrabbableProps", currentSaveFileName);
         }
+    }
+
+
+    public static class TooManyEmotesCompat
+    {
+        public static bool IsEnabled { get { return BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("FlipMods.TooManyEmotes"); } }
+        public static bool IsPlayerEmoting(PlayerControllerB playerController) => EmoteControllerPlayer.allPlayerEmoteControllers.TryGetValue(playerController, out var emoteController) && emoteController.IsPerformingCustomEmote();
     }
 }
