@@ -26,14 +26,14 @@ namespace TooManyEmotes
         public static List<UnlockableEmote> unlockedEmotesTier3 = new List<UnlockableEmote>();
 
         internal static List<UnlockableEmote> emotesUnlockedThisSession = new List<UnlockableEmote>();
-        
+
         public static Dictionary<string, List<UnlockableEmote>> unlockedEmotesByPlayer = new Dictionary<string, List<UnlockableEmote>>();
         public static List<UnlockableEmote> unlockedFavoriteEmotes = new List<UnlockableEmote>();
 
 
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
         [HarmonyPrefix]
-        private static void ResetGameValues()
+        public static void ResetGameValues()
         {
             EmoteController.allEmoteControllers?.Clear();
             EmoteControllerPlayer.allPlayerEmoteControllers?.Clear();
@@ -45,7 +45,7 @@ namespace TooManyEmotes
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
-        private static void OnHostConnected(PlayerControllerB __instance)
+        public static void OnHostConnected(PlayerControllerB __instance)
         {
             if (!isServer)
                 return;
@@ -70,7 +70,7 @@ namespace TooManyEmotes
 
         [HarmonyPatch(typeof(StartOfRound), "Start")]
         [HarmonyPostfix]
-        private static void OnServerStart(StartOfRound __instance)
+        public static void OnServerStart(StartOfRound __instance)
         {
             if (isServer)
             {
@@ -83,7 +83,7 @@ namespace TooManyEmotes
 
         [HarmonyPatch(typeof(StartOfRound), "StartGame")]
         [HarmonyPostfix]
-        private static void ResetOverrideSeedFlag(StartOfRound __instance)
+        public static void ResetOverrideSeedFlag(StartOfRound __instance)
         {
             __instance.overrideRandomSeed = false;
         }
@@ -91,7 +91,7 @@ namespace TooManyEmotes
 
         [HarmonyPatch(typeof(StartOfRound), "ResetShip")]
         [HarmonyPostfix]
-        private static void ResetEmotesOnShipReset(StartOfRound __instance)
+        public static void ResetEmotesOnShipReset(StartOfRound __instance)
         {
             if (!ConfigSync.instance.syncUnlockEverything)
                 ResetProgressLocal();
@@ -118,7 +118,7 @@ namespace TooManyEmotes
 
         [HarmonyPatch(typeof(StartOfRound), "SyncShipUnlockablesServerRpc")]
         [HarmonyPostfix]
-        private static void SyncUnlockedEmotesWithClients(StartOfRound __instance)
+        public static void SyncUnlockedEmotesWithClients(StartOfRound __instance)
         {
             if (!isServer)
                 return;
@@ -224,6 +224,8 @@ namespace TooManyEmotes
                     if (_unlockedEmotes.Contains(syncEmote))
                         return;
                 }
+                if (emote.emoteSyncGroup.Count > 0)
+                    emote = emote.emoteSyncGroup[0];
             }
             if (!_unlockedEmotes.Contains(emote))
                 _unlockedEmotes.Add(emote);
@@ -277,7 +279,7 @@ namespace TooManyEmotes
             unlockedEmotesByPlayer.Clear();
             foreach (var playerController in StartOfRound.Instance.allPlayerScripts)
             {
-                if (playerController.playerSteamId != 0)
+                if (playerController.playerSteamId != 0 && !unlockedEmotesByPlayer.ContainsKey(playerController.playerUsername))
                     unlockedEmotesByPlayer.Add(playerController.playerUsername, (playerController == localPlayerController || ConfigSync.instance.syncShareEverything) ? unlockedEmotes : new List<UnlockableEmote>());
             }
             UnlockEmotesLocal(ConfigSync.instance.syncUnlockEverything ? EmotesManager.allUnlockableEmotes : EmotesManager.complementaryEmotes);
@@ -301,6 +303,12 @@ namespace TooManyEmotes
                         unlockedFavoriteEmotes.Add(emote);
                 }
             }
+        }
+
+
+        internal static void UpdateBlacklistedEmotes()
+        {
+
         }
     }
 }

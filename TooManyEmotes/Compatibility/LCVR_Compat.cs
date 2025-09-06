@@ -1,5 +1,5 @@
 ﻿using HarmonyLib;
-using LCVR.Player;
+using LCVR.Managers;
 
 namespace TooManyEmotes.Compatibility
 {

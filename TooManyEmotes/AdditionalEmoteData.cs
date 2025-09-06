@@ -74,6 +74,7 @@ namespace TooManyEmotes
             SetEmoteDoesNotUseBoombox("paddle_royale");
             SetEmoteDoesNotUseBoombox("wolf_howl");
             SetEmoteDoesNotUseBoombox("jar_of_dirt");
+            SetEmoteDoesNotUseBoombox("squeaky_step");
 
             SetEmoteDoesNotUseBoombox("travelers.banjo");
             SetEmoteDoesNotUseBoombox("travelers.harmonica");

@@ -28,6 +28,8 @@ namespace TooManyEmotes
         public static List<UnlockableEmote> allEmotesTier2;
         public static List<UnlockableEmote> allEmotesTier3;
 
+        public static HashSet<int> blacklistedEmoteIds = new HashSet<int>();
+
         internal static CultureInfo defaultSortCulture = CultureInfo.CreateSpecificCulture("en-US");
 
 
@@ -61,18 +63,6 @@ namespace TooManyEmotes
                     rarity = 0
                 };
 
-                /*emote.rarity =
-                    SyncManager.overrideEmoteNames0.Contains(clip.name.ToLower()) ? 0 :
-                    SyncManager.overrideEmoteNames1.Contains(clip.name.ToLower()) ? 1 :
-                    SyncManager.overrideEmoteNames2.Contains(clip.name.ToLower()) ? 2 :
-                    SyncManager.overrideEmoteNames3.Contains(clip.name.ToLower()) ? 3 : -1;
-                if (SyncManager.overrideEmoteNamesComplementary.Contains(clip.name.ToLower()))
-                {
-                    emote.rarity = 0;
-                    emote.complementary = true;
-                }*/
-
-                
                 emote.rarity = 
                     Plugin.animationClipsTier1.Contains(clip) ? 1 :
                     Plugin.animationClipsTier2.Contains(clip) ? 2 :
@@ -197,6 +187,8 @@ namespace TooManyEmotes
                 {
                     allUnlockableEmotes.Add(emote);
                     allUnlockableEmotesDict.Add(emote.emoteName, emote);
+                    if (ConfigSettings.blacklistedEmoteNames.Contains(emote.displayName))
+                        blacklistedEmoteIds.Add(emote.emoteId);
                 }
 
                 if (Plugin.complementaryAnimationClips.Contains(clip) && emote.purchasable)
@@ -233,6 +225,8 @@ namespace TooManyEmotes
                     allEmotesTier2.Add(emote);
                 else if (emote.rarity == 3)
                     allEmotesTier3.Add(emote);
+
+
             }
 
             complementaryEmotes = new List<UnlockableEmote>(complementaryEmotesDefault);

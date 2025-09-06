@@ -20,7 +20,7 @@ namespace TooManyEmotes
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPrefix]
-        private static void CheckIfShouldResetLocalSettings()
+        public static void CheckIfShouldResetLocalSettings()
         {
             if (ConfigSettings.resetGloballyUnlockedEmotes)
                 ResetGloballyUnlockedEmotes();
@@ -37,7 +37,7 @@ namespace TooManyEmotes
 
         [HarmonyPatch(typeof(GameNetworkManager), "SaveGameValues")]
         [HarmonyPostfix]
-        private static void SaveUnlockedEmotes(GameNetworkManager __instance)
+        public static void SaveUnlockedEmotes(GameNetworkManager __instance)
         {
             if (!__instance.isHostingGame || !StartOfRound.Instance.inShipPhase)
                 return;
@@ -114,7 +114,7 @@ namespace TooManyEmotes
 
         [HarmonyPatch(typeof(StartOfRound), "LoadUnlockables")]
         [HarmonyPostfix]
-        private static void LoadUnlockedEmotes(StartOfRound __instance)
+        public static void LoadUnlockedEmotes(StartOfRound __instance)
         {
             if (!GameNetworkManager.Instance.isHostingGame)
                 return;
@@ -184,7 +184,7 @@ namespace TooManyEmotes
 
         [HarmonyPatch(typeof(GameNetworkManager), "ResetSavedGameValues")]
         [HarmonyPrefix]
-        private static void ResetUnlockedEmotesList(GameNetworkManager __instance)
+        public static void ResetUnlockedEmotesList(GameNetworkManager __instance)
         {
             if (!__instance.isHostingGame || StartOfRound.Instance == null || SessionManager.unlockedEmotes == null)
                 return;
@@ -221,7 +221,7 @@ namespace TooManyEmotes
 
         [HarmonyPatch(typeof(GameNetworkManager), "SaveLocalPlayerValues")]
         [HarmonyPrefix]
-        private static void SaveLocalPlayerValues()
+        public static void SaveLocalPlayerValues()
         {
             if (!isClient || !SyncManager.isSynced || ConfigSync.instance == null || !ConfigSync.instance.syncPersistentUnlocksGlobal || globallyUnlockedEmoteNames == null || SessionManager.emotesUnlockedThisSession == null)
                 return;

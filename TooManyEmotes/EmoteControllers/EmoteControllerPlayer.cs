@@ -56,6 +56,8 @@ namespace TooManyEmotes
 
         public GrabbablePropObject sourceGrabbableEmoteProp;
 
+        internal static float timeLastPeformedEmoteLocalPlayer = 0;
+
 
         public override void Initialize(string sourceRootBoneName = "metarig")
         {
@@ -227,6 +229,10 @@ namespace TooManyEmotes
                 return false;
             }
 
+            // Prevent emote spamming
+            if (Time.time - timeLastPeformedEmoteLocalPlayer < 0.25f)
+                return false;
+
             Log("Attempting to perform emote on local player.");
 
             if (!CanPerformEmote())
@@ -268,7 +274,10 @@ namespace TooManyEmotes
                 {
                     // Performing emote with others in the sync group, but emote only has 1 emote in the emote group.
                     if (emoteSyncGroup.syncGroup.Count > 1 && (performingEmote?.emoteSyncGroup == null || performingEmote.emoteSyncGroup.Count <= 1))
+                    {
+                        timeLastPeformedEmoteLocalPlayer = Time.time;
                         return true;
+                    }
 
                     foreach (var emoteController in emoteSyncGroup.syncGroup)
                     {
@@ -287,7 +296,7 @@ namespace TooManyEmotes
             }
 
 
-            LogWarningVerbose("[DEBUG] Trying to perform emote on local player. Emote: " + emote.emoteName + " | Emote id: " + emote.emoteId);
+            LogWarningVerbose("Trying to perform emote on local player. Emote: " + emote.emoteName + " | Emote id: " + emote.emoteId);
 
             bool success;
             if (sourcePropObject != null && sourcePropObject == localPlayerController.ItemSlots[localPlayerController.currentItemSlot])
@@ -316,6 +325,10 @@ namespace TooManyEmotes
                 return false;
             }
 
+            // Prevent emote spamming
+            if (Time.time - timeLastPeformedEmoteLocalPlayer < 0.25f)
+                return false;
+
             Log("Attempting to sync emote for player: " + playerController.name + " with emote controller with id: " + emoteController.emoteControllerId);
 
             if (!CanPerformEmote() || !emoteController.IsPerformingCustomEmote())
@@ -335,6 +348,7 @@ namespace TooManyEmotes
                 timeSinceStartingEmote = 0;
                 playerController.performingEmote = true;
                 //originalAnimator.SetInteger("emoteNumber", 1);
+                timeLastPeformedEmoteLocalPlayer = Time.time;
                 return true;
             }
             return false;

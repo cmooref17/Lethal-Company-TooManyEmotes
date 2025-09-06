@@ -49,8 +49,9 @@
     <Reference Include="BepInEx">
       <HintPath>..\..\..\..\..\AppData\Roaming\r2modmanPlus-local\LethalCompany\profiles\Flip\BepInEx\core\BepInEx.dll</HintPath>
     </Reference>
-    <Reference Include="LCVR">
-      <HintPath>..\..\..\..\..\Downloads\DaXcess-LethalCompanyVR-1.2.0\BepInEx\plugins\LCVR\LCVR.dll</HintPath>
+    <Reference Include="LCVR, Version=1.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Downloads\LCVR\LCVR.dll</HintPath>
     </Reference>
     <Reference Include="LethalCompanyInputUtils">
       <HintPath>..\..\..\..\..\Downloads\Rune580-LethalCompany_InputUtils-0.4.4\LethalCompanyInputUtils\LethalCompanyInputUtils.dll</HintPath>

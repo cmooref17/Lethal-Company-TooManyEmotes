@@ -169,7 +169,9 @@ namespace TooManyEmotes.UI
                 if (AdvancedCompany_Compat.Enabled)
                 { }
                 else if (MoreCompany_Compat.Enabled)
+                {
                     MoreCompany_Compat.ShowLocalCosmetics(metarigGameObject.transform);
+                }
 
                 SetObjectLayerRecursive(previewPlayerObject, renderLayer);
             }

@@ -16,6 +16,7 @@ using TooManyEmotes.Props;
 using static TooManyEmotes.CustomLogging;
 using static TooManyEmotes.HelperTools;
 using TooManyEmotes.UI;
+using System.Globalization;
 
 namespace TooManyEmotes.Networking
 {
@@ -143,11 +144,14 @@ namespace TooManyEmotes.Networking
             try
             {
                 string[] values = str.Split(',');
-                if (float.TryParse(values[0].Trim(' '), out float x) && float.TryParse(values[1].Trim(' '), out float y))
+                if (float.TryParse(values[0].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float x) &&
+                    float.TryParse(values[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float y))
+                {
                     vector = new Vector2(Mathf.Min(Mathf.Abs(x), Mathf.Abs(y)), Mathf.Max(Mathf.Abs(x), Mathf.Abs(y)));
-                return vector;
-            } catch { }
-            return Vector2.zero;
+                }
+            }
+            catch { }
+            return vector;
         }
 
 

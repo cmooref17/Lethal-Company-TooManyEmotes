@@ -24,22 +24,10 @@ namespace TooManyEmotes.Networking
         public static bool isSynced = false;
         public static HashSet<ulong> syncedClients = new HashSet<ulong>();
 
-        /*public static HashSet<int> overrideEmotesComplementary = new HashSet<int>();
-        public static HashSet<int> overrideEmotesTier0 = new HashSet<int>();
-        public static HashSet<int> overrideEmotesTier1 = new HashSet<int>();
-        public static HashSet<int> overrideEmotesTier2 = new HashSet<int>();
-        public static HashSet<int> overrideEmotesTier3 = new HashSet<int>();
-
-        public static HashSet<string> overrideEmoteNamesComplementary = new HashSet<string>();
-        public static HashSet<string> overrideEmoteNames0 = new HashSet<string>();
-        public static HashSet<string> overrideEmoteNames1 = new HashSet<string>();
-        public static HashSet<string> overrideEmoteNames2 = new HashSet<string>();
-        public static HashSet<string> overrideEmoteNames3 = new HashSet<string>();*/
-
 
         [HarmonyPatch(typeof(StartOfRound), "Awake")]
         [HarmonyPostfix]
-        private static void ResetValues()
+        public static void ResetValues()
         {
             isSynced = false;
             requestedSync = false;
@@ -48,81 +36,13 @@ namespace TooManyEmotes.Networking
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
-        private static void Init()
+        public static void Init()
         {
             isSynced = false;
             requestedSync = false;
             if (isServer)
             {
                 syncedClients?.Clear();
-
-                /*if (!string.IsNullOrEmpty(ConfigSettings.forceEmotesIntoComplementary.Value) && ConfigSettings.forceEmotesIntoComplementary.Value.Contains(","))
-                {
-                    string str = ConfigSettings.forceEmotesIntoComplementary.Value.ToLower();
-                    while (str.Contains("  "))
-                        str = str.Replace("  ", " ");
-                    str = str.Replace(", ", ",");
-                    var emoteNames = str.Split(',');
-                    foreach (var e in emoteNames)
-                        overrideEmoteNamesComplementary.Add(e);
-                }
-                if (!string.IsNullOrEmpty(ConfigSettings.forceEmotesTier0.Value) && ConfigSettings.forceEmotesTier0.Value.Contains(","))
-                {
-                    string str = ConfigSettings.forceEmotesTier0.Value.ToLower();
-                    while (str.Contains("  "))
-                        str = str.Replace("  ", " ");
-                    str = str.Replace(", ", ",");
-                    var emoteNames = str.Split(',');
-                    foreach (var e in emoteNames)
-                        overrideEmoteNames0.Add(e);
-                }
-                if (!string.IsNullOrEmpty(ConfigSettings.forceEmotesTier1.Value) && ConfigSettings.forceEmotesTier1.Value.Contains(","))
-                {
-                    string str = ConfigSettings.forceEmotesTier1.Value.ToLower();
-                    while (str.Contains("  "))
-                        str = str.Replace("  ", " ");
-                    str = str.Replace(", ", ",");
-                    var emoteNames = str.Split(',');
-                    foreach (var e in emoteNames)
-                        overrideEmoteNames1.Add(e);
-                }
-                if (!string.IsNullOrEmpty(ConfigSettings.forceEmotesTier2.Value) && ConfigSettings.forceEmotesTier2.Value.Contains(","))
-                {
-                    string str = ConfigSettings.forceEmotesTier2.Value.ToLower();
-                    while (str.Contains("  "))
-                        str = str.Replace("  ", " ");
-                    str = str.Replace(", ", ",");
-                    var emoteNames = str.Split(',');
-                    foreach (var e in emoteNames)
-                        overrideEmoteNames2.Add(e);
-                }
-                if (!string.IsNullOrEmpty(ConfigSettings.forceEmotesTier3.Value) && ConfigSettings.forceEmotesTier3.Value.Contains(","))
-                {
-                    string str = ConfigSettings.forceEmotesTier3.Value.ToLower();
-                    while (str.Contains("  "))
-                        str = str.Replace("  ", " ");
-                    str = str.Replace(", ", ",");
-                    var emoteNames = str.Split(',');
-                    foreach (var e in emoteNames)
-                        overrideEmoteNames3.Add(e);
-                }
-
-                for (int i = 0; i < Plugin.customAnimationClips.Count; i++)
-                {
-                    var animationClip = Plugin.customAnimationClips[i];
-                    string name = animationClip.name.ToLower();
-                    if (overrideEmoteNamesComplementary.Contains(name))
-                        overrideEmotesComplementary.Add(i);
-                    else if (overrideEmoteNames0.Contains(name))
-                        overrideEmotesTier0.Add(i);
-                    else if (overrideEmoteNames1.Contains(name))
-                        overrideEmotesTier1.Add(i);
-                    else if (overrideEmoteNames2.Contains(name))
-                        overrideEmotesTier2.Add(i);
-                    else if (overrideEmoteNames3.Contains(name))
-                        overrideEmotesTier3.Add(i);
-                }*/
-
                 OnSynced();
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.OnRequestSyncServerRpc", OnRequestSyncServerRpc);
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler("TooManyEmotes.OnUnlockEmoteServerRpc", OnUnlockEmoteServerRpc);
@@ -138,7 +58,7 @@ namespace TooManyEmotes.Networking
 
         [HarmonyPatch(typeof(PlayerControllerB), "Update")]
         [HarmonyPostfix]
-        private static void RequestSyncAfterConfigUpdate(PlayerControllerB __instance)
+        public static void RequestSyncAfterConfigUpdate(PlayerControllerB __instance)
         {
             if (!isClient || isServer)
                 return;
@@ -214,37 +134,22 @@ namespace TooManyEmotes.Networking
             }
 
             int numEmotes = ConfigSync.instance.syncPersistentUnlocksGlobal ? 0 : unlockedEmotes.Count;
-            //int numEmotes = unlockedEmotes.Count;
             int bufferSize = sizeof(int) + sizeof(short) * 2 + sizeof(short) * numEmotes;
 
-            // override emotes tier
-            //bufferSize += sizeof(short) * 5 + sizeof(short) * overrideEmotesComplementary.Count + sizeof(short) * overrideEmotesTier0.Count + sizeof(short) * overrideEmotesTier1.Count + sizeof(short) * overrideEmotesTier2.Count + sizeof(short) * overrideEmotesTier3.Count;
+            int numBlacklistedEmotes = EmotesManager.blacklistedEmoteIds.Count;
+            bufferSize += sizeof(short) + sizeof(short) * numBlacklistedEmotes;
 
             var writer = new FastBufferWriter(bufferSize, Allocator.Temp);
 
             writer.WriteValue(TerminalPatcher.emoteStoreSeed);
             writer.WriteValue((short)Mathf.Min(emoteCredits, 32767));
             writer.WriteValue((short)numEmotes);
-            /*writer.WriteValue((short)overrideEmotesComplementary.Count);
-            writer.WriteValue((short)overrideEmotesTier0.Count);
-            writer.WriteValue((short)overrideEmotesTier1.Count);
-            writer.WriteValue((short)overrideEmotesTier2.Count);
-            writer.WriteValue((short)overrideEmotesTier3.Count);*/
-
-            /*
-            foreach (var emoteIndex in overrideEmotesComplementary)
-                writer.WriteValue((short)emoteIndex);
-            foreach (var emoteIndex in overrideEmotesTier0)
-                writer.WriteValue((short)emoteIndex);
-            foreach (var emoteIndex in overrideEmotesTier1)
-                writer.WriteValue((short)emoteIndex);
-            foreach (var emoteIndex in overrideEmotesTier2)
-                writer.WriteValue((short)emoteIndex);
-            foreach (var emoteIndex in overrideEmotesTier3)
-                writer.WriteValue((short)emoteIndex);*/
-
             for (int i = 0; i < numEmotes; i++)
                 writer.WriteValue((short)unlockedEmotes[i].emoteId);
+
+            writer.WriteValue((short)numBlacklistedEmotes);
+            foreach (int emoteId in EmotesManager.blacklistedEmoteIds)
+                writer.WriteValue((short)emoteId);
 
             syncedClients.Add(clientId);
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes.OnRequestSyncClientRpc", clientId, writer);
@@ -261,60 +166,8 @@ namespace TooManyEmotes.Networking
             reader.ReadValue(out TerminalPatcher.emoteStoreSeed);
             reader.ReadValue(out short currentEmoteCredits);
             reader.ReadValue(out short numEmotes);
-            /*reader.ReadValue(out short numOverrideEmotesComplementary);
-            reader.ReadValue(out short numOverrideEmotes0);
-            reader.ReadValue(out short numOverrideEmotes1);
-            reader.ReadValue(out short numOverrideEmotes2);
-            reader.ReadValue(out short numOverrideEmotes3);*/
 
             TerminalPatcher.currentEmoteCredits = currentEmoteCredits;
-
-            /*overrideEmoteNamesComplementary?.Clear();
-            overrideEmoteNames0?.Clear();
-            overrideEmoteNames1?.Clear();
-            overrideEmoteNames2?.Clear();
-            overrideEmoteNames3?.Clear();*/
-            
-            /*for (int i = 0; i < numOverrideEmotesComplementary; i++)
-            {
-                if (i >= 0 && i < Plugin.customAnimationClips.Count)
-                {
-                    string name = Plugin.customAnimationClips[i].name.ToLower();
-                    overrideEmoteNamesComplementary.Add(name);
-                }
-            }
-            for (int i = 0; i < numOverrideEmotes0; i++)
-            {
-                if (i >= 0 && i < Plugin.customAnimationClips.Count)
-                {
-                    string name = Plugin.customAnimationClips[i].name.ToLower();
-                    overrideEmoteNames0.Add(name);
-                }
-            }
-            for (int i = 0; i < numOverrideEmotes1; i++)
-            {
-                if (i >= 0 && i < Plugin.customAnimationClips.Count)
-                {
-                    string name = Plugin.customAnimationClips[i].name.ToLower();
-                    overrideEmoteNames1.Add(name);
-                }
-            }
-            for (int i = 0; i < numOverrideEmotes2; i++)
-            {
-                if (i >= 0 && i < Plugin.customAnimationClips.Count)
-                {
-                    string name = Plugin.customAnimationClips[i].name.ToLower();
-                    overrideEmoteNames2.Add(name);
-                }
-            }
-            for (int i = 0; i < numOverrideEmotes3; i++)
-            {
-                if (i >= 0 && i < Plugin.customAnimationClips.Count)
-                {
-                    string name = Plugin.customAnimationClips[i].name.ToLower();
-                    overrideEmoteNames3.Add(name);
-                }
-            }*/
 
             if (numEmotes <= 0)
             {
@@ -338,6 +191,18 @@ namespace TooManyEmotes.Networking
                     return;
                 }
             }
+
+            EmotesManager.blacklistedEmoteIds = new HashSet<int>();
+            reader.ReadValue(out short numBlacklistedEmotes);
+            if (numBlacklistedEmotes > 0 && reader.TryBeginRead(sizeof(short) * numBlacklistedEmotes))
+            {
+                for (int i = 0; i < numBlacklistedEmotes; i++)
+                {
+                    reader.ReadValue(out short emoteId);
+                    EmotesManager.blacklistedEmoteIds.Add(emoteId);
+                }
+            }
+            
             Log("Received sync from server. CurrentEmoteCredits: " + TerminalPatcher.currentEmoteCredits + " EmoteStoreSeed: " + TerminalPatcher.emoteStoreSeed + " NumEmotes: " + numEmotes);
             OnSynced();
         }

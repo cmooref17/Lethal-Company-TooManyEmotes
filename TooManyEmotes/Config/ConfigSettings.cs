@@ -5,6 +5,7 @@ using System.IO;
 using static TooManyEmotes.CustomLogging;
 using TooManyEmotes.Patches;
 using System;
+using System.Linq;
 
 namespace TooManyEmotes.Config
 {
@@ -29,6 +30,8 @@ namespace TooManyEmotes.Config
         public static ConfigEntry<bool> disableEmotesForSelf;
         public static ConfigEntry<bool> disableChatLogRandomEmote;
         public static ConfigEntry<bool> toggleRotateCharacterInEmote;
+        
+        public static ConfigEntry<string> blacklistEmotes;
 
         public static ConfigEntry<bool> removeGrabbableEmotesPartyPooperMode;
 
@@ -82,7 +85,7 @@ namespace TooManyEmotes.Config
 
         public static ConfigEntry<bool> verboseLogs;
         //public static ConfigEntry<bool> enableGirlPatch;
-        public static ConfigEntry<bool> resetFavoriteOnNextStart;
+        public static ConfigEntry<bool> resetFavoritesOnNextStart;
         public static ConfigEntry<bool> resetGlobalUnlocksOnNextStart;
 
         public static Dictionary<string, ConfigEntryBase> currentConfigEntries = new Dictionary<string, ConfigEntryBase>();
@@ -90,6 +93,8 @@ namespace TooManyEmotes.Config
 
         internal static bool resetFavoriteEmotes = false;
         internal static bool resetGloballyUnlockedEmotes = false;
+
+        public static List<string> blacklistedEmoteNames = new List<string>();
 
         public static void BindConfigSettings()
         {
@@ -114,6 +119,8 @@ namespace TooManyEmotes.Config
             disableEmotesForSelf = AddConfigEntry("Emote Settings", "DisableEmotingForSelf", false, "Disabling this will not convert your player's animator controller to an AnimatorOverrideController, and you will not be able to perform custom emotes. Disable this in case of specific mod conflicts. You will still be able to see other players emoting.");
             disableChatLogRandomEmote = AddConfigEntry("Emote Settings", "DisableChatLogRandomEmote", false, "If true, chat will no longer display what emote you are performing when performing a random emote. This could save memory if using mods that cache all chat messages.");
             toggleRotateCharacterInEmote = AddConfigEntry("Emote Settings", "ToggleRotateCharacterInEmote", false, "If true, rotating character while emoting will be toggled, instead of rotating while holding the hotkey.");
+
+            blacklistEmotes = AddConfigEntry("Emote Settings", "Blacklist Emotes", "", "[Host only] Enter emote names, separated by a comma. Case-insensitive.\nBlacklisted emotes will not appear in game for any players.");
 
             disableRaritySystem = AddConfigEntry("Emote Store", "DisableRaritySystem", false, "[Host only] If true, every emote will have the same likelyhood of appearing in the emote store.");
             basePriceEmoteRaritySystemDisabled = AddConfigEntry("Emote Store", "BasePriceEmote - Rarity System Disabled", 100, "[Host only] Base price of emotes if the rarity system is disabled.");
@@ -164,13 +171,13 @@ namespace TooManyEmotes.Config
 
             verboseLogs = AddConfigEntry("Other", "VerboseLogs", false, "Set to true if you want to receive ALL logs. Most of the time, you will want to keep this disabled unless troubleshooting a specific issue.");
             //enableGirlPatch = AddConfigEntry("Other", "EnableGirlPatch", true, "If true, this mod will disable the girl's mesh while she's un the \"unrendered\" layer to prevent the third-person emote camera from seeing her when not supposed do. Disable this if this causes conflicts with another mod.");
-            resetFavoriteOnNextStart = AddConfigEntry("Other", "ResetFavoritedEmotesOnNextStart", false, "Set this to true to force remove all emotes from your favorites when the game starts up next.\nThis may resolve any issues that might be related to having favorited emotes that don't exist.\nThis setting will reset back to false once reset.");
+            resetFavoritesOnNextStart = AddConfigEntry("Other", "ResetFavoritedEmotesOnNextStart", false, "Set this to true to force remove all emotes from your favorites when the game starts up next.\nThis may resolve any issues that might be related to having favorited emotes that don't exist.\nThis setting will reset back to false once reset.");
             resetGlobalUnlocksOnNextStart = AddConfigEntry("Other", "ResetGlobalUnlocksOnNextStart", false, "Set this to true to force reset all globally unlocked emotes for your local player. These emotes are only usable when the host has PersistentUnlocksGlobal enabled in the config.\nThis setting will reset back to false once reset.");
 
             bool saveConfig = false;
-            if (resetFavoriteOnNextStart.Value)
+            if (resetFavoritesOnNextStart.Value)
             {
-                resetFavoriteOnNextStart.Value = false;
+                resetFavoritesOnNextStart.Value = false;
                 resetFavoriteEmotes = true;
                 saveConfig = true;
             }
@@ -201,6 +208,25 @@ namespace TooManyEmotes.Config
                 config.Save();
 
             TryRemoveOldConfigSettings();
+
+            // parse blacklisted emotes
+            try
+            {
+                if (blacklistEmotes.Value.Length > 0)
+                {
+                    string emoteNames = blacklistEmotes.Value.Replace("\n", " ").Replace("\t", " ").Trim();
+                    while (emoteNames.Contains(", "))
+                        emoteNames = emoteNames.Replace(", ", ",");
+                    blacklistedEmoteNames = blacklistEmotes.Value.Split(',').ToList();
+                    for (int i = 0; i < blacklistedEmoteNames.Count; i++)
+                        blacklistedEmoteNames[i] = char.ToUpper(blacklistedEmoteNames[i][0]) + blacklistedEmoteNames[i].Substring(1).ToLower();
+                    Log("Added " + blacklistedEmoteNames.Count + " emotes to the blacklist.");
+                }
+            }
+            catch (Exception e)
+            {
+                LogError("Error parsing emote blacklist. If you are the host, the blacklist will not be used.\n" + e);
+            }
         }
 
 

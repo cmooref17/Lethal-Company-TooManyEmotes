@@ -123,9 +123,9 @@ namespace TooManyEmotes.Networking
 
             bool sendTriggerAudioUpdate = doNotTriggerAudioDict[emoteController] != doNotTriggerAudio;
 
-            int bufferSize = sizeof(ushort) + sizeof(short) + (sendTriggerAudioUpdate ? sizeof(bool) : 0);
+            int bufferSize = sizeof(uint) + sizeof(short) + (sendTriggerAudioUpdate ? sizeof(bool) : 0);
             var writer = new FastBufferWriter(bufferSize, Allocator.Temp);
-            writer.WriteValue((ushort)emoteController.emoteControllerId);
+            writer.WriteValue((uint)emoteController.emoteControllerId);
             writer.WriteValue((short)emote.emoteId);
 
             if (sendTriggerAudioUpdate)
@@ -143,7 +143,7 @@ namespace TooManyEmotes.Networking
             if (!isClient || isServer)
                 return;
 
-            reader.ReadValue(out ushort emoteControllerId);
+            reader.ReadValue(out uint emoteControllerId);
 
             // Do not update player's local emote controller
             if (emoteControllerLocal != null && emoteControllerId == emoteControllerLocal.emoteControllerId)
@@ -200,8 +200,8 @@ namespace TooManyEmotes.Networking
             }
 
             Log("Sending sync emote update to server. Sync with emote controller id: " + emoteController);
-            var writer = new FastBufferWriter(sizeof(ushort) + sizeof(short), Allocator.Temp);
-            writer.WriteValue((ushort)emoteController.emoteControllerId);
+            var writer = new FastBufferWriter(sizeof(uint) + sizeof(short), Allocator.Temp);
+            writer.WriteValue((uint)emoteController.emoteControllerId);
             writer.WriteValue((short)overrideEmoteId);
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage("TooManyEmotes.SyncEmoteServerRpc", NetworkManager.ServerClientId, writer);
         }
@@ -219,7 +219,7 @@ namespace TooManyEmotes.Networking
                 return;
             }
 
-            reader.ReadValue(out ushort emoteControllerId);
+            reader.ReadValue(out uint emoteControllerId);
             reader.ReadValue(out short overrideEmoteId);
 
             var syncWithEmoteController = GetEmoteControllerById(emoteControllerId);
@@ -254,9 +254,9 @@ namespace TooManyEmotes.Networking
             if (emoteController == null || syncWithEmoteController == null)
                 return;
 
-            var writer = new FastBufferWriter(sizeof(ushort) * 2 + sizeof(short), Allocator.Temp);
-            writer.WriteValue((ushort)emoteController.emoteControllerId);
-            writer.WriteValue((ushort)syncWithEmoteController.emoteControllerId);
+            var writer = new FastBufferWriter(sizeof(uint) * 2 + sizeof(short), Allocator.Temp);
+            writer.WriteValue((uint)emoteController.emoteControllerId);
+            writer.WriteValue((uint)syncWithEmoteController.emoteControllerId);
             writer.WriteValue((short)overrideEmoteId);
             NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll("TooManyEmotes.SyncEmoteClientRpc", writer);
         }
@@ -268,7 +268,7 @@ namespace TooManyEmotes.Networking
             if (!isClient || isServer)
                 return;
 
-            reader.ReadValue(out ushort emoteControllerId);
+            reader.ReadValue(out uint emoteControllerId);
 
             // Do not update player's local emote controller
             if (emoteControllerLocal != null && emoteControllerId == emoteControllerLocal.emoteControllerId)
@@ -281,7 +281,7 @@ namespace TooManyEmotes.Networking
                 return;
             }
 
-            reader.ReadValue(out ushort syncWithEmoteControllerId);
+            reader.ReadValue(out uint syncWithEmoteControllerId);
             reader.ReadValue(out short overrideEmoteId);
 
             var syncWithEmoteController = GetEmoteControllerById(syncWithEmoteControllerId);

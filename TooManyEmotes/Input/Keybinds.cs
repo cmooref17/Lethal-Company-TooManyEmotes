@@ -124,7 +124,7 @@ namespace TooManyEmotes.Input
                 PerformNextInstrumentAction = ActionMap.AddAction("TooManyEmotes.PlayNextInstrument", binding: "<Keyboard>/n", interactions: "Press");
                 PerformNextInstrumentAction.AddBinding("<Gamepad>/dpad/right");
 
-                PerformRandomEmoteAction = ActionMap.AddAction("TooManyEmotes.PerformRandomEmote", binding: "<Keyboard>/m", interactions: "Press");
+                 
                 PerformRandomEmoteAction.AddBinding("<Gamepad>/ ");
 
                 PerformSelectedEmoteAction = new InputAction("TooManyEmotes.PerformSelectedEmote", binding: "<Mouse>/leftButton", interactions: "Press");
@@ -204,7 +204,6 @@ namespace TooManyEmotes.Input
             // For now
             if (InputUtils_Compat.Enabled)
             {
-
                 QuickEmote1Action.performed -= OnQuickEmote1;
                 QuickEmote2Action.performed -= OnQuickEmote2;
                 QuickEmote3Action.performed -= OnQuickEmote3;
@@ -213,7 +212,6 @@ namespace TooManyEmotes.Input
                 QuickEmote6Action.performed -= OnQuickEmote6;
                 QuickEmote7Action.performed -= OnQuickEmote7;
                 QuickEmote8Action.performed -= OnQuickEmote8;
-
             }
 
             PerformSelectedEmoteAction.Disable();
@@ -413,6 +411,9 @@ namespace TooManyEmotes.Input
                             LogWarningVerbose("Could not perform quick emote " + (quickEmoteIndex + 1) + ". Emote is not unlocked: " + emoteName);
                         else
                         {
+                            // Prevent emote spamming
+                            if (Time.time - EmoteControllerPlayer.timeLastPeformedEmoteLocalPlayer < 0.25f)
+                                return;
                             LogVerbose("Attempting to perform quick emote " + (quickEmoteIndex + 1) + ". Emote: " + emote);
                             emoteControllerLocal.TryPerformingEmoteLocal(emote);
                         }
@@ -477,7 +478,7 @@ namespace TooManyEmotes.Input
             if (success && !ConfigSettings.disableChatLogRandomEmote.Value)
             {
                 MethodInfo method = HUDManager.Instance.GetType().GetMethod("AddChatMessage", BindingFlags.NonPublic | BindingFlags.Instance);
-                method.Invoke(HUDManager.Instance, new object[] { string.Format("<size=80%><align=\"center\">Perform Random Emote\n<line-height=80%>[{0}]</line-height></align><size=100%>", emoteControllerLocal.performingEmote.displayNameColorCoded), "" });
+                method.Invoke(HUDManager.Instance, new object[] { string.Format("<size=80%><align=\"center\">Perform Random Emote\n<line-height=80%>[{0}]</line-height></align><size=100%>", emoteControllerLocal.performingEmote.displayNameColorCoded), "", -1, false });
             }
         }
 

@@ -1,5 +1,4 @@
 ﻿using HarmonyLib;
-using LCVR.Player;
 using System.Diagnostics.Eventing.Reader;
 using TooManyEmotes.Patches;
 using TooManyEmotes.UI;
