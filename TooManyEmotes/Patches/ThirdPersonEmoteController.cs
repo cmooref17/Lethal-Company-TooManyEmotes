@@ -545,7 +545,7 @@ namespace TooManyEmotes.Patches
 
         public static void UpdateControlTip(int appendToIndex = 0)
         {
-            if (!emoteControllerLocal.IsPerformingCustomEmote() || customControlTipLines == null)
+            if (!(emoteControllerLocal.IsPerformingCustomEmote() is true) || controlTipLines == null || customControlTipLines == null || customControlTipLines.Length < 4)
                 return;
 
             if (appendToIndex < 0 || appendToIndex >= controlTipLines.Length - 1)

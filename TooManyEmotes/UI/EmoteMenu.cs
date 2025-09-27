@@ -382,6 +382,9 @@ namespace TooManyEmotes.UI
 
         public static void UpdateControlTipLines()
         {
+            if (customControlTipLines == null)
+                return;
+
             string prevPageKeybind = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.PrevEmotePageAction);
             string nextPageKeybind = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.NextEmotePageAction);
             string nextEmoteLoadoutUpKeybind = KeybindDisplayNames.GetKeybindDisplayName(Keybinds.NextEmoteLoadoutUpAction);

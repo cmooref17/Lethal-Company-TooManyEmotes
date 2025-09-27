@@ -47,20 +47,23 @@ namespace TooManyEmotes.Input
             if (EmoteMenu.isMenuOpen)
                 EmoteMenu.UpdateControlTipLines();
 
-            for (int i = 0; i < HUDManager.Instance.controlTipLines.Length; i++)
+            if (HUDManager.Instance?.controlTipLines != null)
             {
-                var line = HUDManager.Instance.controlTipLines[i];
-                if (line != null && line.gameObject.activeSelf && line.enabled && line.text.Contains("Emote Radial Menu"))
+                for (int i = 0; i < HUDManager.Instance.controlTipLines.Length; i++)
                 {
-                    string emoteMenuDisplayName = GetKeybindDisplayName(Keybinds.OpenEmoteMenuAction);
-                    string randomEmoteDisplayName = GetKeybindDisplayName(Keybinds.PerformRandomEmoteAction);
-                    if (emoteMenuDisplayName != "")
+                    var line = HUDManager.Instance.controlTipLines[i];
+                    if (line != null && line.gameObject.activeSelf && line.enabled && line.text.Contains("Emote Radial Menu"))
                     {
-                        HUDManager.Instance.controlTipLines[i].text = string.Format("Emote Menu : [{0}]", emoteMenuDisplayName);
-                        if (i == HUDManager.Instance.controlTipLines.Length - 1 && randomEmoteDisplayName != "")
-                            HUDManager.Instance.controlTipLines[i].text += string.Format("\nRandom Emote : [{0}]", randomEmoteDisplayName);
+                        string emoteMenuDisplayName = GetKeybindDisplayName(Keybinds.OpenEmoteMenuAction);
+                        string randomEmoteDisplayName = GetKeybindDisplayName(Keybinds.PerformRandomEmoteAction);
+                        if (emoteMenuDisplayName != "")
+                        {
+                            HUDManager.Instance.controlTipLines[i].text = string.Format("Emote Menu : [{0}]", emoteMenuDisplayName);
+                            if (i == HUDManager.Instance.controlTipLines.Length - 1 && randomEmoteDisplayName != "")
+                                HUDManager.Instance.controlTipLines[i].text += string.Format("\nRandom Emote : [{0}]", randomEmoteDisplayName);
+                        }
+                        break;
                     }
-                    break;
                 }
             }
 

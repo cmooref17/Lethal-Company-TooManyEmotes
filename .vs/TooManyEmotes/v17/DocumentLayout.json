@@ -1,0 +1,385 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\plugininfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\plugininfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\patches\\thirdpersonemotecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\patches\\thirdpersonemotecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|c:\\users\\cmoor\\source\\repos\\toomanyemotes\\toomanyemotes\\input\\keybinddisplaynames.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\input\\keybinddisplaynames.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|c:\\users\\cmoor\\source\\repos\\toomanyemotes\\toomanyemotes\\ui\\emotemenu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\ui\\emotemenu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\input\\keybinds.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\input\\keybinds.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|c:\\users\\cmoor\\source\\repos\\toomanyemotes\\toomanyemotes\\compatibility\\advancedcompany_compat.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\compatibility\\advancedcompany_compat.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|c:\\users\\cmoor\\source\\repos\\toomanyemotes\\toomanyemotes\\compatibility\\morecompany_compat.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\compatibility\\morecompany_compat.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\patches\\playerpatcher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\patches\\playerpatcher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|c:\\users\\cmoor\\source\\repos\\toomanyemotes\\toomanyemotes\\compatibility\\lcvr_compat.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\compatibility\\lcvr_compat.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\compatibility\\lethalvrm_compat.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\compatibility\\lethalvrm_compat.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\ui\\animationpreviewer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\ui\\animationpreviewer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\emotegifts.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\emotegifts.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\savemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\savemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\sessionmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\sessionmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\patches\\maskedenemypatcher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\patches\\maskedenemypatcher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\networking\\configsync.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\networking\\configsync.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\emotecontrollers\\emotecontrollerplayer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\emotecontrollers\\emotecontrollerplayer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\plugin.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\plugin.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\config\\configsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\config\\configsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\emotecontrollers\\emotecontrollermaskedenemy.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\emotecontrollers\\emotecontrollermaskedenemy.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\audio\\audiomanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\audio\\audiomanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\toomanyemotes\\additionalemotedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEADA14F-0F02-4CF6-AD29-9C986DC23B6D}|TooManyEmotes\\TooManyEmotes.csproj|solutionrelative:toomanyemotes\\additionalemotedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 13,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "MoreCompany_Compat.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Compatibility\\MoreCompany_Compat.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\Compatibility\\MoreCompany_Compat.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Compatibility\\MoreCompany_Compat.cs",
+              "RelativeToolTip": "TooManyEmotes\\Compatibility\\MoreCompany_Compat.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAQwDoAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-27T17:38:22.528Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "AdvancedCompany_Compat.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Compatibility\\AdvancedCompany_Compat.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\Compatibility\\AdvancedCompany_Compat.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Compatibility\\AdvancedCompany_Compat.cs",
+              "RelativeToolTip": "TooManyEmotes\\Compatibility\\AdvancedCompany_Compat.cs",
+              "ViewState": "AgIAABkAAAAAAAAAAAAAADUAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-27T17:38:20.348Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "EmoteMenu.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\UI\\EmoteMenu.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\UI\\EmoteMenu.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\UI\\EmoteMenu.cs",
+              "RelativeToolTip": "TooManyEmotes\\UI\\EmoteMenu.cs",
+              "ViewState": "AgIAAGMBAAAAAAAAAAAiwIEBAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-27T17:35:48.054Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "KeybindDisplayNames.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Input\\KeybindDisplayNames.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\Input\\KeybindDisplayNames.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Input\\KeybindDisplayNames.cs",
+              "RelativeToolTip": "TooManyEmotes\\Input\\KeybindDisplayNames.cs",
+              "ViewState": "AgIAABMAAAAAAAAAAAA1wDUAAABGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-27T17:35:14.558Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "LCVR_Compat.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Compatibility\\LCVR_Compat.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\Compatibility\\LCVR_Compat.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Compatibility\\LCVR_Compat.cs",
+              "RelativeToolTip": "TooManyEmotes\\Compatibility\\LCVR_Compat.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-06T16:00:09.544Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "PlayerPatcher.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Patches\\PlayerPatcher.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\Patches\\PlayerPatcher.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Patches\\PlayerPatcher.cs",
+              "RelativeToolTip": "TooManyEmotes\\Patches\\PlayerPatcher.cs",
+              "ViewState": "AgIAABoAAAAAAAAAAAAAACwAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-02T15:42:05.601Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "ConfigSettings.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Config\\ConfigSettings.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\Config\\ConfigSettings.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Config\\ConfigSettings.cs",
+              "RelativeToolTip": "TooManyEmotes\\Config\\ConfigSettings.cs",
+              "ViewState": "AgIAAHIAAAAAAAAAAAAQwJMAAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-21T17:22:47.544Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "MaskedEnemyPatcher.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Patches\\MaskedEnemyPatcher.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\Patches\\MaskedEnemyPatcher.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Patches\\MaskedEnemyPatcher.cs",
+              "RelativeToolTip": "TooManyEmotes\\Patches\\MaskedEnemyPatcher.cs",
+              "ViewState": "AgIAABkAAAAAAAAAAAAAABkAAABNAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-21T17:20:22.41Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "EmoteControllerMaskedEnemy.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\EmoteControllers\\EmoteControllerMaskedEnemy.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\EmoteControllers\\EmoteControllerMaskedEnemy.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\EmoteControllers\\EmoteControllerMaskedEnemy.cs",
+              "RelativeToolTip": "TooManyEmotes\\EmoteControllers\\EmoteControllerMaskedEnemy.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-21T17:20:10.752Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "AudioManager.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Audio\\AudioManager.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\Audio\\AudioManager.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Audio\\AudioManager.cs",
+              "RelativeToolTip": "TooManyEmotes\\Audio\\AudioManager.cs",
+              "ViewState": "AgIAAB8AAAAAAAAAAAAiwDwAAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-21T00:07:56.138Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Keybinds.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Input\\Keybinds.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\Input\\Keybinds.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Input\\Keybinds.cs",
+              "RelativeToolTip": "TooManyEmotes\\Input\\Keybinds.cs",
+              "ViewState": "AgIAALsBAAAAAAAAAAAiwAoBAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-14T16:56:42.872Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ThirdPersonEmoteController.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Patches\\ThirdPersonEmoteController.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\Patches\\ThirdPersonEmoteController.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Patches\\ThirdPersonEmoteController.cs",
+              "RelativeToolTip": "TooManyEmotes\\Patches\\ThirdPersonEmoteController.cs",
+              "ViewState": "AgIAABECAAAAAAAAAAAqwCMCAABIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-12-23T19:15:42.17Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "PluginInfo.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\PluginInfo.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\PluginInfo.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\PluginInfo.cs",
+              "RelativeToolTip": "TooManyEmotes\\PluginInfo.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-14T17:15:52.821Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "ConfigSync.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Networking\\ConfigSync.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\Networking\\ConfigSync.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Networking\\ConfigSync.cs",
+              "RelativeToolTip": "TooManyEmotes\\Networking\\ConfigSync.cs",
+              "ViewState": "AgIAAJEAAAAAAAAAAAAqwK0AAABNAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-21T19:01:47Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "Plugin.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Plugin.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\Plugin.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Plugin.cs",
+              "RelativeToolTip": "TooManyEmotes\\Plugin.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAABsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-28T00:31:31.072Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "EmoteGifts.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\EmoteGifts.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\EmoteGifts.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\EmoteGifts.cs",
+              "RelativeToolTip": "TooManyEmotes\\EmoteGifts.cs",
+              "ViewState": "AgIAAGoAAAAAAAAAAAAAAGoAAABNAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-28T00:39:10.589Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "AdditionalEmoteData.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\AdditionalEmoteData.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\AdditionalEmoteData.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\AdditionalEmoteData.cs",
+              "RelativeToolTip": "TooManyEmotes\\AdditionalEmoteData.cs",
+              "ViewState": "AgIAAFMAAAAAAAAAAAAwwIAAAACNAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-15T21:55:28.354Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "AnimationPreviewer.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\UI\\AnimationPreviewer.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\UI\\AnimationPreviewer.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\UI\\AnimationPreviewer.cs",
+              "RelativeToolTip": "TooManyEmotes\\UI\\AnimationPreviewer.cs",
+              "ViewState": "AgIAAHYAAAAAAAAAAAAQwLUAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-02T15:39:47.47Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "LethalVRM_Compat.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Compatibility\\LethalVRM_Compat.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\Compatibility\\LethalVRM_Compat.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\Compatibility\\LethalVRM_Compat.cs",
+              "RelativeToolTip": "TooManyEmotes\\Compatibility\\LethalVRM_Compat.cs",
+              "ViewState": "AgIAAAEAAAAAAAAAAAAAAAMAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-06T16:01:04.592Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "SessionManager.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\SessionManager.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\SessionManager.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\SessionManager.cs",
+              "RelativeToolTip": "TooManyEmotes\\SessionManager.cs",
+              "ViewState": "AgIAAC0AAAAAAAAAAAAAAC0AAABNAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-15T04:53:02.115Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "SaveManager.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\SaveManager.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\SaveManager.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\SaveManager.cs",
+              "RelativeToolTip": "TooManyEmotes\\SaveManager.cs",
+              "ViewState": "AgIAABQAAAAAAAAAAAAAABQAAABNAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-11-17T18:33:03.088Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "EmoteControllerPlayer.cs",
+              "DocumentMoniker": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\EmoteControllers\\EmoteControllerPlayer.cs",
+              "RelativeDocumentMoniker": "TooManyEmotes\\EmoteControllers\\EmoteControllerPlayer.cs",
+              "ToolTip": "C:\\Users\\cmoor\\source\\repos\\TooManyEmotes\\TooManyEmotes\\EmoteControllers\\EmoteControllerPlayer.cs",
+              "RelativeToolTip": "TooManyEmotes\\EmoteControllers\\EmoteControllerPlayer.cs",
+              "ViewState": "AgIAAHIBAAAAAAAAAAAAAHIBAACZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-11-02T19:44:40.975Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
