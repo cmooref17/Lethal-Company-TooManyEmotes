@@ -66,5 +66,13 @@ namespace TooManyEmotes
             }
             return null;
         }
+
+        public static GrabbableObject GetHeldGrabbable(this PlayerControllerB playerController)
+        {
+            int slot = playerController.currentItemSlot;
+            return slot is 50
+                ? playerController.ItemOnlySlot
+                : playerController.ItemSlots[slot];
+        }
     }
 }
