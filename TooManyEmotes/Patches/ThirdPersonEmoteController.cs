@@ -21,19 +21,19 @@ namespace TooManyEmotes.Patches
     public static class ThirdPersonEmoteController
     {
         internal static Transform localPlayerCameraContainer { get { return localPlayerController?.cameraContainerTransform; } }
-
+        
         internal static GameObject playerHUDHelmetModel;
         internal static GameObject scannedObjectsUI;
         internal static Camera gameplayCamera;
         internal static Camera emoteCamera;
         internal static Transform emoteCameraPivot;
         internal static int cameraCollideLayerMask = 1 << LayerMask.NameToLayer("Room") | 1 << LayerMask.NameToLayer("PlaceableShipObject") | 1 << LayerMask.NameToLayer("Terrain") | 1 << LayerMask.NameToLayer("MiscLevelGeometry");
-
+        
         internal static Vector2 clampCameraDistance = new Vector2(1.5f, 5);
         internal static float targetCameraDistance = 3f;
-
+        
         internal static ShadowCastingMode defaultShadowCastingMode = ShadowCastingMode.On;
-
+        
         internal static RectTransform defaultControlTipLinesParent;
         internal static RectTransform customControlTipLinesParent;
         internal static TextMeshProUGUI[] customControlTipLines;
@@ -564,7 +564,7 @@ namespace TooManyEmotes.Patches
                 rotateDisplayText = "Unbound";
 
             int index = appendToIndex;
-
+            
             string zoomControlText;
             if ((zoomInDisplayText == "Scroll Up" || zoomInDisplayText == "Scroll Down") && (zoomOutDisplayText == "Scroll Up" || zoomOutDisplayText == "Scroll Down") && zoomInDisplayText != zoomOutDisplayText)
                 zoomControlText = "[Scroll Mouse]";
