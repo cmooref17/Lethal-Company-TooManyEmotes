@@ -12,6 +12,30 @@ namespace TooManyEmotes
 {
     internal static class HelperTools
     {
+        internal enum HeldItemSource
+        {
+            ItemSlot,
+            ItemOnlySlot,
+            Invalid
+        }
+
+        internal readonly struct HeldItemResult
+        {
+            public HeldItemSource Source { get; }
+            public int Slot { get; }
+            public GrabbableObject Item { get; }
+
+            public bool IsValid { get { return Source != HeldItemSource.Invalid; } }
+            public bool HasItem { get { return Item != null; } }
+
+            public HeldItemResult(HeldItemSource source, int slot, GrabbableObject item)
+            {
+                Source = source;
+                Slot = slot;
+                Item = item;
+            }
+        }
+
         public static NetworkManager networkManager { get { return NetworkManager.Singleton; } }
         public static bool isClient { get { return networkManager.IsClient; } }
         public static bool isServer { get { return networkManager.IsServer; } }
@@ -65,6 +89,34 @@ namespace TooManyEmotes
                     return emoteController;
             }
             return null;
+        }
+
+
+        public static HeldItemResult ResolveHeldItem(this PlayerControllerB playerController)
+        {
+            if (playerController == null)
+                return new HeldItemResult(HeldItemSource.Invalid, -1, null);
+
+            int slot = playerController.currentItemSlot;
+            if (slot == 50)
+                return new HeldItemResult(HeldItemSource.ItemOnlySlot, slot, playerController.ItemOnlySlot);
+
+            if (playerController.ItemSlots == null || slot < 0 || slot >= playerController.ItemSlots.Length)
+                return new HeldItemResult(HeldItemSource.Invalid, slot, null);
+
+            return new HeldItemResult(HeldItemSource.ItemSlot, slot, playerController.ItemSlots[slot]);
+        }
+
+
+        public static GrabbableObject GetHeldGrabbableSafe(this PlayerControllerB playerController)
+        {
+            return playerController.ResolveHeldItem().Item;
+        }
+
+
+        public static bool HasHeldGrabbable(this PlayerControllerB playerController, GrabbableObject item)
+        {
+            return item != null && playerController.GetHeldGrabbableSafe() == item;
         }
     }
 }
