@@ -1,4 +1,4 @@
-﻿﻿using GameNetcodeStuff;
+﻿using GameNetcodeStuff;
 using HarmonyLib;
 using System;
 using System.Collections;
@@ -454,7 +454,6 @@ namespace TooManyEmotes
             }
             return success;
         }
-
 
         /// <summary>
         /// Stops emoting, and switches camera back to the player's view immediately.
