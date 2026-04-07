@@ -27,7 +27,7 @@ namespace TooManyEmotes
     {
         public static Dictionary<PlayerControllerB, EmoteControllerPlayer> allPlayerEmoteControllers = new Dictionary<PlayerControllerB, EmoteControllerPlayer>();
         public static EmoteControllerPlayer emoteControllerLocal { get { return localPlayerController != null && allPlayerEmoteControllers.ContainsKey(localPlayerController) ? allPlayerEmoteControllers[localPlayerController] : null; } }
-
+        
         public PlayerControllerB playerController;
 
         public bool isLocalPlayer { get { return playerController == StartOfRound.Instance?.localPlayerController; } }
