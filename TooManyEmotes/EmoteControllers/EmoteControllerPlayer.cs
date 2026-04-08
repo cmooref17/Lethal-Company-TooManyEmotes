@@ -204,7 +204,8 @@ namespace TooManyEmotes
             if (base.CheckIfShouldStopEmoting() || !playerController.performingEmote || performingEmote == null)
                 return true;
 
-            var heldObject = playerController.ItemSlots[playerController.currentItemSlot];
+            var heldObject = playerController.GetHeldGrabbable();
+
             if (sourceGrabbableEmoteProp != null && sourceGrabbableEmoteProp != heldObject)
                 return true;
 
@@ -299,7 +300,7 @@ namespace TooManyEmotes
             LogWarningVerbose("Trying to perform emote on local player. Emote: " + emote.emoteName + " | Emote id: " + emote.emoteId);
 
             bool success;
-            if (sourcePropObject != null && sourcePropObject == localPlayerController.ItemSlots[localPlayerController.currentItemSlot])
+            if (sourcePropObject != null && sourcePropObject == localPlayerController.GetHeldGrabbable())
                 success = PerformEmote(emote, sourcePropObject, overrideEmoteId, AudioManager.emoteOnlyMode);
             else
                 success = PerformEmote(emote, overrideEmoteId, AudioManager.emoteOnlyMode);
@@ -379,7 +380,7 @@ namespace TooManyEmotes
         {
             if (allPlayerEmoteControllers.TryGetValue(__instance, out var emoteController) && emoteController.IsPerformingCustomEmote())
             {
-                var heldObject = __instance.ItemSlots[slot];
+                var heldObject = __instance.GetHeldGrabbable();
                 if (emoteController.sourceGrabbableEmoteProp != null && emoteController.sourceGrabbableEmoteProp != heldObject)
                     emoteController.StopPerformingEmote();
                 else if (heldObject && emoteController.emotingProps.Count > 0 /*heldObject is GrabbablePropObject*/)
@@ -390,7 +391,7 @@ namespace TooManyEmotes
 
         public bool PerformEmote(UnlockableEmote emote, GrabbablePropObject sourcePropObject, int overrideEmoteId = -1, bool doNotTriggerAudio = false)
         {
-            if (sourcePropObject != null && sourcePropObject == playerController.ItemSlots[playerController.currentItemSlot])
+            if (sourcePropObject != null && sourcePropObject == playerController.GetHeldGrabbable())
                 sourceGrabbableEmoteProp = sourcePropObject;
 
             bool success = PerformEmote(emote, overrideEmoteId, doNotTriggerAudio);
@@ -420,7 +421,7 @@ namespace TooManyEmotes
                     originalAnimator.SetInteger("emoteNumber", 0);*/
                 originalAnimator.SetInteger("emoteNumber", 1);
 
-                var heldProp = playerController.ItemSlots[playerController.currentItemSlot];
+                var heldProp = playerController.GetHeldGrabbable();
                 if (heldProp && emotingProps.Count > 0)
                     heldProp.EnableItemMeshes(false);
 
@@ -468,7 +469,7 @@ namespace TooManyEmotes
             base.StopPerformingEmote();
             cameraContainerLerp.SetPositionAndRotation(cameraContainerTarget.position, cameraContainerTarget.rotation);
 
-            var heldProp = playerController.ItemSlots[playerController.currentItemSlot];
+            var heldProp = playerController.GetHeldGrabbable();
             if (heldProp)
                 heldProp.EnableItemMeshes(true);
 
@@ -508,7 +509,7 @@ namespace TooManyEmotes
                 sourceGrabbableEmoteProp = null;
             }
 
-            var heldProp = playerController.ItemSlots[playerController.currentItemSlot];
+            var heldProp = playerController.GetHeldGrabbable();
             if (heldProp)
                 heldProp.EnableItemMeshes(true);
         }
