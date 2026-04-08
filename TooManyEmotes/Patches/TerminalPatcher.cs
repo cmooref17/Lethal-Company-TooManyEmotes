@@ -16,7 +16,6 @@ using UnityEditor;
 using System.Security.Cryptography;
 using TooManyEmotes.Config;
 using TooManyEmotes.Networking;
-using DunGen;
 using Unity.Netcode;
 using TooManyEmotes.Compatibility;
 using static TooManyEmotes.CustomLogging;
