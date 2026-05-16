@@ -92,6 +92,8 @@ namespace TooManyEmotes.UI
         private static Toggle hideEmotes2Toggle;
         private static Toggle hideEmotes3Toggle;
 
+        private static Camera currentCameraInSettings;
+
 
         [HarmonyPatch(typeof(HUDManager), "Awake")]
         [HarmonyPostfix]
@@ -837,10 +839,12 @@ namespace TooManyEmotes.UI
         [HarmonyPrefix]
         public static bool OnOpenQuickMenu()
         {
-            if (!isMenuOpen)
-                return true;
-            CloseEmoteMenu();
-            return false;
+            if (isMenuOpen)
+            {
+                CloseEmoteMenu();
+                return false;
+            }
+            return true;
         }
 
 
@@ -859,6 +863,33 @@ namespace TooManyEmotes.UI
         {
             if (isMenuOpen && __instance == localPlayerController && __instance.isPlayerDead)
                 CloseEmoteMenu();
+        }
+
+        [HarmonyPatch(typeof(IngamePlayerSettings), "UpdateCameraMotionVectorsSetting")]
+        [HarmonyPrefix]
+        public static void OnUpdateCameraMotionVectorsSettingPrefix()
+        {
+            currentCameraInSettings = null;
+            if (StartOfRound.Instance != null && StartOfRound.Instance.activeCamera != null)
+            {
+                currentCameraInSettings = StartOfRound.Instance.activeCamera;
+                if (emoteControllerLocal.isPerformingEmote && StartOfRound.Instance.activeCamera != ThirdPersonEmoteController.gameplayCamera)
+                {
+                    currentCameraInSettings = StartOfRound.Instance.activeCamera;
+                    StartOfRound.Instance.activeCamera = ThirdPersonEmoteController.gameplayCamera;
+                }
+            }
+        }
+
+
+        [HarmonyPatch(typeof(IngamePlayerSettings), "UpdateCameraMotionVectorsSetting")]
+        [HarmonyPostfix]
+        public static void OnUpdateCameraMotionVectorsSettingPostfix()
+        {
+            if (StartOfRound.Instance != null && currentCameraInSettings != null)
+            {
+                StartOfRound.Instance.activeCamera = currentCameraInSettings;
+            }
         }
     }
 

@@ -81,7 +81,7 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         [HarmonyPostfix]
-        private static void InitLocalPlayerController(PlayerControllerB __instance)
+        public static void InitLocalPlayerController(PlayerControllerB __instance)
         {
             gameplayCamera = __instance.gameplayCamera;
             if (!emoteCamera)
@@ -124,7 +124,7 @@ namespace TooManyEmotes.Patches
 
         [HarmonyPatch(typeof(PlayerControllerB), "SpawnPlayerAnimation")]
         [HarmonyPostfix]
-        private static void OnPlayerSpawn(PlayerControllerB __instance)
+        public static void OnPlayerSpawn(PlayerControllerB __instance)
         {
             firstPersonCameraLocalPosition = localPlayerCameraContainer.transform.localPosition;
             firstPersonCameraLocalRotation = localPlayerCameraContainer.transform.localRotation;
@@ -187,11 +187,18 @@ namespace TooManyEmotes.Patches
 
         public static void ResetCamera()
         {
+            if (StartOfRound.Instance == null || localPlayerController == null)
+                return;
+
             if (!gameplayCamera || !emoteCamera || !emoteCameraPivot)
                 return;
 
             emoteCamera.enabled = false;
             Camera activeCamera = (firstPersonEmotesEnabled || ConfigSettings.disableEmotesForSelf.Value || LCVR_Compat.LoadedAndEnabled) ? gameplayCamera : StartOfRound.Instance.activeCamera;
+
+            if (activeCamera == null)
+                activeCamera = gameplayCamera;
+
             StartOfRound.Instance.SwitchCamera(activeCamera);
             CallChangeAudioListenerToObject(activeCamera.gameObject);
 
@@ -593,7 +600,7 @@ namespace TooManyEmotes.Patches
             if (firstPersonEmotesEnabled && gameObject != localPlayerController.gameplayCamera)
                 return;
 
-            MethodInfo method = localPlayerController.GetType().GetMethod("ChangeAudioListenerToObject", BindingFlags.NonPublic | BindingFlags.Instance);
+            MethodInfo method = localPlayerController.GetType().GetMethod("ChangeAudioListenerToObject", BindingFlags.Public | BindingFlags.Instance);
             method.Invoke(localPlayerController, new object[] { gameObject });
         }
     }

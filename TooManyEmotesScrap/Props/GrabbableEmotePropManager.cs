@@ -324,10 +324,8 @@ namespace TooManyEmotesScrap.Props
                 SpawnableItemWithRarity itemRarityData = grabbablePropData.itemRarityData;
                 if (itemRarityData == null)
                 {
-                    itemRarityData = new SpawnableItemWithRarity();
+                    itemRarityData = new SpawnableItemWithRarity(grabbablePropData.itemData, grabbablePropData.rarity);
                     grabbablePropData.itemRarityData = itemRarityData;
-                    itemRarityData.spawnableItem = grabbablePropData.itemData;
-                    itemRarityData.rarity = grabbablePropData.rarity;
                 }
             }
         }
