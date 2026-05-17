@@ -1,4 +1,5 @@
-﻿using GameNetcodeStuff;
+using System;
+using GameNetcodeStuff;
 using HarmonyLib;
 using System.Collections;
 using System.Collections.Generic;
@@ -170,7 +171,8 @@ namespace TooManyEmotes.UI
                 { }
                 else if (MoreCompany_Compat.Enabled)
                 {
-                    MoreCompany_Compat.ShowLocalCosmetics(metarigGameObject.transform);
+                    try { MoreCompany_Compat.ShowLocalCosmetics(metarigGameObject.transform); }
+                    catch (Exception e) { LogWarning("MoreCompany cosmetics skipped on preview model: " + e.Message); }
                 }
 
                 SetObjectLayerRecursive(previewPlayerObject, renderLayer);

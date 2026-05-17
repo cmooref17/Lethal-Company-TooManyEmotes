@@ -1,4 +1,4 @@
-﻿using GameNetcodeStuff;
+using GameNetcodeStuff;
 using HarmonyLib;
 using System;
 using System.Collections;
@@ -383,7 +383,7 @@ namespace TooManyEmotes
                 var heldObject = __instance.GetHeldGrabbable();
                 if (emoteController.sourceGrabbableEmoteProp != null && emoteController.sourceGrabbableEmoteProp != heldObject)
                     emoteController.StopPerformingEmote();
-                else if (heldObject && emoteController.emotingProps.Count > 0 /*heldObject is GrabbablePropObject*/)
+                else if (heldObject && emoteController.emotingProps != null && emoteController.emotingProps.Count > 0 /*heldObject is GrabbablePropObject*/)
                     heldObject.EnableItemMeshes(false);
             }
         }
@@ -422,7 +422,7 @@ namespace TooManyEmotes
                 originalAnimator.SetInteger("emoteNumber", 1);
 
                 var heldProp = playerController.GetHeldGrabbable();
-                if (heldProp && emotingProps.Count > 0)
+                if (heldProp && emotingProps != null && emotingProps.Count > 0)
                     heldProp.EnableItemMeshes(false);
 
                 if (isLocalPlayer)
