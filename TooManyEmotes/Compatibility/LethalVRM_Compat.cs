@@ -9,7 +9,7 @@ namespace TooManyEmotes.Compatibility
     [HarmonyPatch]
     internal static class LethalVRM_Compat
     {
-        internal static bool Enabled { get { return Plugin.IsModLoaded("Ooseykins.LethalVRM") || Plugin.IsModLoaded("OomJan.BetterLethalVRM"); } }
+        internal static bool Enabled { get { return Plugin.IsModLoaded("Ooseykins.LethalVRM") || Plugin.IsModLoaded("OomJan.BetterLethalVRM") || Plugin.IsModLoaded("Zch.BettererLethalVRM"); } }
         
         internal static void DisplayVRMModel()
         {
