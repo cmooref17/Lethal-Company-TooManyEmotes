@@ -1,4 +1,4 @@
-﻿using GameNetcodeStuff;
+using GameNetcodeStuff;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -69,10 +69,13 @@ namespace TooManyEmotes
 
         public static GrabbableObject GetHeldGrabbable(this PlayerControllerB playerController)
         {
+            if (playerController == null) return null;
             int slot = playerController.currentItemSlot;
-            return slot is 50
-                ? playerController.ItemOnlySlot
-                : playerController.ItemSlots[slot];
+            if (slot == 50)
+                return playerController.ItemOnlySlot;
+            if (playerController.ItemSlots == null || slot < 0 || slot >= playerController.ItemSlots.Length)
+                return null;
+            return playerController.ItemSlots[slot];
         }
     }
 }

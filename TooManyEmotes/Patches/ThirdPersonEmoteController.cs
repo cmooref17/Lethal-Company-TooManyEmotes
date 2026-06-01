@@ -1,6 +1,6 @@
-﻿using GameNetcodeStuff;
-using HarmonyLib;
 using System;
+using GameNetcodeStuff;
+using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Rendering;
 using TMPro;
@@ -381,8 +381,14 @@ namespace TooManyEmotes.Patches
                 if (scannedObjectsUI)
                     scannedObjectsUI.SetActive(false);
 
-                if (localPlayerController.localItemHolder == localPlayerController.currentlyHeldObjectServer?.parentObject)
-                    localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.serverItemHolder;
+                try
+                {
+                    if (localPlayerController.currentlyHeldObjectServer != null
+                        && localPlayerController.localItemHolder != null
+                        && localPlayerController.localItemHolder == localPlayerController.currentlyHeldObjectServer.parentObject)
+                        localPlayerController.currentlyHeldObjectServer.parentObject = localPlayerController.serverItemHolder;
+                }
+                catch (Exception e) { LogErrorVerbose("Failed to reassign held item parent on emote start: " + e); }
 
                 if (AdvancedCompany_Compat.Enabled)
                     AdvancedCompany_Compat.ShowLocalCosmetics();
@@ -411,7 +417,7 @@ namespace TooManyEmotes.Patches
 
             if (StartOfRound.Instance.activeCamera != gameplayCamera)
                 StartOfRound.Instance.SwitchCamera(gameplayCamera);
-            if (localPlayerController.activeAudioListener != gameplayCamera.gameObject)
+            if (localPlayerController.activeAudioListener == null || localPlayerController.activeAudioListener != gameplayCamera.gameObject)
                 CallChangeAudioListenerToObject(gameplayCamera.gameObject);
 
             localPlayerController.thisPlayerModel.gameObject.layer = 23;
@@ -431,10 +437,13 @@ namespace TooManyEmotes.Patches
 
             ShowCustomControlTips(false);
 
-            foreach (var item in localPlayerController.ItemSlots)
+            if (localPlayerController.ItemSlots != null)
             {
-                if (item && item.parentObject == localPlayerController.serverItemHolder)
-                    item.parentObject = localPlayerController.localItemHolder;
+                foreach (var item in localPlayerController.ItemSlots)
+                {
+                    if (item != null && item.parentObject == localPlayerController.serverItemHolder)
+                        item.parentObject = localPlayerController.localItemHolder;
+                }
             }
 
             emoteCameraPivot.eulerAngles = localPlayerCameraContainer.eulerAngles;
@@ -527,16 +536,20 @@ namespace TooManyEmotes.Patches
             if (__instance != localPlayerController)
                 return;
 
-            if (emoteControllerLocal.IsPerformingCustomEmote())
+            try
             {
-                var heldItem = localPlayerController.GetHeldGrabbable();
-                if (heldItem)
+                if (emoteControllerLocal.IsPerformingCustomEmote())
                 {
-                    heldItem.parentObject = firstPersonEmotesEnabled ? localPlayerController.localItemHolder : localPlayerController.serverItemHolder;
-                    if (EmoteControllerPlayer.emoteControllerLocal.emotingProps.Count > 0)
-                        heldItem.EnableItemMeshes(false);
+                    var heldItem = localPlayerController.GetHeldGrabbable();
+                    if (heldItem)
+                    {
+                        heldItem.parentObject = firstPersonEmotesEnabled ? localPlayerController.localItemHolder : localPlayerController.serverItemHolder;
+                        if (EmoteControllerPlayer.emoteControllerLocal?.emotingProps != null && EmoteControllerPlayer.emoteControllerLocal.emotingProps.Count > 0)
+                            heldItem.EnableItemMeshes(false);
+                    }
                 }
             }
+            catch (Exception e) { LogErrorVerbose("Failed to fix held item parent on slot switch: " + e); }
         }
 
 
@@ -597,11 +610,48 @@ namespace TooManyEmotes.Patches
 
         public static void CallChangeAudioListenerToObject(GameObject gameObject)
         {
-            if (firstPersonEmotesEnabled && gameObject != localPlayerController.gameplayCamera)
+            if (localPlayerController == null || gameObject == null)
+                return;
+            if (firstPersonEmotesEnabled && gameObject != localPlayerController.gameplayCamera?.gameObject)
                 return;
 
-            MethodInfo method = localPlayerController.GetType().GetMethod("ChangeAudioListenerToObject", BindingFlags.Public | BindingFlags.Instance);
-            method.Invoke(localPlayerController, new object[] { gameObject });
+            try
+            {
+                MethodInfo method = localPlayerController.GetType().GetMethod("ChangeAudioListenerToObject",
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (method != null)
+                {
+                    method.Invoke(localPlayerController, new object[] { gameObject });
+                }
+                else
+                {
+                    // Fallback: move AudioListener directly
+                    LogWarning("ChangeAudioListenerToObject method not found. Using fallback audio listener swap.");
+                    var existingListener = localPlayerController.activeAudioListener?.GetComponent<AudioListener>()
+                        ?? localPlayerController.GetComponentInChildren<AudioListener>();
+                    if (existingListener != null && existingListener.gameObject != gameObject)
+                    {
+                        UnityEngine.Object.Destroy(existingListener);
+                        if (gameObject.GetComponent<AudioListener>() == null)
+                            gameObject.AddComponent<AudioListener>();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                LogError("CallChangeAudioListenerToObject failed. Attempting fallback. Error: " + e);
+                try
+                {
+                    var existingListener = localPlayerController.GetComponentInChildren<AudioListener>();
+                    if (existingListener != null && existingListener.gameObject != gameObject)
+                    {
+                        UnityEngine.Object.Destroy(existingListener);
+                        if (gameObject.GetComponent<AudioListener>() == null)
+                            gameObject.AddComponent<AudioListener>();
+                    }
+                }
+                catch { }
+            }
         }
     }
 }
